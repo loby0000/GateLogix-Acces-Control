@@ -4,6 +4,8 @@ const Guardia = require('../models/Guardia');
 const Admin = require('../models/admin');
 const Log = require('../models/Logs');
 
+const generateBarcode = require('../utils/generateBarcode'); // tu función que genera código de barras
+
 // Iniciar sesión (guardia)
 exports.login = async (req, res) => {
   const { documento, clave } = req.body;
@@ -18,7 +20,7 @@ exports.login = async (req, res) => {
     const token = jwt.sign(
       { id: guardia._id, documento: guardia.documento, rol: 'guardia' },
       process.env.JWT_SECRET,
-      { expiresIn: '8h' }
+      { expiresIn: '1d' }
     );
 
     res.json({ token });
@@ -57,5 +59,37 @@ exports.registrar = async (req, res) => {
   } catch (err) {
     console.error('Error al registrar guardia:', err);
     res.status(500).json({ message: 'Error al registrar guardia' });
+  }
+};
+
+// Registrar usuario con equipo y generar código de barras
+exports.registrarUsuarioConEquipo = async (req, res) => {
+  const { nombre, documento, tipoEquipo, serialEquipo } = req.body;
+
+  try {
+    // Guardar usuario y su equipo
+    const usuario = await Usuario.create({
+      nombre,
+      documento,
+      tipoEquipo,
+      serialEquipo
+    });
+
+    // Generar el código de barras usando el serial o documento como identificador
+    const filePath = await generateBarcode(serialEquipo);
+
+    await Log.create({
+      tipo: 'Registro de usuario con equipo',
+      detalle: `Usuario ${nombre} (${documento}) registrado con equipo ${serialEquipo}`
+    });
+
+    res.json({
+      message: 'Usuario y equipo registrados exitosamente',
+      usuario,
+      codigoBarras: filePath // ruta donde se guardó el código
+    });
+  } catch (err) {
+    console.error('Error al registrar usuario con equipo:', err);
+    res.status(500).json({ message: 'Error al registrar usuario con equipo' });
   }
 };

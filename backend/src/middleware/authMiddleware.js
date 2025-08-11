@@ -2,13 +2,15 @@ const jwt = require('jsonwebtoken');
 
 // Autenticación general (admin o guardia)
 exports.verifyToken = (req, res, next) => {
-  const token = req.headers['authorization'];
+  const authHeader = req.headers['authorization'];
+  if (!authHeader) return res.status(403).json({ message: 'Token no proporcionado' });
 
-  if (!token) return res.status(403).json({ message: 'Token no proporcionado' });
+  // Extraer el token si viene como "Bearer <token>"
+  const token = authHeader.startsWith('Bearer ') ? authHeader.split(' ')[1] : authHeader;
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded; // Aquí podemos saber si es guardia o admin según lo que guardamos en el token
+    req.user = decoded;
     next();
   } catch (err) {
     return res.status(401).json({ message: 'Token inválido o expirado' });

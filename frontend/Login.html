@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inicio de Sesión</title>
+  <link rel="stylesheet" href="login.css">
+</head>
+<body>
+
+<div class="container">
+  <!-- Sección Logo -->
+  <div class="logo-section">
+    LOGO
+  </div>
+
+  <!-- Sección Formulario -->
+  <div class="form-section">
+    <form id="loginForm">
+      <h2>Iniciar Sesión</h2>
+
+      <label for="tipoIngreso">Tipo de ingreso</label>
+      <select id="tipoIngreso" name="tipoIngreso">
+        <option value="admin">Administrador</option>
+        <option value="guardia">Guardia</option>
+      </select>
+
+      <label for="documento">Número de documento</label>
+      <input type="text" id="documento" name="documento" placeholder="Ingrese su documento" required>
+
+      <label for="password">Contraseña</label>
+      <input type="password" id="password" name="password" placeholder="Ingrese su contraseña" required>
+
+      <div id="extraGuardia" style="display:none;">
+        <label for="turno">Turno</label>
+        <select id="turno" name="turno">
+          <option value="mañana">Mañana</option>
+          <option value="tarde">Tarde</option>
+          <option value="noche">Noche</option>
+        </select>
+      </div>
+
+      <button type="submit">Iniciar Sesión</button>
+
+      <div class="register-link">
+        ¿No tienes cuenta? <a href="#">Regístrate</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  const tipoIngreso = document.getElementById("tipoIngreso");
+  const extraGuardia = document.getElementById("extraGuardia");
+
+  tipoIngreso.addEventListener("change", () => {
+    if (tipoIngreso.value === "guardia") {
+      extraGuardia.style.display = "block";
+    } else {
+      extraGuardia.style.display = "none";
+    }
+  });
+
+  document.getElementById("loginForm").addEventListener("submit", function(event) {
+    event.preventDefault();
+
+    const tipo = tipoIngreso.value;
+    const documento = document.getElementById("documento").value;
+    const password = document.getElementById("password").value;
+    const turno = document.getElementById("turno") ? document.getElementById("turno").value : null;
+
+    alert(`Tipo: ${tipo}\nDocumento: ${documento}\nContraseña: ${password}\nTurno: ${turno || 'N/A'}`);
+  });
+</script>
+
+</body>
+</html>

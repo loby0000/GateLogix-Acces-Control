@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Registro Usuario y Equipo</title>
+  <link rel="stylesheet" href="registroUsuarioEquipo.css">
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <h2>Registro de Usuario y Equipo</h2>
+
+      <form id="registroForm" autocomplete="off">
+        <input type="text" placeholder="Nombre del Usuario" required>
+        <input type="text" placeholder="Apellido del Usuario" required>
+        <input type="text" placeholder="Documento de Identidad" required>
+        <input type="text" placeholder="Nombre del Equipo" required>
+        <input type="text" placeholder="Marca del Equipo" required>
+        <input type="text" placeholder="Serial del Equipo" required>
+
+        <select required>
+          <option value="">Tipo de Equipo</option>
+          <option value="laptop">Laptop</option>
+          <option value="tablet">Tablet</option>
+          <option value="telefono">Teléfono</option>
+        </select>
+
+        <!-- Chips para accesorios -->
+        <div class="chip-container">
+          <button type="button" class="chip" data-value="mouse">🖱 Mouse</button>
+          <button type="button" class="chip" data-value="cargador">🔌 Cargador</button>
+        </div>
+
+        <!-- Insert image wrapper: botón + bloque flotante -->
+        <div class="image-wrapper">
+          <button type="button" id="btnImagen" class="btn-image">📷 Insertar Imagen</button>
+
+          <div id="opcionesImagen" class="opciones-flotantes" aria-hidden="true">
+            <button type="button" id="abrirCamara" class="option-btn">📷 Tomar foto</button>
+            <button type="button" id="seleccionarArchivo" class="option-btn">📁 Seleccionar archivo</button>
+          </div>
+        </div>
+
+        <!-- Camera preview + controls -->
+        <div id="cameraContainer" class="camera-container" aria-hidden="true">
+          <video id="video" autoplay playsinline></video>
+          <div class="camera-controls">
+            <button type="button" id="tomarFoto" class="btn-small">Tomar Foto</button>
+            <button type="button" id="cerrarCamara" class="btn-small btn-cancel">Cerrar</button>
+          </div>
+          <canvas id="canvas" style="display:none;"></canvas>
+          <img id="preview" class="image-preview" style="display:none;" alt="Foto tomada">
+        </div>
+
+        <!-- File input hidden -->
+        <input type="file" id="fileInput" accept="image/*" style="display:none;">
+        <img id="filePreview" class="image-preview" style="display:none;" alt="Imagen seleccionada">
+
+        <button type="submit" class="btn-submit">Registrar</button>
+      </form>
+    </div>
+  </div>
+
+<script>
+const btnImagen = document.getElementById('btnImagen');
+const opcionesImagen = document.getElementById('opcionesImagen');
+const abrirCamara = document.getElementById('abrirCamara');
+const seleccionarArchivo = document.getElementById('seleccionarArchivo');
+const cameraContainer = document.getElementById('cameraContainer');
+const video = document.getElementById('video');
+const tomarFoto = document.getElementById('tomarFoto');
+const cerrarCamara = document.getElementById('cerrarCamara');
+const canvas = document.getElementById('canvas');
+const preview = document.getElementById('preview');
+const fileInput = document.getElementById('fileInput');
+const filePreview = document.getElementById('filePreview');
+
+let currentStream = null;
+
+// Chips toggle
+document.querySelectorAll('.chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    chip.classList.toggle('active');
+  });
+});
+
+// Toggle flotante
+btnImagen.addEventListener('click', (e) => {
+  e.stopPropagation();
+  const visible = opcionesImagen.style.display === 'block';
+  opcionesImagen.style.display = visible ? 'none' : 'block';
+  opcionesImagen.setAttribute('aria-hidden', visible ? 'true' : 'false');
+});
+
+document.addEventListener('click', (e) => {
+  if (!opcionesImagen.contains(e.target) && e.target !== btnImagen) {
+    opcionesImagen.style.display = 'none';
+    opcionesImagen.setAttribute('aria-hidden', 'true');
+  }
+});
+
+// Abrir cámara
+abrirCamara.addEventListener('click', async () => {
+  opcionesImagen.style.display = 'none';
+  try {
+    currentStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+    video.srcObject = currentStream;
+    cameraContainer.style.display = 'block';
+    cameraContainer.setAttribute('aria-hidden', 'false');
+    preview.style.display = 'none';
+    filePreview.style.display = 'none';
+  } catch (err) {
+    alert('No se pudo acceder a la cámara: ' + (err.message || err));
+  }
+});
+
+// Tomar foto (sin cerrar cámara)
+tomarFoto.addEventListener('click', () => {
+  if (!currentStream) return;
+  canvas.width = video.videoWidth || 640;
+  canvas.height = video.videoHeight || 480;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+  const dataURL = canvas.toDataURL('image/png');
+  preview.src = dataURL;
+  preview.style.display = 'block';
+});
+
+// Cerrar cámara
+cerrarCamara.addEventListener('click', () => {
+  if (currentStream) {
+    currentStream.getTracks().forEach(t => t.stop());
+    currentStream = null;
+  }
+  video.srcObject = null;
+  cameraContainer.style.display = 'none';
+  cameraContainer.setAttribute('aria-hidden', 'true');
+});
+
+// Seleccionar archivo
+seleccionarArchivo.addEventListener('click', () => {
+  opcionesImagen.style.display = 'none';
+  fileInput.click();
+});
+
+fileInput.addEventListener('change', (ev) => {
+  const f = ev.target.files[0];
+  if (!f) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    filePreview.src = e.target.result;
+    filePreview.style.display = 'block';
+    preview.style.display = 'none';
+  };
+  reader.readAsDataURL(f);
+});
+
+document.getElementById('registroForm').addEventListener('submit', (e) => {
+  e.preventDefault();
+  alert('Formulario enviado (aquí conecta con tu backend).');
+});
+</script>
+</body>
+</html>

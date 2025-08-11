@@ -9,8 +9,7 @@ exports.registrar = async (req, res) => {
     tipoDocumento,
     numeroDocumento,
     email,
-    equipo,
-    accesorios
+    equipo
   } = req.body;
 
   const idGuardia = req.user.id; // 👈 viene del middleware JWT
@@ -47,8 +46,8 @@ exports.registrar = async (req, res) => {
         marca: equipo.marca,
         caracteristicas: equipo.caracteristicas,
         accesorios: {
-          mouse: accesorios.mouse || false,
-          cargador: accesorios.cargador || false
+          mouse: equipo.accesorios && equipo.accesorios.mouse || false,
+          cargador: equipo.accesorios && equipo.accesorios.cargador || false
         }
       },
       guardiaRegistrador: guardia._id,

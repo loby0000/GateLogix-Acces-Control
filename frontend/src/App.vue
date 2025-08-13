@@ -6,13 +6,13 @@
 <script>
 
 import Login from './components/Login.vue'
-import RegistroUsuariosConEquipo from './components/RegistroUsuariosConEquipo.vue'
+import RegistroUsuario from './components/RegistroUsuario.vue'
 
 export default {
   name: 'App',
   components: {
     Login,
-    RegistroUsuariosConEquipo
+  RegistroUsuario
   },
   data() {
     return {
@@ -22,7 +22,7 @@ export default {
   methods: {
     handleLoginSuccess(tipo) {
       if (tipo === 'guardia') {
-        this.currentComponent = 'RegistroUsuariosConEquipo';
+        this.currentComponent = 'RegistroUsuario';
       } else {
         // Aquí podrías redirigir a otro componente según el tipo
         alert('Solo el guardia está implementado para redirigir.');

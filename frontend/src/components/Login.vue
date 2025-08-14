@@ -1,17 +1,17 @@
 <template>
   <div class="login-page">
     <div class="container">
-      <!-- Sección Logo -->
+      <!-- Logo -->
       <div class="logo-section" style="text-align:center; margin-bottom: 24px;">
         <img :src="logo" alt="Logo" style="max-width: 200px; width: 160px; height: auto; border-radius: 16px; box-shadow: 0 4px 24px rgba(0,0,0,0.12); background: #fff; padding: 12px;" />
       </div>
 
-      <!-- Sección Formulario -->
+      <!-- Formulario -->
       <div class="form-section">
-        <form id="loginForm" @submit.prevent="onSubmit" class="login-form">
+        <form @submit.prevent="onSubmit" class="login-form">
           <h2>Iniciar Sesión</h2>
 
-          <select id="tipoIngreso" name="tipoIngreso" v-model="tipoIngreso" style="margin-bottom: 12px;">
+          <select v-model="tipoIngreso" style="margin-bottom: 12px;">
             <option disabled value="">Tipo de usuario</option>
             <option value="admin">Administrador</option>
             <option value="guardia">Guardia</option>
@@ -19,10 +19,8 @@
 
           <input
             type="text"
-            id="documento"
-            name="documento"
             placeholder="Número de documento"
-            v-model="documento"
+            v-model.trim="documento"
             required
             autocomplete="off"
             style="margin-bottom: 12px;"
@@ -30,17 +28,15 @@
 
           <input
             type="password"
-            id="password"
-            name="password"
             placeholder="Contraseña"
-            v-model="password"
+            v-model.trim="password"
             required
             autocomplete="current-password"
             style="margin-bottom: 12px;"
           />
 
           <div v-if="tipoIngreso === 'guardia'">
-            <select id="turno" name="turno" v-model="turno" style="margin-bottom: 12px;">
+            <select v-model="turno" style="margin-bottom: 12px;">
               <option disabled value="">Jornada</option>
               <option value="mañana">Mañana</option>
               <option value="tarde">Tarde</option>
@@ -48,17 +44,19 @@
             </select>
           </div>
 
-          <!-- botones: Iniciar Sesión y Regístrate (debajo, centrado) -->
-          <div class="actions" role="group" aria-label="Acciones de sesión">
-            <button type="submit" class="btn btn-primary" aria-label="Iniciar sesión">
-              Iniciar Sesión
+          <div class="actions" role="group">
+            <button
+              type="submit"
+              class="btn btn-primary"
+              :disabled="loading"
+            >
+              {{ loading ? 'Ingresando…' : 'Iniciar sesión' }}
             </button>
 
             <button
               type="button"
               class="btn btn-secondary"
               @click="goToRegister"
-              aria-label="Registrarse"
             >
               Regístrate
             </button>
@@ -70,29 +68,65 @@
 </template>
 
 <script setup>
-import { ref, defineProps } from 'vue'
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 import logo from '../assets/logo.png'
 
 const props = defineProps({
   onLoginSuccess: Function
 })
 
+const router = useRouter()
+
 const tipoIngreso = ref('')
 const documento = ref('')
 const password = ref('')
 const turno = ref('')
+const loading = ref(false)
 
-function onSubmit() {
-  // Aquí deberías validar contra la base de datos real
-  if (props.onLoginSuccess && (tipoIngreso.value === 'guardia' || tipoIngreso.value === 'admin')) {
-    props.onLoginSuccess(tipoIngreso.value)
-  } else {
-    alert('Tipo de usuario no válido o falta callback')
+async function onSubmit() {
+  if (!tipoIngreso.value) return alert('Por favor, selecciona el tipo de usuario')
+  if (!documento.value) return alert('Por favor, ingresa tu número de documento')
+  if (!password.value) return alert('Por favor, ingresa tu contraseña')
+  if (tipoIngreso.value === 'guardia' && !turno.value) return alert('Por favor, selecciona la jornada')
+
+  loading.value = true
+  try {
+    if (tipoIngreso.value === 'guardia') {
+      const res = await fetch('http://localhost:3000/api/guardia/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          documento: documento.value,
+          clave: password.value
+        })
+      })
+
+      const data = await res.json()
+
+      if (res.ok && data.token) {
+        localStorage.setItem('token', data.token)
+        // Redirige a RegistroUsuario.vue
+        router.push({ name: 'registro' })
+      } else {
+        localStorage.removeItem('token')
+        alert(data.message || 'Credenciales incorrectas')
+      }
+
+    } else if (tipoIngreso.value === 'admin') {
+      alert('Login de administrador aún no está implementado.')
+    }
+
+  } catch (e) {
+    localStorage.removeItem('token')
+    alert('Error de conexión con el servidor')
+  } finally {
+    loading.value = false
   }
 }
 
 function goToRegister() {
-  alert('Aquí abrirías el formulario de registro (configura la ruta /registro)')
+  router.push({ name: 'registroguardia' })
 }
 </script>
 
@@ -124,14 +158,14 @@ function goToRegister() {
 /* Logo (columna izquierda) */
 .logo-section {
   flex: 1 1 50%;
-  min-width: 320px;
+  min-width: 420px;
   background: #1e293b;
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
   font-size: 2.2rem;
-  padding: 20px;
+  padding: 30px;
 }
 
 /* Form (columna derecha) */
@@ -214,22 +248,30 @@ input:focus {
 
 /* Primary */
 .btn-primary {
-  background: linear-gradient(90deg, #1e293b, #334155);
-  color: #fff;
+  background: #000000;       /* Fondo negro */
+  border: 2px solid #e6eefb;
+  color: #ffffff;           /* Texto blanco */
   box-shadow: 0 6px 18px rgba(30,41,59,0.12);
+  transition: all 0.3s ease; /* Transición suave */
 }
-.btn-primary:hover { transform: translateY(-2px); }
+
+.btn-primary:hover {
+  background: #ffffff;       /* Fondo blanco */
+  color: #000000;           /* Texto negro */
+  transform: translateY(-2px);
+}
+
 
 /* Secondary (Regístrate) */
 .btn-secondary {
   background: transparent;
   color: #1e293b;
-  border: 2px solid #e6eefb; /* sutil borde claro */
+  border: 2px solid #000000; /* sutil borde claro */
   background-image: linear-gradient(180deg, rgba(30,41,59,0.03), transparent);
   box-shadow: 0 6px 18px rgba(16,24,40,0.06);
 }
 .btn-secondary:hover {
-  background: #f3f6fb;
+  background: #000000;
   transform: translateY(-2px);
 }
 

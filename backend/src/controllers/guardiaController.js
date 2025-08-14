@@ -33,10 +33,13 @@ exports.login = async (req, res) => {
 // Registrar guardia (autenticación admin requerida)
 exports.registrar = async (req, res) => {
   const { documento, nombre, jornada, claveGuardia, usuarioAdmin, claveAdmin } = req.body;
+  console.log("Datos recibidos en registrar guardia:", req.body);
 
   try {
     const admin = await Admin.findOne({ usuario: usuarioAdmin });
     if (!admin) return res.status(404).json({ message: 'Admin no encontrado' });
+
+    console.log("Admin encontrado:", admin);
 
     const validaClave = await bcrypt.compare(claveAdmin, admin.clave);
     if (!validaClave) return res.status(401).json({ message: 'Credenciales de admin incorrectas' });
@@ -50,6 +53,8 @@ exports.registrar = async (req, res) => {
       clave: hashed
     });
 
+    console.log("Guardia creado:", guardia);
+
     await Log.create({
       tipo: 'Registro de guardia',
       detalle: `Guardia ${nombre} (${documento}) registrado por ${usuarioAdmin}`,
@@ -57,8 +62,8 @@ exports.registrar = async (req, res) => {
 
     res.json({ message: 'Guardia registrado exitosamente', guardia });
   } catch (err) {
-    console.error('Error al registrar guardia:', err);
-    res.status(500).json({ message: 'Error al registrar guardia' });
+    console.error('Error al registrar guardia:', err.message, err.stack);
+    res.status(500).json({ message: 'Error al registrar guardia', error: err.message });
   }
 };
 

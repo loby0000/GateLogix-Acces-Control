@@ -8,4 +8,7 @@ router.post('/login', adminCtrl.login);
 // POST /api/admin/reemplazar
 router.post('/reemplazar', adminCtrl.reemplazarAdmin);
 
+// POST /api/admin/crear
+router.post('/crear', adminCtrl.crearAdmin);
+
 module.exports = router;

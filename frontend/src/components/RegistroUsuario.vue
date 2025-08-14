@@ -84,7 +84,8 @@
         <span style="font-size:18px;">✔</span> El Registro Ha Sido Exitoso
       </div>
 
-      <button class="enviar" @click.prevent="registrar">Registrar</button>
+  <button class="enviar" @click.prevent="registrar">Registrar</button>
+  <router-link to="/login" class="cerrar-sesion-btn">Cerrar sesión</router-link>
     </div>
   </div>
 </template>
@@ -263,6 +264,29 @@ button {
   width: 100%;
 }
 .enviar:hover { transform: translateY(-2px); }
+
+.cerrar-sesion-btn {
+  display: block;
+  width: 100%;
+  margin-top: 10px;
+  background: #ef4444;
+  color: #111827;
+  border: none;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 15px;
+  padding: 10px 0;
+  text-align: center;
+  box-shadow: 0 6px 18px rgba(30,41,59,0.12);
+  transition: background 0.2s, color 0.2s, transform .06s, box-shadow .12s, opacity .12s;
+  cursor: pointer;
+  text-decoration: none;
+}
+.cerrar-sesion-btn:hover {
+  background: #b91c1c;
+  color: #fff;
+  transform: translateY(-2px);
+}
 .modal {
   position: fixed;
   top: 0; left: 0;

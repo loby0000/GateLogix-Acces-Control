@@ -12,7 +12,7 @@ const adminSchema = new mongoose.Schema({
   },
   rol: {
     type: String,
-    enum: ['admin'],
+    enum: ['admin', 'SupA'],  // <-- agregamos SupA
     default: 'admin'
   }
 });

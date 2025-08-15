@@ -6,7 +6,7 @@ const initEmergencyAdmin = async () => {
     const existingAdmin = await Admin.findOne({ usuario: 'admin' });
 
     if (existingAdmin) {
-      console.log('🛡️ Admin de emergencia ya existe');
+      console.log('🛡️ Superadmin de emergencia ya existe');
       return;
     }
 
@@ -15,13 +15,13 @@ const initEmergencyAdmin = async () => {
     const emergencyAdmin = new Admin({
       usuario: 'admin',
       clave: hashedPassword,
-      rol: 'admin'
+      rol: 'SupA'   // Cambiado a SuperAdmin
     });
 
     await emergencyAdmin.save();
-    console.log('✅ Admin de emergencia creado: usuario=admin, clave=admin123');
+    console.log('✅ Superadmin de emergencia creado: usuario=admin, clave=admin123, rol=SupA');
   } catch (error) {
-    console.error('❌ Error al crear admin de emergencia:', error);
+    console.error('❌ Error al crear superadmin de emergencia:', error);
   }
 };
 

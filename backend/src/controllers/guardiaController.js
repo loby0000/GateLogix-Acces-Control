@@ -7,18 +7,27 @@ const Log = require('../models/Logs');
 const generateBarcode = require('../utils/generateBarcode'); // tu función que genera código de barras
 
 // Iniciar sesión (guardia)
+// login guardia seguro
 exports.login = async (req, res) => {
-  const { documento, clave } = req.body;
+  const { documento, clave, jornada } = req.body;
 
   try {
     const guardia = await Guardia.findOne({ documento });
-    if (!guardia) return res.status(404).json({ message: 'Documento no encontrado' });
+    if (!guardia) {
+      return res.status(401).json({ message: 'Documento, contraseña o jornada incorrectos' });
+    }
 
     const match = await bcrypt.compare(clave, guardia.clave);
-    if (!match) return res.status(401).json({ message: 'Clave incorrecta' });
+    if (!match) {
+      return res.status(401).json({ message: 'Documento, contraseña o jornada incorrectos' });
+    }
+
+    if (guardia.jornada !== jornada) {
+      return res.status(401).json({ message: 'Documento, contraseña o jornada incorrectos' });
+    }
 
     const token = jwt.sign(
-      { id: guardia._id, documento: guardia.documento, rol: 'guardia' },
+      { id: guardia._id, documento: guardia.documento, rol: 'guardia', jornada: guardia.jornada },
       process.env.JWT_SECRET,
       { expiresIn: '1d' }
     );
@@ -29,6 +38,8 @@ exports.login = async (req, res) => {
     res.status(500).json({ message: 'Error en el servidor' });
   }
 };
+
+
 
 // Registrar guardia (autenticación admin requerida)
 exports.registrar = async (req, res) => {

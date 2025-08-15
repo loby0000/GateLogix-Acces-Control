@@ -27,34 +27,40 @@ exports.login = async (req, res) => {
   }
 };
 
-// Reemplazar admin (excepto el de emergencia)
 exports.reemplazarAdmin = async (req, res) => {
-  const { usuarioAnterior, claveAnterior, nuevoUsuario, nuevaClave } = req.body;
+  const { usuario, clave } = req.body; // usa los nombres del modelo
 
   try {
-    const admin = await Admin.findOne({ usuario: usuarioAnterior });
-    if (!admin || admin.esEmergencia)
-      return res.status(403).json({ message: 'No se puede reemplazar este administrador' });
+    if (!usuario || !clave) {
+      return res.status(400).json({ message: 'Faltan datos: usuario y clave son requeridos' });
+    }
 
-    const valido = await bcrypt.compare(claveAnterior, admin.clave);
-    if (!valido)
-      return res.status(401).json({ message: 'Credenciales incorrectas' });
+    // Buscar admin existente con rol 'admin' (dejando SupA intactos)
+    const adminExistente = await Admin.findOne({ rol: 'admin' });
 
-    // Eliminar admin anterior
-    await Admin.deleteMany({ esEmergencia: false });
+    if (adminExistente) {
+      // Eliminar admin existente
+      await Admin.deleteOne({ _id: adminExistente._id });
+    }
 
     // Crear nuevo admin
-    const hashed = await bcrypt.hash(nuevaClave, 10);
-    const nuevo = await Admin.create({ usuario: nuevoUsuario, clave: hashed });
+    const hashed = await bcrypt.hash(clave, 10);
+    const nuevo = await Admin.create({ usuario, clave: hashed, rol: 'admin' });
 
     // Guardar log
     await Log.create({
-      tipo: 'Cambio de Admin',
-      detalle: `Reemplazado ${usuarioAnterior} por ${nuevoUsuario}`,
+      tipo: 'Creación/Reemplazo de Admin',
+      detalle: adminExistente
+        ? `Reemplazado ${adminExistente.usuario} por ${usuario}`
+        : `Creado nuevo admin ${usuario}`,
       fecha: new Date(),
     });
 
-    res.json({ message: 'Administrador reemplazado correctamente' });
+    res.json({
+      message: adminExistente
+        ? 'Administrador reemplazado correctamente'
+        : 'Administrador creado correctamente',
+    });
 
   } catch (err) {
     console.error(err);

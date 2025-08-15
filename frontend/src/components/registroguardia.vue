@@ -47,13 +47,17 @@
             <label for="nombreAdmin">Nombre</label>
             <input id="nombreAdmin" v-model="nombreNuevoAdmin" placeholder="Nombre del nuevo admin" />
 
+            <label for="documentoAdmin">Documento</label>
+            <input id="documentoAdmin" v-model="documentoNuevoAdmin" placeholder="Documento del nuevo admin" />
+
             <label for="claveAdminNueva">Contraseña</label>
             <input type="password" id="claveAdminNueva" v-model="claveNuevoAdmin" placeholder="Clave del nuevo admin" />
           </div>
 
-          <!-- Botón -->
+          <!-- Botones -->
           <div style="margin-top: 12px;">
             <button type="submit" class="btn btn-primary">Registrar</button>
+            <button type="button" class="btn btn-primaryInit" @click="irALogin">Iniciar Sesión</button>
           </div>
         </form>
       </div>
@@ -103,15 +107,27 @@ const password = ref('')
 
 // Campos Nuevo Admin
 const usuarioNuevoAdmin = ref('')
-const nombreNuevoAdmin = ref('')
+const nombreNuevoAdmin = ref('')      // enviado pero no guardado en DB
+const documentoNuevoAdmin = ref('')   // enviado pero no guardado en DB
 const claveNuevoAdmin = ref('')
 
-// Abrir modal
+// Abrir modal de confirmación
 function abrirConfirmacion() {
+  // Validaciones básicas antes de abrir modal
+  if (tipoIngreso.value === 'guardia') {
+    if (!documento.value || !password.value || !turno.value || !nombre.value) {
+      return alert('Por favor, completa todos los campos del guardia')
+    }
+  } else if (tipoIngreso.value === 'admin') {
+    if (!usuarioNuevoAdmin.value || !claveNuevoAdmin.value || !nombreNuevoAdmin.value || !documentoNuevoAdmin.value) {
+      return alert('Por favor, completa todos los campos del admin')
+    }
+  }
+
   mostrarConfirmacion.value = true
 }
 
-// Confirmar y enviar
+// Confirmar y enviar al backend
 async function confirmarRegistro() {
   try {
     let url = ''
@@ -132,7 +148,8 @@ async function confirmarRegistro() {
       body = {
         usuario: usuarioNuevoAdmin.value,
         clave: claveNuevoAdmin.value,
-        nombre: nombreNuevoAdmin.value,
+        nombre: nombreNuevoAdmin.value,          // enviado pero no guardado en DB
+        documento: documentoNuevoAdmin.value,   // enviado pero no guardado en DB
         usuarioAdmin: usuarioAdmin.value,
         claveAdmin: claveAdmin.value
       }
@@ -158,6 +175,11 @@ async function confirmarRegistro() {
   }
 }
 
+// Redirigir al login
+function irALogin() {
+  router.push({ path: '/login', name: 'login' })
+}
+
 // Limpiar todos los campos
 function limpiarCampos() {
   turno.value = ''
@@ -166,6 +188,7 @@ function limpiarCampos() {
   password.value = ''
   usuarioNuevoAdmin.value = ''
   nombreNuevoAdmin.value = ''
+  documentoNuevoAdmin.value = ''
   claveNuevoAdmin.value = ''
   usuarioAdmin.value = ''
   claveAdmin.value = ''
@@ -209,6 +232,21 @@ function limpiarCampos() {
   box-sizing: border-box;
   transition: border-color .12s ease, box-shadow .12s ease;
 }
+/* Botón iniciar sesión estilo invertido */
+.btn-primaryInit {
+  background: #ffffff;      /* Fondo blanco */
+  color: #000000;           /* Letras negras */
+  border: 2px solid #000000;
+  box-shadow: 0 6px 18px rgba(30,41,59,0.12);
+  transition: all 0.3s ease, transform .06s ease;
+}
+
+.btn-primaryInit:hover {
+  background: #000000;      /* Fondo negro al pasar mouse */
+  color: #ffffff;           /* Letras blancas al pasar mouse */
+  transform: translateY(-2px);
+}
+
 /* Contenedor ocupa todo el viewport */
 .login-page {
   position: fixed;

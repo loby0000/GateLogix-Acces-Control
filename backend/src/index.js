@@ -19,8 +19,10 @@ app.use(cors());
 app.use(helmet());
 app.use(morgan('dev'));
 
+
 // Archivos estáticos (códigos de barras)
 app.use('/barcodes', express.static(path.join(__dirname, 'barcodes')));
+
 
 // Rutas
 app.use('/api/admin', adminRoutes);

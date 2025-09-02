@@ -14,6 +14,20 @@ exports.login = async (req, res) => {
     const guardia = await Guardia.findOne({ documento });
     if (!guardia) return res.status(404).json({ message: 'Documento no encontrado' });
 
+    // Validar jornada del guardia en la base de datos
+    const jornadasValidas = ['mañana', 'tarde', 'noche'];
+    const jornadaGuardia = (guardia.jornada || '').trim().toLowerCase();
+    if (!jornadasValidas.includes(jornadaGuardia)) {
+      return res.status(403).json({ message: 'Guardia sin jornada válida. Acceso denegado.' });
+    }
+    // Si el frontend envía la jornada, validar que coincida con la de la base de datos
+    if (req.body.jornada) {
+      const jornadaInput = req.body.jornada.trim().toLowerCase();
+      if (jornadaInput !== jornadaGuardia) {
+        return res.status(403).json({ message: 'La jornada ingresada no coincide con la registrada. Acceso denegado.' });
+      }
+    }
+
     const match = await bcrypt.compare(clave, guardia.clave);
     if (!match) return res.status(401).json({ message: 'Clave incorrecta' });
 

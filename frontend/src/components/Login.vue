@@ -98,7 +98,8 @@ async function onSubmit() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           documento: documento.value,
-          clave: password.value
+          clave: password.value,
+          jornada: turno.value
         })
       })
 
@@ -114,7 +115,9 @@ async function onSubmit() {
       }
 
     } else if (tipoIngreso.value === 'admin') {
-      alert('Login de administrador aún no está implementado.')
+      // Aquí puedes agregar la lógica de autenticación de admin si la tienes
+      // Si el login es exitoso, redirige al dashboard
+      router.push({ name: 'dashboard' })
     }
 
   } catch (e) {

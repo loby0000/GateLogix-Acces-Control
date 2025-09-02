@@ -17,8 +17,8 @@
       <!-- Select tipo de usuario -->
       <select v-model="tipoUsuario" class="input-select">
         <option disabled value="">Tipo de usuario</option>
-        <option>Administrador</option>
-        <option>Guardia</option>
+        <option>Instructor</option>
+        <option>Aprendiz</option>
         <option>Visitante</option>
       </select>
       <select v-model="tipoDocumento" class="input-select">
@@ -27,10 +27,23 @@
         <option value="Tarjeta de identidad">Tarjeta de identidad</option>
         <option value="Extranjero">Extranjero</option>
       </select>
-  <input type="text" v-model="nombre" placeholder="Nombre" class="input-text" />
   <input type="text" v-model="numeroDocumento" placeholder="Documento" class="input-text" />
+  <input type="text" v-model="nombre" placeholder="Nombre" class="input-text" />
   <input type="text" v-model="serialEquipo" placeholder="Serial Del Equipo" class="input-text" />
-  <input type="text" v-model="marcaEquipo" placeholder="Marca Del Equipo" class="input-text" />
+  <select v-model="marcaEquipo" class="input-select">
+    <option disabled value="">Marca Del Equipo</option>
+    <option value="Dell">Dell</option>
+    <option value="HP">HP</option>
+    <option value="Lenovo">Lenovo</option>
+    <option value="Asus">Asus</option>
+    <option value="Acer">Acer</option>
+    <option value="Apple">Apple</option>
+    <option value="Samsung">Samsung</option>
+    <option value="Huawei">Huawei</option>
+    <option value="Toshiba">Toshiba</option>
+    <option value="MSI">MSI</option>
+    <option value="Otro">Otro</option>
+  </select>
   <input type="text" v-model="caracteristicas" placeholder="Características" class="input-text" />
 
       <div class="checkbox-group">
@@ -91,6 +104,7 @@
 </template>
 
 <script>
+import { useRouter } from 'vue-router';
 export default {
   data() {
     return {
@@ -110,6 +124,13 @@ export default {
       stream: null,
       registroExitoso: false,
     };
+  },
+  watch: {
+    tipoRegistro(newVal) {
+      if (newVal === 'Registrado') {
+        this.$router.push({ name: 'registroUsuariosConEquipo' });
+      }
+    }
   },
   methods: {
     async abrirCamara() {

@@ -11,9 +11,22 @@ const adminSchema = new mongoose.Schema({
     required: true
   },
   rol: {
-    type: String,
-    enum: ['admin'],
+    type: String,   
+    enum: ['admin', 'SupA'],  // Roles permitidos
     default: 'admin'
+  },
+  esEmergencia: {  // Identifica admin de emergencia
+    type: Boolean,
+    default: false
+  },
+  nombre: {        // 👈 campo nuevo (como aparece en el Vue)
+    type: String,
+    required: true
+  },
+  documento: {     // 👈 campo nuevo (como aparece en el Vue)
+    type: String,
+    required: true,
+    unique: true
   }
 });
 

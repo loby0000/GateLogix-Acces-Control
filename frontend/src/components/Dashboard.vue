@@ -21,7 +21,7 @@
           <li>Control Equipos</li>
           <li>Notificaciones</li>
           <li>Logs Auditoría</li>
-          <li>Cerrar Sesión</li>
+          <li @click="logout" style="cursor:pointer">Cerrar Sesión</li>
         </ul>
       </nav>
     </aside>
@@ -50,7 +50,6 @@
           <button class="historial-btn">Historial</button>
         </div>
         <div class="chart-placeholder">
-          <!-- Aquí iría un gráfico real, por ahora solo el placeholder -->
           <p>Gráfico de barras mes a mes (placeholder)</p>
         </div>
       </section>
@@ -164,7 +163,6 @@ export default {
       return Array.from({ length: blank });
     },
     calendarRows() {
-      // 5 filas x 7 columnas
       const totalBlocks = 35;
       const blanks = this.blankDays.length;
       const days = this.daysInMonth;
@@ -172,7 +170,6 @@ export default {
       for (let i = 0; i < blanks; i++) blocks.push({ type: 'empty' });
       for (let i = 1; i <= days; i++) blocks.push({ type: 'date', value: i });
       while (blocks.length < totalBlocks) blocks.push({ type: 'empty' });
-      // Agrupar en filas de 7
       const rows = [];
       for (let i = 0; i < 5; i++) {
         rows.push(blocks.slice(i * 7, (i + 1) * 7));
@@ -189,6 +186,17 @@ export default {
         this.month--;
       }
     },
+    nextMonth() {
+      if (this.month === 11) {
+        this.month = 0;
+        this.year++;
+      } else {
+        this.month++;
+      }
+    },
+    selectDate(date) {
+      this.selectedDate = date;
+    },
     triggerFileInput() {
       this.$refs.fileInput.click();
     },
@@ -202,19 +210,12 @@ export default {
         reader.readAsDataURL(file);
       }
     },
-    nextMonth() {
-      if (this.month === 11) {
-        this.month = 0;
-        this.year++;
-      } else {
-        this.month++;
-      }
-    },
-    selectDate(date) {
-      this.selectedDate = date;
-    },
     goToHistorial() {
       this.$router.push({ path: '/historial' });
+    },
+    logout() {
+      localStorage.removeItem('token');
+      this.$router.push({ path: '/login', name: 'login' });
     }
   }
 }

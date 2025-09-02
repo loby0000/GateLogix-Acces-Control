@@ -20,7 +20,8 @@ exports.login = async (req, res) => {
     if (!jornadasValidas.includes(jornadaGuardia)) {
       return res.status(403).json({ message: 'Guardia sin jornada válida. Acceso denegado.' });
     }
-    // Si el frontend envía la jornada, validar que coincida con la de la base de datos
+
+    // Validar jornada si viene del frontend
     if (req.body.jornada) {
       const jornadaInput = req.body.jornada.trim().toLowerCase();
       if (jornadaInput !== jornadaGuardia) {
@@ -46,8 +47,12 @@ exports.login = async (req, res) => {
 
 // Registrar guardia (autenticación admin requerida)
 exports.registrar = async (req, res) => {
-  const { documento, nombre, jornada, claveGuardia, usuarioAdmin, claveAdmin } = req.body;
+  const { documento, nombre, jornada, clave, usuarioAdmin, claveAdmin } = req.body;
   console.log("Datos recibidos en registrar guardia:", req.body);
+
+  if (!clave) {
+    return res.status(400).json({ message: 'La clave del guardia es requerida' });
+  }
 
   try {
     const admin = await Admin.findOne({ usuario: usuarioAdmin });
@@ -58,7 +63,7 @@ exports.registrar = async (req, res) => {
     const validaClave = await bcrypt.compare(claveAdmin, admin.clave);
     if (!validaClave) return res.status(401).json({ message: 'Credenciales de admin incorrectas' });
 
-    const hashed = await bcrypt.hash(claveGuardia, 10);
+    const hashed = await bcrypt.hash(clave, 10);
 
     const guardia = await Guardia.create({
       documento,
@@ -105,7 +110,7 @@ exports.registrarUsuarioConEquipo = async (req, res) => {
     res.json({
       message: 'Usuario y equipo registrados exitosamente',
       usuario,
-      codigoBarras: filePath // ruta donde se guardó el código
+      codigoBarras: filePath
     });
   } catch (err) {
     console.error('Error al registrar usuario con equipo:', err);

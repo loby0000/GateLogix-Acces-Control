@@ -44,6 +44,9 @@
             <label for="usuarioAdminNuevo">Usuario</label>
             <input id="usuarioAdminNuevo" v-model="usuarioNuevoAdmin" placeholder="Usuario del nuevo admin" />
 
+            <label for="documentoAdminNuevo">Documento</label>
+            <input id="documentoAdminNuevo" v-model="documentoNuevoAdmin" placeholder="Documento del nuevo admin" />
+
             <label for="nombreAdmin">Nombre</label>
             <input id="nombreAdmin" v-model="nombreNuevoAdmin" placeholder="Nombre del nuevo admin" />
 
@@ -51,9 +54,17 @@
             <input type="password" id="claveAdminNueva" v-model="claveNuevoAdmin" placeholder="Clave del nuevo admin" />
           </div>
 
-          <!-- Botón -->
-          <div style="margin-top: 12px;">
+          <!-- Botones -->
+          <div style="margin-top: 12px; display:flex; flex-direction:column; gap:10px; align-items:center;">
             <button type="submit" class="btn btn-primary">Registrar</button>
+
+            <button 
+              type="button" 
+              class="btn btn-login"
+              @click="router.push({ name: 'login' })"
+            >
+              Iniciar Sesión
+            </button>
           </div>
         </form>
       </div>
@@ -66,12 +77,12 @@
           {{ tipoIngreso === 'guardia' ? 'Confirmar Registro de Guardia' : 'Confirmar Reemplazo de Admin' }}
         </h3>
 
-        <!-- Credenciales admin para confirmar -->
-        <label for="confirmUsuarioAdmin">Usuario Admin</label>
-        <input id="confirmUsuarioAdmin" v-model="usuarioAdmin" placeholder="Usuario del administrador" class="input-confirm" />
+        <!-- Credenciales de admin existente para validar -->
+        <label for="usuarioExistente">Usuario Admin Existente</label>
+        <input id="usuarioExistente" v-model="usuarioExistente" placeholder="Usuario del admin existente" class="input-confirm" />
 
-        <label for="confirmClaveAdmin">Clave Admin</label>
-        <input type="password" id="confirmClaveAdmin" v-model="claveAdmin" placeholder="Clave del administrador" class="input-confirm" />
+        <label for="claveExistente">Clave Admin Existente</label>
+        <input type="password" id="claveExistente" v-model="claveExistente" placeholder="Clave del admin existente" class="input-confirm" />
 
         <div style="display:flex; gap:10px; justify-content:center; margin-top:16px;">
           <button type="button" class="btn btn-primary" @click="confirmarRegistro">Confirmar</button>
@@ -91,9 +102,11 @@ const router = useRouter()
 
 // Campos generales
 const tipoIngreso = ref('guardia')
-const usuarioAdmin = ref('')
-const claveAdmin = ref('')
 const mostrarConfirmacion = ref(false)
+
+// Credenciales admin existente (modal)
+const usuarioExistente = ref('')
+const claveExistente = ref('')
 
 // Campos Guardia
 const turno = ref('')
@@ -103,6 +116,7 @@ const password = ref('')
 
 // Campos Nuevo Admin
 const usuarioNuevoAdmin = ref('')
+const documentoNuevoAdmin = ref('')
 const nombreNuevoAdmin = ref('')
 const claveNuevoAdmin = ref('')
 
@@ -123,18 +137,19 @@ async function confirmarRegistro() {
         documento: documento.value,
         nombre: nombre.value,
         jornada: turno.value,
-        claveGuardia: password.value,
-        usuarioAdmin: usuarioAdmin.value,
-        claveAdmin: claveAdmin.value
+        clave: password.value,
+        usuarioAdmin: usuarioExistente.value,
+        claveAdmin: claveExistente.value
       }
     } else if (tipoIngreso.value === 'admin') {
       url = 'http://localhost:3000/api/admin/reemplazar'
       body = {
         usuario: usuarioNuevoAdmin.value,
-        clave: claveNuevoAdmin.value,
+        documento: documentoNuevoAdmin.value,
         nombre: nombreNuevoAdmin.value,
-        usuarioAdmin: usuarioAdmin.value,
-        claveAdmin: claveAdmin.value
+        clave: claveNuevoAdmin.value,
+        usuarioExistente: usuarioExistente.value,
+        claveExistente: claveExistente.value
       }
     }
 
@@ -154,21 +169,23 @@ async function confirmarRegistro() {
       alert(data.message || '❌ Error en la operación')
     }
   } catch (err) {
+    console.error(err)
     alert('⚠️ Error de conexión con el servidor')
   }
 }
 
-// Limpiar todos los campos
+// Limpiar campos
 function limpiarCampos() {
   turno.value = ''
   documento.value = ''
   nombre.value = ''
   password.value = ''
   usuarioNuevoAdmin.value = ''
+  documentoNuevoAdmin.value = ''
   nombreNuevoAdmin.value = ''
   claveNuevoAdmin.value = ''
-  usuarioAdmin.value = ''
-  claveAdmin.value = ''
+  usuarioExistente.value = ''
+  claveExistente.value = ''
   mostrarConfirmacion.value = false
 }
 </script>
@@ -316,9 +333,21 @@ input:focus {
   color: #000000;
   transform: translateY(-2px);
 }
+.btn-login {
+  background: #ffffff;
+  border: 2px solid #000000;
+  color: #000000;
+  box-shadow: 0 6px 18px rgba(30,41,59,0.12);
+  transition: all 0.3s ease;
+}
+.btn-login:hover {
+  background: #000000;
+  color: #ffffff;
+  transform: translateY(-2px);
+}
 .btn-secondary {
   background: transparent;
-  color: #000000; /* Texto negro */
+  color: #000000;
   border: 2px solid #000000;
   background-image: linear-gradient(180deg, rgba(30,41,59,0.03), transparent);
   box-shadow: 0 6px 18px rgba(16,24,40,0.06);

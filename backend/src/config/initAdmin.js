@@ -1,28 +1,39 @@
-const Admin = require('../models/admin');
 const bcrypt = require('bcrypt');
+const Admin = require('../models/admin');
 
-const initEmergencyAdmin = async () => {
+async function initEmergencyAdmin() {
   try {
-    const existingAdmin = await Admin.findOne({ usuario: 'admin' });
+    const existeSupA = await Admin.findOne({ rol: 'SupA', esEmergencia: true });
 
-    if (existingAdmin) {
-      console.log('🛡️ Admin de emergencia ya existe');
-      return;
+    if (!existeSupA) {
+      const clavePlano = 'admin123'; // 👈 clave por defecto
+      const hashed = await bcrypt.hash(clavePlano, 10);
+
+      const nuevoAdmin = await Admin.create({
+        usuario: 'admin',  // 👈 usuario fijo
+        clave: hashed,
+        rol: 'SupA',
+        esEmergencia: true,   // 👈 marcado como de emergencia
+        nombre: 'Administrador de Emergencia',
+        documento: '0000000000'
+      });
+
+      console.log('⚡ Admin de emergencia creado con éxito:');
+      console.log({
+        id: nuevoAdmin._id,
+        usuario: nuevoAdmin.usuario,
+        clave: clavePlano, // 👈 mostramos la clave en texto plano SOLO en consola
+        rol: nuevoAdmin.rol,
+        esEmergencia: nuevoAdmin.esEmergencia,
+        nombre: nuevoAdmin.nombre,
+        documento: nuevoAdmin.documento
+      });
+    } else {
+      console.log('✅ SupA de emergencia ya existe, no se crea otro');
     }
-
-    const hashedPassword = await bcrypt.hash('admin123', 10);
-
-    const emergencyAdmin = new Admin({
-      usuario: 'admin',
-      clave: hashedPassword,
-      rol: 'admin'
-    });
-
-    await emergencyAdmin.save();
-    console.log('✅ Admin de emergencia creado: usuario=admin, clave=admin123');
-  } catch (error) {
-    console.error('❌ Error al crear admin de emergencia:', error);
+  } catch (err) {
+    console.error('❌ Error creando admin de emergencia:', err);
   }
-};
+}
 
 module.exports = initEmergencyAdmin;

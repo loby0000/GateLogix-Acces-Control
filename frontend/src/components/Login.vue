@@ -72,10 +72,6 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import logo from '../assets/logo.png'
 
-const props = defineProps({
-  onLoginSuccess: Function
-})
-
 const router = useRouter()
 
 const tipoIngreso = ref('')
@@ -86,7 +82,7 @@ const loading = ref(false)
 
 async function onSubmit() {
   if (!tipoIngreso.value) return alert('Por favor, selecciona el tipo de usuario')
-  if (!documento.value) return alert('Por favor, ingresa tu número de documento')
+  if (!documento.value) return alert('Por favor, ingresa tu usuario o documento')
   if (!password.value) return alert('Por favor, ingresa tu contraseña')
   if (tipoIngreso.value === 'guardia' && !turno.value) return alert('Por favor, selecciona la jornada')
 
@@ -102,32 +98,40 @@ async function onSubmit() {
           jornada: turno.value
         })
       })
-
       const data = await res.json()
-
       if (res.ok && data.token) {
         localStorage.setItem('token', data.token)
-        // Redirige a RegistroUsuario.vue
         router.push({ name: 'registro' })
       } else {
-        localStorage.removeItem('token')
         alert(data.message || 'Credenciales incorrectas')
       }
 
     } else if (tipoIngreso.value === 'admin') {
-      // Aquí puedes agregar la lógica de autenticación de admin si la tienes
-      // Si el login es exitoso, redirige al dashboard
-      router.push({ name: 'dashboard' })
+      const res = await fetch('http://localhost:3000/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          usuario: documento.value,
+          clave: password.value
+        })
+      })
+      const data = await res.json()
+      if (res.ok && data.token) {
+        localStorage.setItem('token', data.token)
+        router.push({ name: 'dashboard' })
+      } else {
+        alert(data.message || 'Usuario o contraseña de admin incorrectos')
+      }
     }
 
   } catch (e) {
-    localStorage.removeItem('token')
     alert('Error de conexión con el servidor')
   } finally {
     loading.value = false
   }
 }
 
+// Función para redirigir a la página de registro de guardia
 function goToRegister() {
   router.push({ name: 'registroguardia' })
 }

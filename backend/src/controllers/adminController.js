@@ -1,7 +1,7 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const Admin = require('../models/admin');
-const Log = require('../models/Logs'); // lo creamos luego
+const Log = require('../models/Logs');
 
 // Iniciar sesión
 exports.login = async (req, res) => {
@@ -14,9 +14,9 @@ exports.login = async (req, res) => {
     const match = await bcrypt.compare(clave, admin.clave);
     if (!match) return res.status(401).json({ message: 'Clave incorrecta' });
 
-    // Generar token
+    // Generar token con rol
     const token = jwt.sign(
-      { id: admin._id, usuario: admin.usuario, rol: 'admin' },
+      { id: admin._id, usuario: admin.usuario, rol: admin.rol },
       process.env.JWT_SECRET,
       { expiresIn: '8h' }
     );
@@ -27,34 +27,46 @@ exports.login = async (req, res) => {
   }
 };
 
-// Reemplazar admin (excepto el de emergencia)
+// Reemplazar o crear admin (manteniendo SupA intocable)
 exports.reemplazarAdmin = async (req, res) => {
-  const { usuarioAnterior, claveAnterior, nuevoUsuario, nuevaClave } = req.body;
+  const { usuario, clave, nombre, documento, usuarioExistente, claveExistente } = req.body;
 
   try {
-    const admin = await Admin.findOne({ usuario: usuarioAnterior });
-    if (!admin || admin.esEmergencia)
-      return res.status(403).json({ message: 'No se puede reemplazar este administrador' });
+    // Validar credenciales del admin existente
+    const adminExistente = await Admin.findOne({ usuario: usuarioExistente });
+    if (!adminExistente) return res.status(404).json({ message: 'Admin existente no encontrado' });
 
-    const valido = await bcrypt.compare(claveAnterior, admin.clave);
-    if (!valido)
-      return res.status(401).json({ message: 'Credenciales incorrectas' });
+    const match = await bcrypt.compare(claveExistente, adminExistente.clave);
+    if (!match) return res.status(401).json({ message: 'Clave del admin existente incorrecta' });
 
-    // Eliminar admin anterior
-    await Admin.deleteMany({ esEmergencia: false });
+    // Validar que la nueva clave y usuario estén presentes
+    if (!usuario || !clave) {
+      return res.status(400).json({ message: 'Debe enviar usuario y clave del nuevo admin' });
+    }
 
-    // Crear nuevo admin
-    const hashed = await bcrypt.hash(nuevaClave, 10);
-    const nuevo = await Admin.create({ usuario: nuevoUsuario, clave: hashed });
+    // Hashear la nueva clave
+    const hashed = await bcrypt.hash(clave, 10);
+
+    // Eliminar todos los admins que no sean SupA
+    await Admin.deleteMany({ rol: 'admin' });
+
+    // Crear el nuevo admin
+    const nuevoAdmin = await Admin.create({
+      usuario,
+      clave: hashed,
+      rol: 'admin',
+      nombre,
+      documento
+    });
 
     // Guardar log
     await Log.create({
       tipo: 'Cambio de Admin',
-      detalle: `Reemplazado ${usuarioAnterior} por ${nuevoUsuario}`,
+      detalle: `Se reemplazaron los administradores por ${usuario}`,
       fecha: new Date(),
     });
 
-    res.json({ message: 'Administrador reemplazado correctamente' });
+    res.json({ message: 'Administrador reemplazado correctamente (SupA preservado)', admin: nuevoAdmin });
 
   } catch (err) {
     console.error(err);

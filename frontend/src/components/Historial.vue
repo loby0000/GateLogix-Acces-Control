@@ -62,15 +62,15 @@
           <input type="text" placeholder="Buscar por día" class="modal-search" />
         </div>
         <div class="modal-row">
-          <button class="modal-btn">Usuario</button>
-          <button class="modal-btn">Documento</button>
+          <button class="modal-btn">{{ selectedUser ? selectedUser.usuario : 'Usuario' }}</button>
+          <button class="modal-btn">{{ selectedUser ? selectedUser.documento : 'Documento' }}</button>
         </div>
         <div class="modal-row">
           <button class="modal-btn">Entrada</button>
           <button class="modal-btn">Salida</button>
         </div>
         <div class="modal-row">
-          <button class="modal-btn">Cerrar</button>
+          <button class="modal-btn" @click="closeUserModal">Cerrar</button>
         </div>
       </div>
     </div>

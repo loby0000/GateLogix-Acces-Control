@@ -15,14 +15,13 @@
       <nav class="nav-menu">
         <ul>
           <li>Dashboard</li>
-          <li>Gestion usuarios</li>
+          <li @click="goToGestionUsuarios" style="cursor:pointer">Gestion usuarios</li>
           <li>Gestion Guardias</li>
           <li @click="goToHistorial" style="cursor:pointer">Historial</li>
-          <li>Control Equipos</li>
-          <li>Notificaciones</li>
-          <li>Logs Auditoría</li>
-          <li @click="logout" style="cursor:pointer">Cerrar Sesión</li>
-        </ul>
+          <li @click="goToControlEquipos" style="cursor:pointer">Control Equipos</li>
+          <li @click="goToNotificacion" style="cursor:pointer">Notificaciones</li>
+          <li @click="goToLogsAuditoria" style="cursor:pointer">Logs Auditoría</li>
+          <li @click="goToLogin" style="cursor:pointer">Cerrar Sesión</li>        </ul>
       </nav>
     </aside>
 
@@ -95,7 +94,7 @@
                 </template>
               </div>
             </div>
-            <button class="btn-gestion-usuarios">Gestion Usuarios</button>
+            <button class="btn-gestion-usuarios" @click="goToGestionUsuarios">Gestion Usuarios</button>
           </div>
         </div>
 
@@ -213,10 +212,14 @@ export default {
     goToHistorial() {
       this.$router.push({ path: '/historial' });
     },
+    goToGestionUsuarios() {
+      this.$router.push({ path: '/gestion-usuarios' });
+    },
     logout() {
       localStorage.removeItem('token');
       this.$router.push({ path: '/login', name: 'login' });
     }
+
   }
 }
 </script>

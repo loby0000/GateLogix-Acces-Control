@@ -13,6 +13,7 @@ const initEmergencyAdmin = require('./config/initAdmin');
 
 const app = express();
 
+
 // Middlewares
 app.use(express.json());
 app.use(cors());

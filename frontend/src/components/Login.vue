@@ -257,6 +257,7 @@ input:focus {
 .btn-primary {
   background: #000000;       /* Fondo negro */
   border: 2px solid #e6eefb;
+  border: 2px solid #000000; /* sutil borde claro */
   color: #ffffff;           /* Texto blanco */
   box-shadow: 0 6px 18px rgba(30,41,59,0.12);
   transition: all 0.3s ease; /* Transición suave */
@@ -279,6 +280,7 @@ input:focus {
 }
 .btn-secondary:hover {
   background: #000000;
+  color: white; 
   transform: translateY(-2px);
 }
 

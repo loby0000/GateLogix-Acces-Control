@@ -6,7 +6,10 @@
         <img src="../assets/logo.png" alt="LOGO" style="max-width:260px; width:180px; height:auto; margin:auto; display:block;" />
       </div>
       <h2 style="text-align:center; margin-bottom: 18px;">Registro de Usuario Con Equipos</h2>
-
+ <div v-if="usuarioEncontradoMsg" 
+           style="background:#e0f7ff; color:#007acc; border-radius:6px; padding:8px; margin-bottom:8px; text-align:center;">
+        ✔ Usuario encontrado. Redirigiendo...
+      </div>
       <!-- Select tipo de registro -->
       <select v-model="tipoRegistro" class="input-select">
         <option disabled value="">Tipo de registro</option>
@@ -15,60 +18,72 @@
       </select>
 
       <!-- Select tipo de usuario -->
-      <select v-model="tipoUsuario" class="input-select">
+      <select v-model="tipoUsuario" class="input-select" required>
         <option disabled value="">Tipo de usuario</option>
-        <option>Instructor</option>
-        <option>Aprendiz</option>
-        <option>Visitante</option>
+        <option value="Personal de planta">Personal de planta</option>
+        <option value="Visitante">Visitante</option>
+        <option value="Instructor">Instructor</option>
+        <option value="Aprendiz">Aprendiz</option>
       </select>
-      <select v-model="tipoDocumento" class="input-select">
+
+      <!-- Select tipo de documento -->
+      <select v-model="tipoDocumento" class="input-select" required>
         <option disabled value="">Tipo de documento</option>
-        <option value="Cédula ciudadana">Cédula ciudadana</option>
-        <option value="Tarjeta de identidad">Tarjeta de identidad</option>
-        <option value="Extranjero">Extranjero</option>
+        <option value="Cédula De Ciudadanía">Cédula De Ciudadanía</option>
+        <option value="Cédula De Extranjería">Cédula De Extranjería</option>
+        <option value="Tarjeta De Identidad">Tarjeta De Identidad</option>
       </select>
-  <input type="text" v-model="numeroDocumento" placeholder="Documento" class="input-text" />
-  <input type="text" v-model="nombre" placeholder="Nombre" class="input-text" />
-  <input type="text" v-model="serialEquipo" placeholder="Serial Del Equipo" class="input-text" />
-  <select v-model="marcaEquipo" class="input-select">
-    <option disabled value="">Marca Del Equipo</option>
-    <option value="Dell">Dell</option>
-    <option value="HP">HP</option>
-    <option value="Lenovo">Lenovo</option>
-    <option value="Asus">Asus</option>
-    <option value="Acer">Acer</option>
-    <option value="Apple">Apple</option>
-    <option value="Samsung">Samsung</option>
-    <option value="Huawei">Huawei</option>
-    <option value="Toshiba">Toshiba</option>
-    <option value="MSI">MSI</option>
-    <option value="Otro">Otro</option>
-  </select>
-  <input type="text" v-model="caracteristicas" placeholder="Características" class="input-text" />
+
+      <!-- Documento con validación -->
+      <input
+        type="text"
+        v-model="numeroDocumento"
+        placeholder="Documento"
+        class="input-text"
+        maxlength="10"
+        @input="soloNumeros"
+        required
+      />
+      <p v-if="errores.numeroDocumento" style="color:red; font-size:13px; margin-top:4px;">
+        {{ errores.numeroDocumento }}
+      </p>
+
+      <input type="text" v-model="nombre" placeholder="Nombre" class="input-text" />
+      <input type="email" v-model="email" placeholder="Correo electrónico" class="input-text" required />
+      <input type="text" v-model="serialEquipo" placeholder="Serial Del Equipo" class="input-text" required />
+
+      <select v-model="marcaEquipo" class="input-select">
+        <option disabled value="">Marca Del Equipo</option>
+        <option value="Dell">Dell</option>
+        <option value="HP">HP</option>
+        <option value="Lenovo">Lenovo</option>
+        <option value="Asus">Asus</option>
+        <option value="Acer">Acer</option>
+        <option value="Apple">Apple</option>
+        <option value="Samsung">Samsung</option>
+        <option value="Huawei">Huawei</option>
+        <option value="Toshiba">Toshiba</option>
+        <option value="MSI">MSI</option>
+        <option value="Otro">Otro</option>
+      </select>
+
+      <input type="text" v-model="caracteristicas" placeholder="Características" class="input-text" />
 
       <div class="checkbox-group">
         <label class="custom-check" :class="{ checked: mouse }">
           <input type="checkbox" v-model="mouse" style="display:none;" />
-          <span class="icon-text">
-            <svg v-if="!mouse" width="22" height="22" viewBox="0 0 22 22" fill="none"><rect x="3" y="6" width="16" height="10" rx="5" stroke="#64748b" stroke-width="2"/><rect x="8" y="2" width="6" height="8" rx="3" stroke="#64748b" stroke-width="2"/></svg>
-            <svg v-else width="22" height="22" viewBox="0 0 22 22" fill="none"><rect x="3" y="6" width="16" height="10" rx="5" fill="#2563eb"/><rect x="8" y="2" width="6" height="8" rx="3" fill="#2563eb"/><path d="M7 11l3 3 5-5" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>
-            <span>Mouse</span>
-          </span>
+          <span class="icon-text"><span>Mouse</span></span>
         </label>
         <label class="custom-check" :class="{ checked: cargador }">
           <input type="checkbox" v-model="cargador" style="display:none;" />
-          <span class="icon-text">
-            <svg v-if="!cargador" width="22" height="22" viewBox="0 0 22 22" fill="none"><rect x="7" y="2" width="8" height="12" rx="4" stroke="#64748b" stroke-width="2"/><rect x="9" y="14" width="4" height="6" rx="2" stroke="#64748b" stroke-width="2"/></svg>
-            <svg v-else width="22" height="22" viewBox="0 0 22 22" fill="none"><rect x="7" y="2" width="8" height="12" rx="4" fill="#2563eb"/><rect x="9" y="14" width="4" height="6" rx="2" fill="#2563eb"/><path d="M9 10l2 2 2-2" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>
-            <span>Cargador</span>
-          </span>
+          <span class="icon-text"><span>Cargador</span></span>
         </label>
       </div>
 
       <div style="margin-bottom:8px;">Insertar imagen</div>
-  <button type="button" @click="mostrarOpciones = true" style="margin-bottom:8px;">Agregar Foto o Archivo</button>
+      <button type="button" @click="mostrarOpciones = true" style="margin-bottom:8px;">Agregar Foto o Archivo</button>
 
-      <!-- Modal flotante -->
+      <!-- Modal flotante (fotos/archivos) -->
       <div v-if="mostrarOpciones" class="modal">
         <div class="modal-content">
           <button @click="abrirCamara">Tomar Foto</button>
@@ -84,7 +99,7 @@
         <button @click="cerrarCamara">Cerrar</button>
       </div>
 
-      <!-- Fotos o archivos cargados -->
+      <!-- Fotos cargadas -->
       <div v-if="fotos.length" style="margin-bottom:8px; display:flex; flex-wrap:wrap; gap:10px; justify-content:center;">
         <div v-for="(img, idx) in fotos" :key="idx" style="text-align:center;">
           <img :src="img.data" alt="Imagen cargada" style="max-width:120px; display:block; margin:auto; border-radius:6px;" />
@@ -92,99 +107,217 @@
         </div>
       </div>
 
-      <!-- Mensaje de éxito simulado -->
+      <!-- Mensaje de éxito -->
       <div v-if="registroExitoso" style="background:#e6ffe6; color:#1a7f1a; border-radius:6px; padding:8px; margin-bottom:8px; text-align:center;">
         <span style="font-size:18px;">✔</span> El Registro Ha Sido Exitoso
       </div>
 
-  <button class="enviar" @click.prevent="registrar">Registrar</button>
-  <router-link to="/login" class="cerrar-sesion-btn">Cerrar sesión</router-link>
+      <!-- Botón registrar -->
+      <button class="enviar" @click.prevent="registrar">Registrar</button>
+      <router-link to="/login" class="cerrar-sesion-btn">Cerrar sesión</router-link>
+    </div>
+
+    <!-- Modal para código de barras -->
+    <div v-if="mostrarCodigoModal" class="modal">
+      <div class="modal-content" style="text-align:center; max-width:400px; margin:auto;">
+        <h3>Código de Barras Generado</h3>
+        <img :src="codigoBarrasUrl" alt="Código de Barras" style="max-width:300px; display:block; margin:15px auto;" />
+        <div style="margin-top:10px;">
+          <button @click="descargarCodigo" class="enviar">Descargar</button>
+          <button @click="imprimirCodigo" class="enviar">Imprimir</button>
+          <button @click="cerrarCodigoModal" class="cerrar">Cerrar</button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
+
 <script>
-import { useRouter } from 'vue-router';
+import axios from "axios";
+import barcodeScannerMixin from "../mixins/barcodeScannerMixin.js";
+
 export default {
+  name: "RegistroUsuario",
+  mixins: [barcodeScannerMixin],
+
   data() {
     return {
-      tipoRegistro: "",
+      tipoRegistro: "Registrar",
       tipoUsuario: "",
       tipoDocumento: "",
-      nombre: "",
       numeroDocumento: "",
+      nombre: "",
+      email: "",
       serialEquipo: "",
       marcaEquipo: "",
       caracteristicas: "",
       mouse: false,
       cargador: false,
+      fotos: [],
       mostrarOpciones: false,
       mostrarCamara: false,
-      fotos: [],
-      stream: null,
       registroExitoso: false,
+      mostrarCodigoModal: false,
+      codigoBarrasUrl: null,
+      usuarioEncontradoMsg: false, // 🔹 mensaje temporal
+      errores: { numeroDocumento: "", email: "" }
     };
   },
+
   watch: {
-    tipoRegistro(newVal) {
-      if (newVal === 'Registrado') {
-        this.$router.push({ name: 'registroUsuariosConEquipo' });
+    tipoRegistro(nuevo) {
+      if (nuevo === "Registrado") {
+        this.$router.push({ name: "RegistroUsuariosYaResg" });
       }
     }
   },
+
+  mounted() {
+    if (this.initScanner) this.initScanner(this.onScanDetected);
+  },
+
+  beforeUnmount() {
+    if (this.stopScanner) this.stopScanner();
+  },
+
   methods: {
-    async abrirCamara() {
-      this.mostrarOpciones = false;
-      this.mostrarCamara = true;
+async onScanDetected(scannedSerial) {
+  if (!scannedSerial) return;
+
+  // 🔹 Limpiar caracteres extra típicos de scanners
+  let serial = scannedSerial.toString().replace(/Shift/g, '').trim();
+
+  this.serialEquipo = serial;
+
+  try {
+    const res = await axios.get(
+      `http://localhost:3000/api/usuario-equipo/buscar/${serial}`,
+      { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
+    );
+
+    if (res.data && Object.keys(res.data).length > 0) {
+      this.usuarioEncontradoMsg = true;
+      setTimeout(() => {
+        this.usuarioEncontradoMsg = false;
+        this.$router.push({ name: "RegistroUsuariosYaResg", params: { serial } });
+      }, 1200);
+    } else {
+      alert("No se encontró un usuario con ese serial.");
+    }
+  } catch (err) {
+    console.error("❌ Error al buscar por serial:", err.response?.data || err.message);
+    alert("Error al buscar usuario por serial.");
+  }
+
+
+},
+
+    soloNumeros(e) {
+      e.target.value = e.target.value.replace(/\D/g, "");
+      this.numeroDocumento = e.target.value;
+      this.errores.numeroDocumento =
+        this.numeroDocumento.length !== 10 ? "El documento debe tener exactamente 10 dígitos numéricos." : "";
+    },
+
+    validarEmail(email) {
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    },
+
+    async registrar() {
+      if (!this.tipoUsuario || !this.tipoDocumento || !this.numeroDocumento || !this.email || !this.serialEquipo || !this.marcaEquipo) {
+        alert("Por favor completa todos los campos obligatorios.");
+        return;
+      }
+
+      if (!this.validarEmail(this.email)) {
+        this.errores.email = "Correo inválido.";
+        return;
+      } else this.errores.email = "";
+
+      const payload = {
+        tipoUsuario: this.tipoUsuario,
+        tipoDocumento: this.tipoDocumento,
+        numeroDocumento: this.numeroDocumento,
+        nombre: this.nombre,
+        email: this.email,
+        equipo: {
+          serial: this.serialEquipo,
+          marca: this.marcaEquipo,
+          caracteristicas: this.caracteristicas,
+          accesorios: { mouse: this.mouse, cargador: this.cargador }
+        }
+      };
+
       try {
-        this.stream = await navigator.mediaDevices.getUserMedia({ video: true });
-        this.$refs.video.srcObject = this.stream;
-      } catch (error) {
-        alert("No se pudo acceder a la cámara");
+        const res = await axios.post(
+          "http://localhost:3000/api/usuario-equipo/registrar",
+          payload,
+          { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
+        );
+
+        console.log("✅ Registrado:", res.data);
+        this.mostrarCodigoModal = true;
+        this.codigoBarrasUrl = `data:image/png;base64,${res.data.codigoBarrasBase64}`;
+        this.registroExitoso = true;
+      } catch (err) {
+        console.error("❌ Error al registrar:", err.response?.data || err.message);
       }
     },
+
+    descargarCodigo() {
+      const link = document.createElement("a");
+      link.href = this.codigoBarrasUrl;
+      link.download = "codigo_barras.png";
+      link.click();
+    },
+
+    imprimirCodigo() {
+      const win = window.open("", "_blank");
+      win.document.write(`<img src="${this.codigoBarrasUrl}" style="max-width:100%;"/>`);
+      win.print();
+      win.close();
+    },
+
+    cerrarCodigoModal() { this.mostrarCodigoModal = false; },
+
+    abrirCamara() {
+      this.mostrarCamara = true;
+      navigator.mediaDevices.getUserMedia({ video: true }).then(stream => this.$refs.video.srcObject = stream);
+    },
+
     capturarFoto() {
       const canvas = document.createElement("canvas");
       canvas.width = this.$refs.video.videoWidth;
       canvas.height = this.$refs.video.videoHeight;
-      const ctx = canvas.getContext("2d");
-      ctx.drawImage(this.$refs.video, 0, 0);
-      this.fotos.push({ data: canvas.toDataURL("image/png"), nombre: "foto_capturada.png" });
+      canvas.getContext("2d").drawImage(this.$refs.video, 0, 0);
+      this.fotos.push({ data: canvas.toDataURL("image/png"), nombre: "foto.png" });
       this.cerrarCamara();
     },
+
     cerrarCamara() {
       this.mostrarCamara = false;
-      if (this.stream) {
-        this.stream.getTracks().forEach(track => track.stop());
-      }
+      const stream = this.$refs.video?.srcObject;
+      if (stream) stream.getTracks().forEach(t => t.stop());
     },
+
     subirArchivo() {
-      this.mostrarOpciones = false;
       const input = document.createElement("input");
       input.type = "file";
       input.accept = "image/*";
-      input.multiple = true;
       input.onchange = e => {
-        const files = Array.from(e.target.files);
-        files.forEach(file => {
+        const file = e.target.files[0];
+        if (file) {
           const reader = new FileReader();
-          reader.onload = ev => {
-            this.fotos.push({ data: ev.target.result, nombre: file.name + ' ' + Math.round(file.size/1024) + 'KB' });
-          };
+          reader.onload = ev => this.fotos.push({ data: ev.target.result, nombre: file.name });
           reader.readAsDataURL(file);
-        });
+        }
       };
       input.click();
-    },
-    registrar() {
-      // Simula registro exitoso
-      this.registroExitoso = true;
-      setTimeout(() => { this.registroExitoso = false; }, 3000);
     }
   }
 };
 </script>
-
 <style scoped>
 .page {
   background: #1e293b !important;
@@ -201,6 +334,31 @@ export default {
   overflow-y: auto;
   box-sizing: border-box;
   z-index: 0;
+}
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.6s;
+}
+.fade-enter-from, .fade-leave-to {
+  opacity: 0;
+}
+/* Modal genérico */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+.modal-content {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  text-align: center;
 }
 .form-container {
   background: #fff;

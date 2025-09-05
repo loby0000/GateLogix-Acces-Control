@@ -4,7 +4,9 @@ const Guardia = require('../models/Guardia');
 const Admin = require('../models/admin');
 const Log = require('../models/Logs');
 
-const generateBarcode = require('../utils/generateBarcode'); // tu función que genera código de barras
+
+
+const generateBarcode = require('../utils/barcodeGenerator.js'); // tu función que genera código de barras
 
 // Iniciar sesión (guardia)
 exports.login = async (req, res) => {

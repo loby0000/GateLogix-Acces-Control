@@ -1,30 +1,25 @@
-const axios = require('axios');
-const fs = require('fs');
-const path = require('path');
+const bwipjs = require("bwip-js");
 
-const generarCodigoBarras = async (codigo) => {
-  try {
-    const response = await axios.post('http://localhost:5001/generate-barcode', {
-      code: codigo
-    }, {
-      responseType: 'arraybuffer' // Importante para que reciba la imagen como buffer
-    });
-
-  // Guardar la imagen en la carpeta 'barcodes' exactamente en la raíz del proyecto
-  const barcodeDir = path.resolve(__dirname, '../../../barcodes');
-    if (!fs.existsSync(barcodeDir)) {
-      fs.mkdirSync(barcodeDir);
-    }
-
-    const outputPath = path.join(barcodeDir, `${codigo}.png`);
-  console.log('Guardando código de barras en:', outputPath);
-  fs.writeFileSync(outputPath, response.data);
-
-    return `${codigo}.png`; // Esto es lo que se guarda en Mongo (opcional)
-  } catch (error) {
-    console.error('❌ Error al generar código de barras:', error.message);
-    throw new Error('No se pudo generar el código de barras');
-  }
+// 🔹 Genera un código de barras en Base64
+const generarCodigoBarras = async (texto) => {
+  return new Promise((resolve, reject) => {
+    bwipjs.toBuffer(
+      {
+        bcid: "code128",    // Tipo de código de barras
+        text: texto,        // Contenido (ej: URL con serial)
+        scale: 2,           // Escala (2 = más compacto)
+        height: 10,         // Altura de las barras
+        includetext: false, // No mostrar el texto debajo
+      },
+      (err, png) => {
+        if (err) {
+          return reject(err);
+        }
+        // Convertir a Base64 para enviarlo al frontend
+        resolve(`data:image/png;base64,${png.toString("base64")}`);
+      }
+    );
+  });
 };
 
-module.exports = generarCodigoBarras;
+module.exports = { generarCodigoBarras };

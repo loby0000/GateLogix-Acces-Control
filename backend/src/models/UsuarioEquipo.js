@@ -3,33 +3,47 @@ const mongoose = require('mongoose');
 const usuarioEquipoSchema = new mongoose.Schema({
   tipoUsuario: {
     type: String,
-    enum: ['empleado', 'visitante', 'otro'],
+    enum: ['Personal de planta', 'Visitante', 'Instructor', 'Aprendiz'],
     required: true
   },
   tipoDocumento: {
     type: String,
-    enum: ['DNI', 'pasaporte', 'otro'],
+    enum: ['Cédula De Ciudadanía', 'Cédula De Extranjería', 'Tarjeta De Identidad'],
     required: true
   },
-  numeroDocumento: {
+  nombre: {
     type: String,
-    required: true,
-    unique: true
+    required: [true, 'El nombre es obligatorio'],
+    trim: true,               // 👈 elimina espacios al inicio y final
+    minlength: [3, 'El nombre debe tener al menos 3 caracteres'],
+    maxlength: [100, 'El nombre no puede exceder 100 caracteres'],
+    set: v => v.charAt(0).toUpperCase() + v.slice(1).toLowerCase() 
+    // 👆 transforma: primera mayúscula, resto minúsculas
+  },
+  numeroDocumento: {
+  type: String,
+  required: [true, 'El número de documento es obligatorio'],
+  unique: true,
+  minlength: [10, 'El documento debe tener 10 dígitos'],
+  maxlength: [10, 'El documento debe tener 10 dígitos'],
+  match: [/^\d{10}$/, 'El documento debe contener solo números (10 dígitos)']
+  
   },
   email: {
     type: String,
-    required: true,
+    required: [true, 'El correo es obligatorio'],
     unique: true,
-    match: /^\S+@\S+\.\S+$/  // Validación de formato
+    lowercase: true,
+    match: [/^\S+@\S+\.\S+$/, 'El correo no es válido'] // Validación regex
   },
   equipo: {
     serial: {
       type: String,
-      required: true,
+      required: [true, 'El serial es obligatorio'],
       unique: true
     },
-    marca: String,
-    caracteristicas: String,
+    marca: { type: String, trim: true },
+    caracteristicas: { type: String, trim: true },
     accesorios: {
       mouse: { type: Boolean, default: false },
       cargador: { type: Boolean, default: false }
@@ -50,7 +64,7 @@ const usuarioEquipoSchema = new mongoose.Schema({
     {
       fecha: { type: Date, default: Date.now },
       cambios: String,
-      registradoPor: { type: String } // Puede ser usuario o ID del admin/guardia
+      registradoPor: { type: String }
     }
   ]
 }, { timestamps: true });

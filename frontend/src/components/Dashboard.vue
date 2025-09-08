@@ -14,14 +14,15 @@
       </div>
       <nav class="nav-menu">
         <ul>
-          <li>Dashboard</li>
-          <li @click="goToGestionUsuarios" style="cursor:pointer">Gestion usuarios</li>
-          <li>Gestion Guardias</li>
-          <li @click="goToHistorial" style="cursor:pointer">Historial</li>
-          <li @click="goToControlEquipos" style="cursor:pointer">Control Equipos</li>
-          <li @click="goToNotificacion" style="cursor:pointer">Notificaciones</li>
-          <li @click="goToLogsAuditoria" style="cursor:pointer">Logs Auditoría</li>
-          <li @click="goToLogin" style="cursor:pointer">Cerrar Sesión</li>        </ul>
+            <li>Dashboard</li>
+            <li @click="goToGestionUsuarios" style="cursor:pointer">Gestion usuarios</li>
+            <li @click="goToGestionGuardias" style="cursor:pointer">Gestion Guardias</li>
+            <li @click="goToHistorial" style="cursor:pointer">Historial</li>
+            <li @click="goToControlEquipos" style="cursor:pointer">Control Equipos</li>
+            <li @click="goToNotificacion" style="cursor:pointer">Notificaciones</li>
+            <li @click="goToLogsAuditoria" style="cursor:pointer">Logs Auditoría</li>
+            <li @click="goToLogin" style="cursor:pointer">Cerrar Sesión</li>
+        </ul>
       </nav>
     </aside>
 
@@ -29,7 +30,7 @@
     <main class="main-content">
       <section class="top-cards">
         <div class="card">
-          <h3>Usuarios Activos</h3>
+          <h3>Usuarios Activos</h3> 
           <p class="number">{{ usuariosActivos }}</p>
         </div>
         <div class="card">
@@ -215,13 +216,27 @@ export default {
     goToGestionUsuarios() {
       this.$router.push({ path: '/gestion-usuarios' });
     },
+     goToGestionGuardias() {
+    this.$router.push({ path: '/gestionGuardia' });
+     },
     logout() {
       localStorage.removeItem('token');
       this.$router.push({ path: '/login', name: 'login' });
+     },
+     goToControlEquipos() {
+       this.$router.push({ path: '/control-equipos' });
+    },
+    goToNotificacion() {
+      this.$router.push({ path: '/notificacion' });
+    },
+    goToLogsAuditoria() {
+      this.$router.push({ path: '/logs-auditoria' });
+    },
+    goToLogin() {
+      this.$router.push({ path: '/login' });
+      },
     }
-
   }
-}
 </script>
 
 <style scoped>

@@ -5,7 +5,7 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const mongoose = require('mongoose');
 const path = require('path');
-
+const historialRoutes = require('./routes/historialRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const guardiaRoutes = require('./routes/guardiaRoutes');
 const usuarioEquipoRoutes = require('./routes/usuarioEquipoRoutes');
@@ -27,6 +27,7 @@ app.use('/barcodes', express.static(path.join(__dirname, 'barcodes')));
 app.use('/api/admin', adminRoutes);
 app.use('/api/guardia', guardiaRoutes);
 app.use('/api/usuario-equipo', usuarioEquipoRoutes);
+app.use('/api/historial', historialRoutes);
 
 // Ruta base
 app.get('/', (req, res) => res.send('API funcionando'));

@@ -1,3 +1,102 @@
+<template>
+  <div class="container">
+    <div class="logo">
+      <img :src="logoUrl" alt="GateLogix Logo" />
+    </div>
+    
+    <div class="controls">
+      <input 
+        v-model="search" 
+        type="text" 
+        placeholder="Buscar por documento..." 
+        class="search-input"
+      />
+      <label class="activo-label">
+        <input 
+          v-model="filtroActivo" 
+          type="checkbox"
+        />
+        Solo activos
+      </label>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Documento</th>
+          <th>Nombre</th>
+          <th>Jornada</th>
+          <th>Registros</th>
+          <th>Estado</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="usuario in usuariosFiltrados" :key="usuario.documento">
+          <td>{{ usuario.documento }}</td>
+          <td>{{ usuario.nombre }}</td>
+          <td>{{ usuario.jornada }}</td>
+          <td>{{ usuario.registros }}</td>
+          <td>
+            <span :class="['badge', usuario.activo ? 'activo' : 'inactivo']">
+              {{ usuario.activo ? 'Activo' : 'Inactivo' }}
+            </span>
+          </td>
+          <td>
+            <button @click="abrirModal(usuario)" class="editar-btn">
+              Editar
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Modal de edición -->
+    <div v-if="modalVisible" class="modal-overlay" @click="cerrarModal">
+      <div class="modal-content" @click.stop>
+        <h3>Editar Usuario</h3>
+        
+        <div class="modal-field">
+          <label>Documento:</label>
+          <input v-model="usuarioEdit.documento" disabled />
+        </div>
+        
+        <div class="modal-field">
+          <label>Nombre:</label>
+          <input v-model="usuarioEdit.nombre" />
+        </div>
+        
+        <div class="jornada-field">
+          <label>Jornada:</label>
+          <select v-model="usuarioEdit.jornada">
+            <option value="Mañana">Mañana</option>
+            <option value="Tarde">Tarde</option>
+            <option value="Noche">Noche</option>
+            <option value="Mixta">Mixta</option>
+          </select>
+        </div>
+        
+        <div class="modal-field">
+          <label>Estado:</label>
+          <select v-model="usuarioEdit.activo">
+            <option :value="true">Activo</option>
+            <option :value="false">Inactivo</option>
+          </select>
+        </div>
+        
+        <div class="modal-actions">
+          <button @click="cerrarModal" class="editar-btn" style="background: #ccc; color: #333;">
+            Cancelar
+          </button>
+          <button @click="guardarUsuario" class="editar-btn">
+            Guardar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
 <script>
 import logoUrl from '../assets/logo.png';
 export default {
@@ -61,7 +160,7 @@ export default {
 }
 
 .logo img {
-  height: 4000px;
+  height: 80px;
   max-width: 380px;
   object-fit: contain;
   display: block;

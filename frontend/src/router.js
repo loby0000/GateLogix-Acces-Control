@@ -3,15 +3,15 @@ import { createRouter, createWebHistory } from 'vue-router'
 import Login from './components/Login.vue'
 import RegistroUsuario from './components/RegistroUsuario.vue'
 import RegistroGuardia from './components/registroguardia.vue'
-import RegistroUsuariosYaResg from './components/RegistroUsuariosYaResg.vue'
 import GestionGuardia from './components/GestionGuardia.vue'
-import RegistroUsuariosConEquipo from './components/RegistroUsuariosConEquipo.vue'
 import Dashboard from './components/Dashboard.vue'
 import Historial from './components/Historial.vue'
 import Notificacion from './components/Notificacion.vue'
 import GestionUsuarios from './components/GestionUsuarios.vue'
 import LogsAuditoria from './components/LogsAuditoria.vue'
 import ControlEquipos from './components/ControlEquipos.vue'
+import RegistroUsuariosYaResg from './components/RegistroUsuariosYaResg.vue'
+
 
 const routes = [
   { path: '/login', component: Login, name: 'login' },
@@ -27,13 +27,13 @@ const routes = [
 
 
   { path: '/gestionGuardia', component: GestionGuardia, name: 'gestionGuardia' },
-  { path: '/registro-usuarios-equipo', component: RegistroUsuariosConEquipo, name: 'registroUsuariosConEquipo' },
   { path: '/dashboard', component: Dashboard, name: 'dashboard' },
   { path: '/historial', component: Historial, name: 'historial' },
   { path: '/notificacion', component: Notificacion, name: 'notificacion' },
   { path: '/gestion-usuarios', component: GestionUsuarios, name: 'gestionUsuarios' },
   { path: '/logs-auditoria', component: LogsAuditoria, name: 'logsAuditoria' },
   { path: '/control-equipos', component: ControlEquipos, name: 'controlEquipos' },
+  
   { path: '/', redirect: '/login' },
 ]
 

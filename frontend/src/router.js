@@ -5,7 +5,6 @@ import RegistroUsuario from './components/RegistroUsuario.vue'
 import RegistroGuardia from './components/registroguardia.vue'
 import RegistroUsuariosYaResg from './components/RegistroUsuariosYaResg.vue'
 import GestionGuardia from './components/GestionGuardia.vue'
-import RegistroUsuariosConEquipo from './components/RegistroUsuariosConEquipo.vue'
 import Dashboard from './components/Dashboard.vue'
 import Historial from './components/Historial.vue'
 import Notificacion from './components/Notificacion.vue'
@@ -27,7 +26,6 @@ const routes = [
 
 
   { path: '/gestionGuardia', component: GestionGuardia, name: 'gestionGuardia' },
-  { path: '/registro-usuarios-equipo', component: RegistroUsuariosConEquipo, name: 'registroUsuariosConEquipo' },
   { path: '/dashboard', component: Dashboard, name: 'dashboard' },
   { path: '/historial', component: Historial, name: 'historial' },
   { path: '/notificacion', component: Notificacion, name: 'notificacion' },

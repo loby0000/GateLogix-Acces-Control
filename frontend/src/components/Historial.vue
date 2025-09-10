@@ -1,76 +1,157 @@
 <template>
   <button class="btn-volver-dashboard-fixed" @click="goToDashboard">Volver al Dashboard</button>
   <section class="container">
-    <div class="top-bar">
-      <div class="search-filter">
-        <input
-          type="search"
-          v-model="searchQuery"
-          placeholder="Buscar por Documento, fecha, documento guardia"
-          aria-label="Buscar registros"
-          @input="filterTable"
-        />
-        <select v-model="selectedType" @change="filterTable" aria-label="Tipo registro">
-          <option value="">Tipo registro</option>
-          <option value="Salida">Salida</option>
-          <option value="Entrada">Entrada</option>
-        </select>
-      </div>
-      <div class="actions">
-        <button @click="exportData('excel')" class="btn primary">Exportar Excel</button>
-        <button @click="exportData('pdf')" class="btn primary">Exportar PDF</button>
-      </div>
+    <!-- Indicador de carga -->
+    <div v-if="loading" class="loading-container">
+      <div class="loading-spinner"></div>
+      <p>Cargando historial...</p>
     </div>
 
-    <table class="records-table">
-      <thead>
-        <tr>
-          <th>Usuario</th>
-          <th>Documento</th>
-          <th>Serial del equipo</th>
-          <th>Entrada</th>
-          <th>Salida</th>
-          <th>Doc.Guardia</th>
-          <th>Tipo</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="(record, index) in filteredRecords" :key="index">
-          <td>
-            <span class="usuario-link" @click="showUserModal(record)">{{ record.usuario }}</span>
-          </td>
-          <td>{{ record.documento }}</td>
-          <td>{{ record.serial }}</td>
-          <td>{{ record.entrada }}</td>
-          <td>{{ record.salida || '---------'}} </td>
-          <td>{{ record.docGuardia }}</td>
-          <td>
-            <span :class="['type-badge', record.tipo.toLowerCase()]">{{ record.tipo }}</span>
-          </td>
-        </tr>
-        <tr v-if="filteredRecords.length === 0">
-          <td colspan="7" class="no-results">No se encontraron registros</td>
-        </tr>
-      </tbody>
-    </table>
+    <!-- Mensaje de error -->
+    <div v-if="error" class="error-container">
+      <p class="error-message">{{ error }}</p>
+      <button @click="recargarHistorial" class="btn primary">Reintentar</button>
+    </div>
 
+    <!-- Contenido principal -->
+    <div v-if="!loading && !error">
+      <div class="top-bar">
+        <div class="search-filter">
+          <input
+            type="search"
+            v-model="searchQuery"
+            placeholder="Buscar por usuario, documento, serial, guardia..."
+            aria-label="Buscar registros"
+            @input="filterTable"
+          />
+          <select v-model="selectedType" @change="filterTable" aria-label="Tipo registro">
+            <option value="">Todos los tipos</option>
+            <option value="Entrada">Entrada</option>
+            <option value="Salida">Salida</option>
+          </select>
+        </div>
+        <div class="actions">
+          <button @click="recargarHistorial" class="btn secondary" title="Recargar historial">
+            🔄 Recargar
+          </button>
+          <button @click="exportData('excel')" class="btn primary" :disabled="filteredRecords.length === 0">
+            📊 Excel
+          </button>
+          <button @click="exportData('pdf')" class="btn primary" :disabled="filteredRecords.length === 0">
+            📄 PDF
+          </button>
+        </div>
+      </div>
+
+      <!-- Estadísticas -->
+      <div class="stats-bar">
+        <span class="stat-item">
+          👥 Usuarios hoy: <strong>{{ totalRecords }}</strong>
+        </span>
+        <span class="stat-item" v-if="allRecords.length > 0">
+          📊 Total histórico: <strong>{{ allRecords.length }}</strong> registros
+        </span>
+        <span class="stat-item" v-if="searchQuery || selectedType">
+          🔍 Filtrados: <strong>{{ filteredRecords.length }}</strong> usuarios
+        </span>
+        <span class="stat-item info-text">
+          💡 Haz clic en un nombre para ver el historial completo del usuario
+        </span>
+      </div>
+
+      <!-- Tabla de historial -->
+      <table v-if="!loading && !error" class="records-table">
+        <thead>
+          <tr>
+             <th>Usuario</th>
+             <th>Documento</th>
+             <th>Serial del equipo</th>
+             <th>Entrada</th>
+             <th>Salida</th>
+             <th>Guardia</th>
+             <th>Tipo</th>
+           </tr>
+        </thead>
+        <tbody>
+          <tr v-for="(record, index) in filteredRecords" :key="record.id || index">
+             <td>
+               <span class="usuario-link" @click="showUserModal(record)" :title="record.email">
+                 {{ record.usuario }}
+               </span>
+             </td>
+             <td>{{ record.documento }}</td>
+             <td class="serial-cell" :title="record.serial">{{ record.serial }}</td>
+             <td class="fecha-cell">{{ record.entrada }}</td>
+             <td class="fecha-cell">{{ record.salida || '---' }}</td>
+             <td :title="record.nombreGuardia">{{ record.docGuardia }}</td>
+             <td>
+               <span :class="['type-badge', record.tipo.toLowerCase()]">
+                 {{ record.tipo }}
+               </span>
+             </td>
+           </tr>
+           <tr v-if="filteredRecords.length === 0 && !loading">
+             <td colspan="7" class="no-results">
+               {{ searchQuery || selectedType ? 'No se encontraron registros con los filtros aplicados' : 'No hay registros de historial' }}
+             </td>
+           </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Modal de historial completo del usuario -->
     <div v-if="showModal" class="modal-overlay" @click.self="closeUserModal">
-      <div class="modal-content">
-        <div class="modal-search-row">
-          <input type="text" placeholder="Buscar por año" class="modal-search" />
-          <input type="text" placeholder="Buscar por mes" class="modal-search" />
-          <input type="text" placeholder="Buscar por día" class="modal-search" />
+      <div class="modal-content-large">
+        <div class="modal-header">
+          <h3>Historial Completo de {{ selectedUser?.usuario }}</h3>
+          <div class="modal-user-info">
+            <span><strong>Documento:</strong> {{ selectedUser?.documento }}</span>
+            <span><strong>Email:</strong> {{ selectedUser?.email }}</span>
+            <span><strong>Total registros:</strong> {{ userHistoryRecords.length }}</span>
+          </div>
+          <button class="modal-close-btn" @click="closeUserModal">✕</button>
         </div>
-        <div class="modal-row">
-          <button class="modal-btn">{{ selectedUser ? selectedUser.usuario : 'Usuario' }}</button>
-          <button class="modal-btn">{{ selectedUser ? selectedUser.documento : 'Documento' }}</button>
+        
+        <div class="modal-table-container">
+          <table class="modal-table">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Entrada</th>
+                <th>Salida</th>
+                <th>Guardia</th>
+                <th>Estado</th>
+                <th>Tipo</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(record, index) in userHistoryRecords" :key="record.id || index">
+                <td class="fecha-cell">{{ formatearFechaSolo(record.fechaCreacion) }}</td>
+                <td class="fecha-cell">{{ record.entrada }}</td>
+                <td class="fecha-cell">{{ record.salida || '---' }}</td>
+                <td>{{ record.nombreGuardia }}</td>
+                <td>
+                  <span :class="['estado-badge', record.estado.toLowerCase()]">
+                    {{ record.estado }}
+                  </span>
+                </td>
+                <td>
+                  <span :class="['type-badge', record.tipo.toLowerCase()]">
+                    {{ record.tipo }}
+                  </span>
+                </td>
+              </tr>
+              <tr v-if="userHistoryRecords.length === 0">
+                <td colspan="6" class="no-results">
+                  No se encontraron registros históricos para este usuario
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
-        <div class="modal-row">
-          <button class="modal-btn">Entrada</button>
-          <button class="modal-btn">Salida</button>
-        </div>
-        <div class="modal-row">
-          <button class="modal-btn" @click="closeUserModal">Cerrar</button>
+        
+        <div class="modal-footer">
+          <button class="btn secondary" @click="closeUserModal">Cerrar</button>
         </div>
       </div>
     </div>
@@ -78,66 +159,234 @@
 </template>
 
 <script>
+import axios from 'axios';
+
 export default {
   data() {
     return {
       searchQuery: "",
       selectedType: "",
-      records: [
-        {
-          usuario: "Fulano",
-          documento: "Fulano123",
-          serial: "Fulanoqthiudyd",
-          entrada: "hoy",
-          salida: "Mañana",
-          docGuardia: "3838738974",
-          tipo: "Salida"
-        },
-        {
-          usuario: "Fulano2",
-          documento: "Fulano2123",
-          serial: "Fulano5qthiudyd",
-          entrada: "hoy",
-          salida: "",
-          docGuardia: "3838738974",
-          tipo: "Entrada"
-        }
-      ],
+      records: [], // Registros del día actual
+      allRecords: [], // Todos los registros históricos
       filteredRecords: [],
       showModal: false,
       selectedUser: null,
+      userHistoryRecords: [], // Registros históricos del usuario seleccionado
+      loading: false,
+      error: null,
+      // Paginación
+      currentPage: 1,
+      recordsPerPage: 50,
+      totalRecords: 0
     };
   },
-  mounted() {
-    this.filteredRecords = this.records;
+  async mounted() {
+    await this.cargarHistorial();
   },
   methods: {
+    // 🔹 Cargar historial desde el backend (solo del día actual)
+    async cargarHistorial() {
+      this.loading = true;
+      this.error = null;
+      
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          this.$router.push('/login');
+          return;
+        }
+
+        const response = await axios.get(
+          'http://localhost:3000/api/historial/listar',
+          {
+            headers: { Authorization: `Bearer ${token}` },
+            timeout: 10000
+          }
+        );
+
+        // Procesar y formatear los datos
+        const allRecords = response.data.map(record => ({
+          id: record._id,
+          usuario: record.usuario?.nombre || 'N/A',
+          documento: record.usuario?.numeroDocumento || 'N/A',
+          email: record.usuario?.email || 'N/A',
+          serial: record.serial || 'N/A',
+          entrada: this.formatearFecha(record.entrada),
+          salida: record.salida ? this.formatearFecha(record.salida) : null,
+          docGuardia: record.docGuardia || record.guardia?.documento || 'N/A',
+          nombreGuardia: record.guardia?.nombre || 'N/A',
+          estado: record.estado || 'N/A',
+          tipo: this.determinarTipo(record),
+          fechaCreacion: record.createdAt,
+          fechaEntrada: new Date(record.entrada),
+          usuarioId: record.usuario?._id,
+          raw: record // Datos originales para referencia
+        }));
+
+        // 🔹 Filtrar solo registros del día actual
+        const hoy = new Date();
+        hoy.setHours(0, 0, 0, 0);
+        const mañana = new Date(hoy);
+        mañana.setDate(mañana.getDate() + 1);
+
+        const registrosDelDia = allRecords.filter(record => {
+          const fechaRegistro = record.fechaEntrada;
+          return fechaRegistro >= hoy && fechaRegistro < mañana;
+        });
+
+        // 🔹 Agrupar por usuario y mostrar solo el último registro de cada uno
+        const usuariosUnicos = new Map();
+        
+        registrosDelDia.forEach(record => {
+          const usuarioKey = record.usuarioId || record.documento;
+          const registroExistente = usuariosUnicos.get(usuarioKey);
+          
+          // Si no existe o el registro actual es más reciente, lo reemplaza
+          if (!registroExistente || new Date(record.fechaCreacion) > new Date(registroExistente.fechaCreacion)) {
+            usuariosUnicos.set(usuarioKey, record);
+          }
+        });
+
+        // Convertir el Map a array y ordenar por fecha más reciente
+        this.records = Array.from(usuariosUnicos.values())
+          .sort((a, b) => new Date(b.fechaCreacion) - new Date(a.fechaCreacion));
+
+        // Guardar todos los registros para el modal
+        this.allRecords = allRecords;
+        
+        this.totalRecords = this.records.length;
+        this.filteredRecords = [...this.records];
+        
+        console.log(`✅ Usuarios únicos del día: ${this.records.length} (de ${registrosDelDia.length} movimientos totales)`);
+        console.log(`📊 Total histórico: ${allRecords.length} registros`);
+        
+      } catch (err) {
+        console.error('❌ Error cargando historial:', err);
+        this.error = 'Error al cargar el historial. Verifique su conexión.';
+        
+        if (err.response?.status === 401) {
+          localStorage.removeItem('token');
+          this.$router.push('/login');
+        }
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    // 🔹 Determinar tipo de movimiento basado en los datos
+    determinarTipo(record) {
+      if (record.salida) {
+        return 'Salida';
+      } else if (record.entrada) {
+        return 'Entrada';
+      }
+      return 'Desconocido';
+    },
+
+    // 🔹 Formatear fechas de manera legible
+    formatearFecha(fecha) {
+      if (!fecha) return null;
+      
+      try {
+        const date = new Date(fecha);
+        return date.toLocaleString('es-ES', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit'
+        });
+      } catch (err) {
+        console.error('Error formateando fecha:', err);
+        return fecha;
+      }
+    },
+
+    // 🔹 Formatear solo fecha (sin hora) para el modal
+    formatearFechaSolo(fecha) {
+      if (!fecha) return null;
+      
+      try {
+        const date = new Date(fecha);
+        return date.toLocaleDateString('es-ES', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit'
+        });
+      } catch (err) {
+        console.error('Error formateando fecha:', err);
+        return fecha;
+      }
+    },
+
+    // 🔹 Filtrar tabla con búsqueda mejorada
     filterTable() {
       const query = this.searchQuery.trim().toLowerCase();
-      this.filteredRecords = this.records.filter(({ usuario, documento, serial, entrada, salida, docGuardia, tipo }) => {
-        const matchesSearch =
-          usuario.toLowerCase().includes(query) ||
-          documento.toLowerCase().includes(query) ||
-          entrada.toLowerCase().includes(query) ||
-          salida?.toLowerCase().includes(query) ||
-          docGuardia.includes(query);
-        const matchesType = this.selectedType ? tipo === this.selectedType : true;
+      
+      this.filteredRecords = this.records.filter(record => {
+        // Búsqueda por texto
+        const matchesSearch = !query || [
+          record.usuario,
+          record.documento,
+          record.serial,
+          record.entrada,
+          record.salida,
+          record.docGuardia,
+          record.nombreGuardia,
+          record.email
+        ].some(field => 
+          field && field.toString().toLowerCase().includes(query)
+        );
+        
+        // Filtro por tipo
+        const matchesType = !this.selectedType || record.tipo === this.selectedType;
+        
         return matchesSearch && matchesType;
       });
+      
+      console.log(`🔍 Filtros aplicados: ${this.filteredRecords.length}/${this.records.length} registros`);
     },
+
+    // 🔹 Recargar historial
+    async recargarHistorial() {
+      await this.cargarHistorial();
+    },
+
+    // 🔹 Exportar datos (placeholder)
     exportData(type) {
-      alert(`Función para exportar como ${type.toUpperCase()} aún no implementada.`);
+      if (this.filteredRecords.length === 0) {
+        alert('No hay registros para exportar.');
+        return;
+      }
+      
+      // TODO: Implementar exportación real
+      alert(`Función para exportar ${this.filteredRecords.length} registros como ${type.toUpperCase()} será implementada próximamente.`);
     },
+
+    // 🔹 Navegación
     goToDashboard() {
       this.$router.push({ path: '/dashboard' });
     },
+
+    // 🔹 Modal de usuario - Mostrar historial completo
     showUserModal(record) {
       this.selectedUser = record;
+      
+      // Filtrar todos los registros históricos del usuario
+      this.userHistoryRecords = this.allRecords.filter(r => 
+        r.usuarioId === record.usuarioId || 
+        (r.documento === record.documento && r.documento !== 'N/A')
+      ).sort((a, b) => new Date(b.fechaCreacion) - new Date(a.fechaCreacion));
+      
+      console.log(`📋 Mostrando historial de ${record.usuario}: ${this.userHistoryRecords.length} registros`);
       this.showModal = true;
     },
+
     closeUserModal() {
       this.showModal = false;
       this.selectedUser = null;
+      this.userHistoryRecords = [];
     },
   }
 }
@@ -228,6 +477,20 @@ select:focus {
 
 .btn.primary:hover {
   background-color: #0d3c78;
+}
+
+.btn.primary:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.btn.secondary {
+  background-color: #6c757d;
+}
+
+.btn.secondary:hover {
+  background-color: #545b62;
 }
 
 .records-table {
@@ -323,60 +586,278 @@ select:focus {
   color: #1565c0;
   text-decoration: underline;
   cursor: pointer;
+  font-weight: 500;
 }
+
+.usuario-link:hover {
+  color: #0d47a1;
+  text-decoration: none;
+}
+
+/* 🔹 Modal styles */
 .modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: rgba(0,0,0,0.18);
+  background: rgba(0,0,0,0.5);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 99999;
 }
-.modal-content {
+
+.modal-content-large {
   background: #fff;
   border-radius: 16px;
-  box-shadow: 0 4px 32px rgba(0,0,0,0.18);
-  padding: 2.5rem 2.5rem 2rem 2.5rem;
-  min-width: 420px;
-  min-height: 340px;
+  box-shadow: 0 8px 48px rgba(0,0,0,0.25);
+  width: 90vw;
+  max-width: 1000px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.modal-header {
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  background: #f8f9fa;
+}
+
+.modal-header h3 {
+  margin: 0;
+  color: #1565c0;
+  font-size: 1.4rem;
+  font-weight: 600;
+}
+
+.modal-user-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.modal-user-info span {
+  display: block;
+}
+
+.modal-close-btn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #999;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.modal-close-btn:hover {
+  background: #f0f0f0;
+  color: #666;
+}
+
+.modal-table-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0;
+}
+
+.modal-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.modal-table thead {
+  background: #f8f9fa;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.modal-table th,
+.modal-table td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #eee;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.modal-table th {
+  font-weight: 600;
+  color: #333;
+  border-bottom: 2px solid #ddd;
+}
+
+.modal-table tbody tr:hover {
+  background: #f8f9fa;
+}
+
+.modal-footer {
+  padding: 1rem 2rem;
+  border-top: 1px solid #eee;
+  display: flex;
+  justify-content: flex-end;
+  background: #f8f9fa;
+}
+
+/* 🔹 Estilos para loading y errores */
+.loading-container {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  color: #666;
 }
-.modal-search-row {
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #1565c0;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.error-container {
   display: flex;
-  gap: 1.2rem;
-  margin-bottom: 2rem;
-}
-.modal-search {
-  padding: 0.6rem 1.2rem;
-  border: 1px solid #bbb;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 2rem;
+  background: #ffeaea;
+  border: 1px solid #ffcdd2;
   border-radius: 8px;
-  font-size: 1rem;
-  min-width: 120px;
+  margin: 2rem 0;
 }
-.modal-row {
+
+.error-message {
+  color: #d32f2f;
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+/* 🔹 Barra de estadísticas */
+.stats-bar {
   display: flex;
   gap: 2rem;
-  margin-bottom: 1.2rem;
-  justify-content: center;
+  padding: 1rem 0;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid #eee;
+  flex-wrap: wrap;
 }
-.modal-btn {
-  padding: 0.7rem 2.2rem;
-  border: 1px solid #1565c0;
-  border-radius: 8px;
-  background: #f7f7f7;
-  color: #222;
-  font-size: 1rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background 0.2s;
+
+.stat-item {
+  color: #666;
+  font-size: 0.95rem;
 }
-.modal-btn:hover {
-  background: #e3eafc;
+
+.stat-item strong {
+  color: #1565c0;
+  font-weight: 600;
+}
+
+.stat-item.info-text {
+  color: #888;
+  font-style: italic;
+  font-size: 0.85rem;
+}
+
+/* 🔹 Estilos mejorados para la tabla */
+.serial-cell {
+  font-family: 'Courier New', monospace;
+  font-size: 0.9rem;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fecha-cell {
+  font-size: 0.9rem;
+  color: #555;
+  min-width: 140px;
+}
+
+.estado-badge {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.estado-badge.adentro {
+  background-color: #e3f2fd;
+  color: #1565c0;
+}
+
+.estado-badge.afuera {
+  background-color: #f3e5f5;
+  color: #7b1fa2;
+}
+
+.estado-badge.n\/a {
+  background-color: #f5f5f5;
+  color: #757575;
+}
+
+/* 🔹 Responsive design */
+@media (max-width: 768px) {
+  .container {
+    width: 95vw;
+    padding: 1.5rem;
+  }
+  
+  .top-bar {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: stretch;
+  }
+  
+  .search-filter {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .actions {
+    justify-content: center;
+  }
+  
+  .records-table {
+    font-size: 0.9rem;
+  }
+  
+  .records-table th,
+  .records-table td {
+    padding: 0.75rem 0.5rem;
+  }
+  
+  .stats-bar {
+    justify-content: center;
+    text-align: center;
+  }
 }
 </style>

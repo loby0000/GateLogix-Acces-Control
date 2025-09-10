@@ -30,6 +30,7 @@
     <table class="tabla-registro" v-if="usuarios.length > 0">
       <thead>
         <tr>
+          <th>Foto</th>
           <th>Tipo De Usuario</th>
           <th>Tipo De Documento</th>
           <th>Documento</th>
@@ -43,6 +44,23 @@
       </thead>
       <tbody>
         <tr v-for="(usuario, index) in usuarios" :key="usuario.numeroDocumento">
+          <!-- Columna de foto -->
+          <td class="foto-cell">
+            <div class="foto-container">
+              <img 
+                v-if="usuario.foto" 
+                :src="usuario.foto" 
+                :alt="`Foto de ${usuario.nombre}`"
+                class="user-photo"
+                @click="mostrarFotoAmpliada(usuario.foto)"
+                @error="handleImageError"
+              />
+              <div v-else class="no-photo">
+                <span>Sin foto</span>
+              </div>
+            </div>
+          </td>
+          
           <td>{{ usuario.tipoUsuario }}</td>
           <td>{{ usuario.tipoDocumento }}</td>
           <td>{{ usuario.numeroDocumento }}</td>
@@ -71,9 +89,31 @@
     <!-- Si no hay resultados -->
     <p v-else style="text-align:center; margin-top:20px;">No hay información para mostrar.</p>
 
-    <!-- Botón registrar general -->
-    <div class="registrar-btn">
-      <button @click="registrar">Registrar</button>
+    <!-- Botón interactivo Ingreso/Salida -->
+    <div class="accion-btn" v-if="usuarios.length > 0">
+      <button 
+        :class="['btn-movimiento', estadoUsuario === 'Afuera' ? 'btn-ingreso' : 'btn-salida']"
+        @click="registrarMovimiento"
+        :disabled="cargandoMovimiento"
+      >
+        <span class="btn-icon">{{ estadoUsuario === 'Afuera' ? '✅' : '❌' }}</span>
+        <span class="btn-text">
+          {{ cargandoMovimiento ? 'Procesando...' : (estadoUsuario === 'Afuera' ? 'Ingreso' : 'Salida') }}
+        </span>
+      </button>
+      
+      <!-- Información del estado actual -->
+      <div class="estado-info">
+        <p class="estado-actual">
+          Estado actual: 
+          <span :class="['estado-badge', estadoUsuario === 'Adentro' ? 'estado-adentro' : 'estado-afuera']">
+            {{ estadoUsuario === 'Adentro' ? 'Dentro del edificio' : 'Fuera del edificio' }}
+          </span>
+        </p>
+        <p v-if="ultimoMovimiento" class="ultimo-movimiento">
+          Último movimiento: {{ formatearFecha(ultimoMovimiento) }}
+        </p>
+      </div>
     </div>
 
     <!-- Menú de equipo como modal centrado -->
@@ -146,6 +186,14 @@
         </div>
       </div>
     </div>
+
+    <!-- Modal para foto ampliada -->
+    <div v-if="fotoAmpliadaVisible" class="modal-overlay" @click.self="cerrarFotoAmpliada">
+      <div class="foto-modal">
+        <button class="close-btn-foto" @click="cerrarFotoAmpliada">✕</button>
+        <img :src="fotoAmpliada" alt="Foto ampliada" class="foto-ampliada" />
+      </div>
+    </div>
   </div>
 </template>
 
@@ -156,6 +204,18 @@ import barcodeScannerMixin from "../mixins/barcodeScannerMixin.js";
 export default {
   name: "RegistroUsuariosYaResg",
   mixins: [barcodeScannerMixin], // 🔹 Agregar mixin
+  
+  // Método para acceder al toast
+  computed: {
+    toast() {
+      return this.$toast || {
+        success: (msg) => console.log('✅', msg),
+        error: (msg) => console.error('❌', msg),
+        warning: (msg) => console.warn('⚠️', msg),
+        info: (msg) => console.info('ℹ️', msg)
+      };
+    }
+  },
   data() {
     return {
       tipoRegistro: "Registrado",
@@ -172,6 +232,13 @@ export default {
         imagen: null,
       },
       usuarios: [],
+      // Variables para modal de foto ampliada
+      fotoAmpliadaVisible: false,
+      fotoAmpliada: null,
+      // Variables para control de movimientos
+      estadoUsuario: 'Afuera', // 'Adentro' o 'Afuera'
+      ultimoMovimiento: null,
+      cargandoMovimiento: false,
     };
   },
   watch: {
@@ -210,10 +277,17 @@ export default {
         );
 
         this.usuarios = [res.data];
+        
+        // 🔹 Obtener el estado actual del usuario (solo consulta, sin registro automático)
+        const serial = res.data.equipo?.serial;
+        if (serial) {
+          await this.obtenerEstadoUsuario(serial);
+        }
+        
       } catch (err) {
         console.error("❌ Error al buscar:", err.response?.data || err.message);
         this.usuarios = [];
-        alert("No se encontró el usuario");
+        this.toast.error("No se encontró el usuario");
       }
     },
 
@@ -228,10 +302,14 @@ export default {
         );
 
         this.usuarios = [res.data];
+        
+        // 🔹 Obtener el estado actual del usuario
+        await this.obtenerEstadoUsuario(serial);
+        
       } catch (err) {
         console.error("❌ Error al buscar por serial:", err.response?.data || err.message);
         this.usuarios = [];
-        alert("No se encontró el usuario con ese serial");
+         this.toast.error("No se encontró el usuario con ese serial");
       }
     },
 
@@ -284,6 +362,161 @@ export default {
         });
       }
       this.cerrarModal();
+    },
+
+    // 🔹 Métodos para manejo de fotos
+    mostrarFotoAmpliada(foto) {
+      this.fotoAmpliada = foto;
+      this.fotoAmpliadaVisible = true;
+    },
+
+    cerrarFotoAmpliada() {
+      this.fotoAmpliadaVisible = false;
+      this.fotoAmpliada = null;
+    },
+
+    handleImageError(event) {
+      console.warn('Error al cargar imagen:', event.target.src);
+      event.target.style.display = 'none';
+      // Mostrar el placeholder "Sin foto" en su lugar
+      const container = event.target.parentElement;
+      if (container) {
+        container.innerHTML = '<div class="no-photo"><span>Error al cargar</span></div>';
+      }
+    },
+
+    // 🔹 Métodos para control de movimientos
+    async obtenerEstadoUsuario(serial) {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) return;
+
+        const response = await axios.get(
+          `http://localhost:3000/api/historial/estado/${serial}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+            timeout: 5000
+          }
+        );
+
+        if (response.data) {
+          this.estadoUsuario = response.data.estado || 'Afuera';
+          this.ultimoMovimiento = response.data.ultimoMovimiento;
+        }
+      } catch (err) {
+        console.error("❌ Error al obtener estado del usuario:", err);
+        // Por defecto, asumir que está afuera
+        this.estadoUsuario = 'Afuera';
+      }
+    },
+
+    async registrarMovimiento() {
+      if (!this.usuarios.length) return;
+      
+      this.cargandoMovimiento = true;
+      
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+           this.toast.error("No hay sesión activa");
+           return;
+         }
+
+        // Obtener información del guardia desde el token
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const docGuardia = payload.documento;
+        const serial = this.usuarios[0].equipo?.serial;
+
+        if (!serial) {
+           this.toast.error("No se encontró el serial del equipo");
+           return;
+         }
+
+        const response = await axios.post(
+          'http://localhost:3000/api/historial/registrar',
+          {
+            serial: serial,
+            docGuardia: docGuardia
+          },
+          {
+            headers: { Authorization: `Bearer ${token}` },
+            timeout: 10000
+          }
+        );
+
+        console.log(`✅ ${response.data.tipo} registrado correctamente:`, response.data);
+        
+        // 🔹 Obtener el estado real del backend después del registro
+        await this.obtenerEstadoUsuario(serial);
+
+        const accion = this.estadoUsuario === 'Adentro' ? 'Ingreso' : 'Salida';
+        this.toast.success(`${accion} registrado correctamente`);
+
+      } catch (err) {
+        console.error("❌ Error al registrar movimiento:", err);
+        
+        if (err.response?.status === 401) {
+           this.toast.error("Sesión expirada. Por favor inicie sesión nuevamente.");
+           this.$router.push('/login');
+         } else {
+           this.toast.error("Error al registrar el movimiento. Intente nuevamente.");
+         }
+      } finally {
+        this.cargandoMovimiento = false;
+      }
+    },
+
+    formatearFecha(fecha) {
+      if (!fecha) return '';
+      
+      const date = new Date(fecha);
+      return date.toLocaleString('es-ES', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    },
+
+    // 🔹 Registrar entrada automática (también usado para búsqueda por documento)
+    async registrarEntradaAutomatica(serial) {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          console.error("No hay token disponible");
+          return;
+        }
+
+        // Obtener información del guardia desde el token
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const docGuardia = payload.documento;
+
+        const response = await axios.post(
+          'http://localhost:3000/api/historial/registrar',
+          {
+            serial: serial,
+            docGuardia: docGuardia
+          },
+          {
+            headers: { Authorization: `Bearer ${token}` },
+            timeout: 10000
+          }
+        );
+
+        console.log("✅ Entrada registrada automáticamente:", response.data);
+        this.toast.success("Entrada registrada correctamente");
+        
+      } catch (err) {
+        console.error("❌ Error al registrar entrada automática:", err.response?.data || err.message);
+        
+        if (err.response?.status === 401) {
+          this.toast.error("Sesión expirada. Por favor inicie sesión nuevamente.");
+          this.$router.push('/login');
+        } else {
+          this.toast.warning("No se pudo registrar la entrada automáticamente. Podrá hacerlo manualmente.");
+        }
+      }
     },
   },
 };
@@ -388,26 +621,105 @@ export default {
   transition: background 0.3s;
 }
 
-/* ===== Botón registrar ===== */
-.registrar-btn {
+/* ===== Botón de acción (Ingreso/Salida) ===== */
+.accion-btn {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
   margin-top: 36px;
+  gap: 20px;
 }
-.registrar-btn button {
-  padding: 16px 36px;
-  background: #27ae60;
-  color: white;
+
+.btn-movimiento {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 40px;
   border: none;
-  border-radius: 14px;
+  border-radius: 16px;
   cursor: pointer;
+  font-size: 18px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  min-width: 200px;
+  justify-content: center;
+}
+
+.btn-movimiento:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.btn-ingreso {
+  background: linear-gradient(135deg, #27ae60, #2ecc71);
+  color: white;
+}
+
+.btn-ingreso:hover:not(:disabled) {
+  background: linear-gradient(135deg, #1e8e4d, #27ae60);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(39, 174, 96, 0.4);
+}
+
+.btn-salida {
+  background: linear-gradient(135deg, #e74c3c, #c0392b);
+  color: white;
+}
+
+.btn-salida:hover:not(:disabled) {
+  background: linear-gradient(135deg, #c0392b, #a93226);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(231, 76, 60, 0.4);
+}
+
+.btn-icon {
+  font-size: 20px;
+}
+
+.btn-text {
+  font-weight: 600;
+}
+
+/* ===== Información de estado ===== */
+.estado-info {
+  text-align: center;
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  max-width: 400px;
+}
+
+.estado-actual {
   font-size: 16px;
   font-weight: 500;
-  transition: background 0.2s, transform 0.1s;
+  margin-bottom: 8px;
+  color: #2c3e50;
 }
-.registrar-btn button:hover {
-  background: #1e8e4d;
-  transform: scale(1.03);
+
+.estado-badge {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.estado-adentro {
+  background: #d5f4e6;
+  color: #27ae60;
+}
+
+.estado-afuera {
+  background: #ffeaa7;
+  color: #e17055;
+}
+
+.ultimo-movimiento {
+  font-size: 14px;
+  color: #7f8c8d;
+  margin: 0;
 }
 
 /* ===== Menú de equipo ===== */
@@ -511,6 +823,89 @@ export default {
   border: none;
   border-radius: 12px;
   font-size: 14px;
+}
+
+/* ===== Estilos para fotos ===== */
+.foto-cell {
+  width: 80px;
+  text-align: center;
+  padding: 10px;
+}
+
+.foto-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.user-photo {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #4a90e2;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.user-photo:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
+}
+
+.no-photo {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background-color: #f0f0f0;
+  color: #999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  text-align: center;
+  border: 2px solid #ddd;
+}
+
+/* ===== Modal de foto ampliada ===== */
+.foto-modal {
+  position: relative;
+  max-width: 90vw;
+  max-height: 90vh;
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+}
+
+.close-btn-foto {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  background: rgba(0,0,0,0.7);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 35px;
+  height: 35px;
+  cursor: pointer;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  transition: background 0.2s;
+}
+
+.close-btn-foto:hover {
+  background: rgba(0,0,0,0.9);
+}
+
+.foto-ampliada {
+  max-width: 100%;
+  max-height: 80vh;
+  object-fit: contain;
+  border-radius: 8px;
 }
 
 /* ===== Animaciones ===== */

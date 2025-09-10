@@ -60,6 +60,10 @@ const usuarioEquipoSchema = new mongoose.Schema({
   codigoBarras: {
     type: String // ruta del archivo o string base64 (según implementación)
   },
+  foto: {
+    type: String, // Almacenará la imagen en formato base64
+    default: null
+  },
   historialModificaciones: [
     {
       fecha: { type: Date, default: Date.now },

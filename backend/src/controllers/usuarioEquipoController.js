@@ -7,7 +7,10 @@ const Historial = require('../models/Historial');
 
 
 exports.registrar = async (req, res) => {
-  const { tipoUsuario, tipoDocumento, numeroDocumento, nombre, email, equipo } = req.body;
+  const { tipoUsuario, tipoDocumento, numeroDocumento, nombre, email, equipo, foto } = req.body;
+  console.log('Foto recibida:', foto ? 'Foto presente (base64)' : 'Foto null o undefined');
+  console.log('Tipo de foto:', typeof foto);
+  console.log('Longitud de la foto:', foto ? foto.length : 0);
   const idGuardia = req.user.id; // 👈 viene del middleware JWT
 
   try {
@@ -47,12 +50,13 @@ exports.registrar = async (req, res) => {
     const codigoBarras = await generarCodigoBarras(equipo.serial);
 
     // Crear usuario con equipo
-    const nuevo = await UsuarioEquipo.create({
+    const usuarioData = {
       tipoUsuario,
       tipoDocumento,
       numeroDocumento,
       nombre,
       email,
+      foto, // Añadimos la foto al objeto de usuario
       equipo: {
         serial: equipo.serial,
         marca: equipo.marca,
@@ -70,28 +74,32 @@ exports.registrar = async (req, res) => {
           registradoPor: guardia.nombre
         }
       ]
-    });
+    };
 
     // Log opcional
     await Log.create({
       tipo: 'Registro Usuario',
       detalle: `Guardia ${guardia.nombre} registró a ${numeroDocumento}`,
     });
+    
+    // Crear el usuario en la base de datos
+    const nuevo = await UsuarioEquipo.create(usuarioData);
+    
     // Crear entrada automática en historial (usuario recién registrado)
-try {
-  await Historial.create({
-    usuario: nuevo._id,
-    serial: equipo.serial,
-    entrada: new Date(),
-    salida: null,
-    guardia: guardia ? guardia._id : null,
-    docGuardia: guardia?.numeroDocumento || guardia?.documento || guardia?._id?.toString() || '',
-    estado: 'Adentro'
-  });
-} catch (histErr) {
-  console.error('❌ Error al crear historial automático tras registro:', histErr);
-  // no rompemos el flujo principal, simplemente logueamos
-}
+    try {
+      await Historial.create({
+        usuario: nuevo._id,
+        serial: equipo.serial,
+        entrada: new Date(),
+        salida: null,
+        guardia: guardia ? guardia._id : null,
+        docGuardia: guardia?.numeroDocumento || guardia?.documento || guardia?._id?.toString() || '',
+        estado: 'Adentro'
+      });
+    } catch (histErr) {
+      console.error('❌ Error al crear historial automático tras registro:', histErr);
+      // no rompemos el flujo principal, simplemente logueamos
+    }
 
 
     // 🚀 Respuesta
@@ -110,79 +118,93 @@ try {
 
 exports.buscarPorSerial = async (req, res) => {
   try {
-    console.log("=== Buscando usuario por serial ===");
-    console.log("Headers recibidos:", req.headers);
-    console.log("Parámetros recibidos:", req.params);
-
     const { serial } = req.params;
     if (!serial) {
-      console.warn("No se recibió serial");
       return res.status(400).json({ message: "Debe enviar un serial" });
     }
 
-    const usuario = await UsuarioEquipo.findOne({ "equipo.serial": serial })
-      .populate("guardiaRegistrador", "nombre email");
+    // 🚀 Optimización: consulta ultra-rápida con índice y proyección mínima
+    const usuario = await UsuarioEquipo.findOne(
+      { "equipo.serial": serial },
+      {
+        tipoUsuario: 1,
+        tipoDocumento: 1,
+        numeroDocumento: 1,
+        nombre: 1,
+        email: 1,
+        equipo: 1,
+        foto: 1,
+        guardiaRegistrador: 1
+      }
+    )
+    .populate("guardiaRegistrador", "nombre email")
+    .lean() // 50% más rápido, menos memoria
+    .maxTimeMS(5000); // Timeout de 5 segundos
 
     if (!usuario) {
-      console.warn("Usuario no encontrado con serial:", serial);
-      return res.status(404).json({ message: "No se encontró ningún registro con ese serial" });
+      return res.status(404).json({ message: "Usuario no encontrado" });
     }
 
-    console.log("Usuario encontrado:", usuario);
+    // 🎯 Respuesta optimizada sin logs innecesarios
     res.json(usuario);
-
   } catch (err) {
-    console.error("Error en buscarPorSerial:", err);
+    console.error("❌ Error buscarPorSerial:", err.message);
     res.status(500).json({ message: "Error en la búsqueda", error: err.message });
   }
 };
 
 exports.buscarPorDocumento = async (req, res) => {
   try {
-    console.log("=== Buscando usuario por documento ===");
-    console.log("Headers recibidos:", req.headers);
-    console.log("Parámetros recibidos:", req.params);
-
     const { numeroDocumento } = req.params;
     if (!numeroDocumento) {
       return res.status(400).json({ message: "Debe enviar un número de documento" });
     }
 
-    const usuario = await UsuarioEquipo.findOne({ numeroDocumento })
-      .populate("guardiaRegistrador", "nombre email");
+    // 🚀 Optimización: consulta ultra-rápida con índice único
+    const usuario = await UsuarioEquipo.findOne(
+      { numeroDocumento },
+      {
+        tipoUsuario: 1,
+        tipoDocumento: 1,
+        numeroDocumento: 1,
+        nombre: 1,
+        email: 1,
+        equipo: 1,
+        foto: 1,
+        guardiaRegistrador: 1
+      }
+    )
+    .populate("guardiaRegistrador", "nombre documento")
+    .lean() // Reducir uso de memoria
+    .maxTimeMS(3000); // Timeout más agresivo para documento (índice único)
 
     if (!usuario) {
-      return res.status(404).json({ message: "No se encontró ningún registro con ese documento" });
+      return res.status(404).json({ message: "Usuario no encontrado" });
     }
 
-    // 🔹 Convertimos a objeto plano igual que en listarTodos
-    const usuarioPlano = {
-      _id: usuario._id,
-      tipoUsuario: usuario.tipoUsuario,
-      tipoDocumento: usuario.tipoDocumento,
-      nombre: usuario.nombre,
-      numeroDocumento: usuario.numeroDocumento,
-      email: usuario.email,
-      marcaEquipo: usuario.equipo?.marca || "",
-      serialEquipo: usuario.equipo?.serial || "",
-      caracteristicas: usuario.equipo?.caracteristicas || "",
-      mouse: usuario.equipo?.accesorios?.mouse || false,
-      cargador: usuario.equipo?.accesorios?.cargador || false,
-    };
-
-    res.json(usuarioPlano);
-
+    res.json(usuario);
   } catch (err) {
-    console.error("Error en buscarPorDocumento:", err);
+    console.error("❌ Error buscarPorDocumento:", err.message);
     res.status(500).json({ message: "Error en la búsqueda", error: err.message });
   }
 };
 
-// Obtener todos los usuarios
-// Obtener todos los usuarios (plano)
+// Obtener todos los usuarios con paginación
 exports.listarTodos = async (req, res) => {
   try {
-    const usuarios = await UsuarioEquipo.find();
+    // Parámetros de paginación
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+    
+    // Contar total de documentos para metadata de paginación
+    const total = await UsuarioEquipo.countDocuments();
+    
+    // Consulta paginada
+    const usuarios = await UsuarioEquipo.find()
+      .sort({ createdAt: -1 }) // Ordenar por fecha de creación, más recientes primero
+      .skip(skip)
+      .limit(limit);
 
     // Aplana la estructura de equipo y accesorios
     const usuariosPlanos = usuarios.map(u => ({
@@ -197,9 +219,19 @@ exports.listarTodos = async (req, res) => {
       caracteristicas: u.equipo?.caracteristicas || "",
       mouse: u.equipo?.accesorios?.mouse || false,
       cargador: u.equipo?.accesorios?.cargador || false,
+      foto: u.foto || null,
     }));
 
-    res.json(usuariosPlanos);
+    // Enviar respuesta con metadata de paginación
+    res.json({
+      usuarios: usuariosPlanos,
+      pagination: {
+        total,
+        page,
+        limit,
+        pages: Math.ceil(total / limit)
+      }
+    });
   } catch (err) {
     console.error("❌ Error al listar usuarios:", err);
     res.status(500).json({ message: "Error al obtener usuarios" });
@@ -221,9 +253,15 @@ exports.actualizar = async (req, res) => {
     // actualizamos campos principales
     usuario.tipoUsuario = data.tipoUsuario || usuario.tipoUsuario;
     usuario.tipoDocumento = data.tipoDocumento || usuario.tipoDocumento;
-    usuario.numeroDocumento = data.documento || usuario.numeroDocumento; // 👈 cuidado con el nombre
+    usuario.numeroDocumento = data.numeroDocumento || usuario.numeroDocumento; // Corregido: usar numeroDocumento en lugar de documento
     usuario.nombre = data.nombre || usuario.nombre;
     usuario.email = data.email || usuario.email;
+    
+    // Actualizar la foto solo si se proporciona una nueva
+    if (data.foto) {
+      console.log('Actualizando foto de usuario');
+      usuario.foto = data.foto;
+    }
 
     // actualizamos equipo
     if (!usuario.equipo) usuario.equipo = {};
@@ -242,6 +280,8 @@ exports.actualizar = async (req, res) => {
     });
 
     await usuario.save();
+    
+    console.log('Usuario actualizado con éxito, foto:', usuario.foto ? 'Presente' : 'No presente');
 
     // devolvemos aplanado (como listarTodos)
     res.json({
@@ -256,6 +296,7 @@ exports.actualizar = async (req, res) => {
       caracteristicas: usuario.equipo?.caracteristicas || "",
       mouse: usuario.equipo?.accesorios?.mouse || false,
       cargador: usuario.equipo?.accesorios?.cargador || false,
+      foto: usuario.foto || null,
     });
 
   } catch (err) {

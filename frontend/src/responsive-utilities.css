@@ -1,0 +1,380 @@
+/* ===== UTILIDADES RESPONSIVE AVANZADAS ===== */
+
+/* Container Queries Support */
+.container-query {
+  container-type: inline-size;
+}
+
+.cq-normal {
+  container-type: normal;
+}
+
+.cq-size {
+  container-type: size;
+}
+
+/* Fluid Typography System */
+.text-fluid-xs {
+  font-size: clamp(0.75rem, 0.5vw + 0.5rem, 0.875rem);
+}
+
+.text-fluid-sm {
+  font-size: clamp(0.875rem, 0.75vw + 0.625rem, 1rem);
+}
+
+.text-fluid-base {
+  font-size: clamp(1rem, 1vw + 0.75rem, 1.125rem);
+}
+
+.text-fluid-lg {
+  font-size: clamp(1.125rem, 1.25vw + 0.875rem, 1.25rem);
+}
+
+.text-fluid-xl {
+  font-size: clamp(1.25rem, 1.5vw + 1rem, 1.5rem);
+}
+
+.text-fluid-2xl {
+  font-size: clamp(1.5rem, 2vw + 1.25rem, 2rem);
+}
+
+.text-fluid-3xl {
+  font-size: clamp(1.875rem, 2.5vw + 1.5rem, 2.5rem);
+}
+
+.text-fluid-4xl {
+  font-size: clamp(2.25rem, 3vw + 1.75rem, 3rem);
+}
+
+/* Fluid Spacing System */
+.p-fluid-xs {
+  padding: clamp(0.25rem, 1vw, 0.5rem);
+}
+
+.p-fluid-sm {
+  padding: clamp(0.5rem, 2vw, 1rem);
+}
+
+.p-fluid-md {
+  padding: clamp(1rem, 3vw, 1.5rem);
+}
+
+.p-fluid-lg {
+  padding: clamp(1.5rem, 4vw, 2rem);
+}
+
+.p-fluid-xl {
+  padding: clamp(2rem, 5vw, 3rem);
+}
+
+.m-fluid-xs {
+  margin: clamp(0.25rem, 1vw, 0.5rem);
+}
+
+.m-fluid-sm {
+  margin: clamp(0.5rem, 2vw, 1rem);
+}
+
+.m-fluid-md {
+  margin: clamp(1rem, 3vw, 1.5rem);
+}
+
+.m-fluid-lg {
+  margin: clamp(1.5rem, 4vw, 2rem);
+}
+
+.m-fluid-xl {
+  margin: clamp(2rem, 5vw, 3rem);
+}
+
+/* Fluid Width System */
+.w-fluid-xs {
+  width: clamp(200px, 30vw, 300px);
+}
+
+.w-fluid-sm {
+  width: clamp(300px, 50vw, 500px);
+}
+
+.w-fluid-md {
+  width: clamp(500px, 70vw, 800px);
+}
+
+.w-fluid-lg {
+  width: clamp(800px, 85vw, 1200px);
+}
+
+.w-fluid-xl {
+  width: clamp(1200px, 95vw, 1600px);
+}
+
+/* Viewport Units */
+.h-screen-safe {
+  height: 100vh;
+  height: 100svh; /* Safari iOS support */
+}
+
+.min-h-screen-safe {
+  min-height: 100vh;
+  min-height: 100svh;
+}
+
+.h-screen-dynamic {
+  height: 100vh;
+  height: 100dvh; /* Dynamic viewport height */
+}
+
+.min-h-screen-dynamic {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+/* Aspect Ratios */
+.aspect-square {
+  aspect-ratio: 1 / 1;
+}
+
+.aspect-video {
+  aspect-ratio: 16 / 9;
+}
+
+.aspect-photo {
+  aspect-ratio: 4 / 3;
+}
+
+.aspect-golden {
+  aspect-ratio: 1.618 / 1;
+}
+
+.aspect-card {
+  aspect-ratio: 3 / 4;
+}
+
+.aspect-banner {
+  aspect-ratio: 5 / 2;
+}
+
+/* Responsive Grid System */
+.grid-responsive {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: clamp(1rem, 3vw, 2rem);
+}
+
+.grid-responsive-sm {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: clamp(0.5rem, 2vw, 1rem);
+}
+
+.grid-responsive-lg {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: clamp(1.5rem, 4vw, 3rem);
+}
+
+/* Flexible Layouts */
+.flex-responsive {
+  display: flex;
+  flex-wrap: wrap;
+  gap: clamp(0.5rem, 2vw, 1.5rem);
+}
+
+.flex-responsive > * {
+  flex: 1 1 clamp(200px, 30vw, 400px);
+}
+
+/* Touch-Friendly Sizes */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+.touch-target-lg {
+  min-height: 48px;
+  min-width: 48px;
+}
+
+/* High DPI Support */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .retina-border {
+    border-width: 0.5px;
+  }
+  
+  .retina-text {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  .motion-safe {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .motion-safe {
+    transition: all 0.3s ease;
+  }
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+  .dark-mode-auto {
+    background-color: #1a1a1a;
+    color: #ffffff;
+  }
+}
+
+@media (prefers-color-scheme: light) {
+  .dark-mode-auto {
+    background-color: #ffffff;
+    color: #000000;
+  }
+}
+
+/* Print Styles */
+@media print {
+  .print-hidden {
+    display: none !important;
+  }
+  
+  .print-visible {
+    display: block !important;
+  }
+  
+  .print-break-before {
+    page-break-before: always;
+  }
+  
+  .print-break-after {
+    page-break-after: always;
+  }
+}
+
+/* Orientation Support */
+@media (orientation: portrait) {
+  .portrait-only {
+    display: block;
+  }
+  
+  .landscape-only {
+    display: none;
+  }
+}
+
+@media (orientation: landscape) {
+  .portrait-only {
+    display: none;
+  }
+  
+  .landscape-only {
+    display: block;
+  }
+}
+
+/* Hover Support */
+@media (hover: hover) {
+  .hover-supported:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+}
+
+@media (hover: none) {
+  .hover-supported:active {
+    transform: scale(0.98);
+  }
+}
+
+/* Focus Visible Support */
+.focus-visible-supported:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* Container Query Utilities */
+@container (min-width: 320px) {
+  .cq-xs\:block {
+    display: block;
+  }
+}
+
+@container (min-width: 480px) {
+  .cq-sm\:flex {
+    display: flex;
+  }
+}
+
+@container (min-width: 768px) {
+  .cq-md\:grid {
+    display: grid;
+  }
+}
+
+/* Utility Classes for Common Responsive Patterns */
+.responsive-stack {
+  display: flex;
+  flex-direction: column;
+}
+
+@media (min-width: 768px) {
+  .responsive-stack {
+    flex-direction: row;
+  }
+}
+
+.responsive-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.responsive-full {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Safe Area Support (iOS) */
+.safe-area-inset {
+  padding-top: env(safe-area-inset-top);
+  padding-right: env(safe-area-inset-right);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+}
+
+.safe-area-inset-top {
+  padding-top: env(safe-area-inset-top);
+}
+
+.safe-area-inset-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Scrollbar Styling */
+.scrollbar-thin {
+  scrollbar-width: thin;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 3px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.5);
+}

@@ -1181,7 +1181,6 @@ tbody tr:hover {
   background: #0d47a1;
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0,0,0,0.15);
->>>>>>> 0cbe113c3e8084e85b3a87e4a4efa37bb58a28bc
 }
 
 .search-input::placeholder {
@@ -1303,7 +1302,7 @@ tbody tr:hover {
 
 .modal-field {
   margin-bottom: 20px;
-=======
+
 /* Estilos para la imagen ampliada */
 .imagen-ampliada-container {
   position: relative;
@@ -1393,7 +1392,6 @@ tbody tr:hover {
 .modal-field textarea {
   min-height: 80px;
   resize: vertical;
->>>>>>> 0cbe113c3e8084e85b3a87e4a4efa37bb58a28bc
 }
 
 .modal-field label {
@@ -1432,11 +1430,9 @@ tbody tr:hover {
 
 .modal-actions {
   display: flex;
-<<<<<<< HEAD
   gap: 16px;
   justify-content: center;
   margin-top: 32px;
-=======
   gap: 12px;
   justify-content: flex-end;
   margin-top: 10px;
@@ -1458,11 +1454,9 @@ tbody tr:hover {
 .save-btn:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow-medium);
-=======
   background: #1b5e20;
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0,0,0,0.15);
->>>>>>> 0cbe113c3e8084e85b3a87e4a4efa37bb58a28bc
 }
 
 .close-btn {
@@ -1479,7 +1473,6 @@ tbody tr:hover {
 }
 
 .close-btn:hover {
-<<<<<<< HEAD
   transform: translateY(-2px);
   box-shadow: var(--shadow-medium);
 }
@@ -1512,7 +1505,6 @@ tbody tr:hover {
   .modal-content {
     width: 350px;
     padding: 24px;
-=======
   background: #8e0000;
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0,0,0,0.15);
@@ -1532,7 +1524,7 @@ tbody tr:hover {
   .save-btn, .close-btn {
     width: 100%;
     padding: 12px;
->>>>>>> 0cbe113c3e8084e85b3a87e4a4efa37bb58a28bc
   }
 }
+}}
 </style>

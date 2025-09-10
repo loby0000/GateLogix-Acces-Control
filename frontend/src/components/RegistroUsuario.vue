@@ -767,11 +767,10 @@ body {
   background-repeat: no-repeat;
 }
 
-<<<<<<< HEAD
 
 .fade-enter-active, .fade-leave-active {
   transition: opacity 2s ease-in-out;
-=======
+
 .background-image::before {
   content: '';
   position: absolute;

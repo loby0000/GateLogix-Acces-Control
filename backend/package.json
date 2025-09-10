@@ -12,7 +12,12 @@
     "production": "NODE_ENV=production node src/index.js",
     "cluster": "NODE_ENV=production pm2 start ecosystem.config.js"
   },
-  "keywords": ["gatelogix", "access-control", "optimized", "scalable"],
+  "keywords": [
+    "gatelogix",
+    "access-control",
+    "optimized",
+    "scalable"
+  ],
   "author": "GateLogix Team",
   "license": "ISC",
   "dependencies": {
@@ -28,6 +33,7 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.17.0",
     "morgan": "^1.10.1",
+    "redis": "^5.8.2",
     "sharp": "^0.33.1"
   },
   "devDependencies": {

@@ -4,6 +4,7 @@ const Guardia = require('../models/Guardia');
 const Log = require('../models/Logs');
 const { generarCodigoBarras } = require('../utils/barcodeGenerator'); // ✅ Importación corregida
 const Historial = require('../models/Historial');
+const cacheService = require('../utils/cacheService');
 
 
 exports.registrar = async (req, res) => {
@@ -102,6 +103,10 @@ exports.registrar = async (req, res) => {
     }
 
 
+    // 🔄 Invalidar caché de usuarios
+    await cacheService.delUserPattern();
+    console.log('🔄 Caché de usuarios invalidado tras registro');
+
     // 🚀 Respuesta
     res.status(201).json({
       message: 'Usuario registrado con éxito',
@@ -121,6 +126,15 @@ exports.buscarPorSerial = async (req, res) => {
     const { serial } = req.params;
     if (!serial) {
       return res.status(400).json({ message: "Debe enviar un serial" });
+    }
+
+    // 🚀 Intentar obtener del caché primero
+    const cacheKey = `user:serial:${serial}`;
+    const cachedUser = await cacheService.get(cacheKey);
+    
+    if (cachedUser) {
+      console.log(`✅ Usuario encontrado en caché: ${serial}`);
+      return res.json(cachedUser);
     }
 
     // 🚀 Optimización: consulta ultra-rápida con índice y proyección mínima
@@ -145,6 +159,10 @@ exports.buscarPorSerial = async (req, res) => {
       return res.status(404).json({ message: "Usuario no encontrado" });
     }
 
+    // 💾 Guardar en caché por 10 minutos
+    await cacheService.setUser(cacheKey, usuario, 600);
+    console.log(`💾 Usuario guardado en caché: ${serial}`);
+
     // 🎯 Respuesta optimizada sin logs innecesarios
     res.json(usuario);
   } catch (err) {
@@ -158,6 +176,15 @@ exports.buscarPorDocumento = async (req, res) => {
     const { numeroDocumento } = req.params;
     if (!numeroDocumento) {
       return res.status(400).json({ message: "Debe enviar un número de documento" });
+    }
+
+    // 🚀 Intentar obtener del caché primero
+    const cacheKey = `user:doc:${numeroDocumento}`;
+    const cachedUser = await cacheService.get(cacheKey);
+    
+    if (cachedUser) {
+      console.log(`✅ Usuario encontrado en caché: ${numeroDocumento}`);
+      return res.json(cachedUser);
     }
 
     // 🚀 Optimización: consulta ultra-rápida con índice único
@@ -182,6 +209,10 @@ exports.buscarPorDocumento = async (req, res) => {
       return res.status(404).json({ message: "Usuario no encontrado" });
     }
 
+    // 💾 Guardar en caché por 10 minutos
+    await cacheService.setUser(cacheKey, usuario, 600);
+    console.log(`💾 Usuario guardado en caché: ${numeroDocumento}`);
+
     res.json(usuario);
   } catch (err) {
     console.error("❌ Error buscarPorDocumento:", err.message);
@@ -196,6 +227,15 @@ exports.listarTodos = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
+    
+    // 🚀 Intentar obtener del caché primero
+    const cacheKey = `users:list:page:${page}:limit:${limit}`;
+    const cachedResult = await cacheService.get(cacheKey);
+    
+    if (cachedResult) {
+      console.log(`✅ Lista de usuarios encontrada en caché: página ${page}`);
+      return res.json(cachedResult);
+    }
     
     // Contar total de documentos para metadata de paginación
     const total = await UsuarioEquipo.countDocuments();
@@ -222,8 +262,8 @@ exports.listarTodos = async (req, res) => {
       foto: u.foto || null,
     }));
 
-    // Enviar respuesta con metadata de paginación
-    res.json({
+    // Preparar respuesta con metadata de paginación
+    const response = {
       usuarios: usuariosPlanos,
       pagination: {
         total,
@@ -231,7 +271,14 @@ exports.listarTodos = async (req, res) => {
         limit,
         pages: Math.ceil(total / limit)
       }
-    });
+    };
+    
+    // 💾 Guardar en caché por 5 minutos
+    await cacheService.setUser(cacheKey, response, 300);
+    console.log(`💾 Lista de usuarios guardada en caché: página ${page}`);
+    
+    // Enviar respuesta
+    res.json(response);
   } catch (err) {
     console.error("❌ Error al listar usuarios:", err);
     res.status(500).json({ message: "Error al obtener usuarios" });
@@ -280,6 +327,10 @@ exports.actualizar = async (req, res) => {
     });
 
     await usuario.save();
+    
+    // 🔄 Invalidar caché de usuarios
+    await cacheService.delUserPattern();
+    console.log('🔄 Caché de usuarios invalidado tras actualización');
     
     console.log('Usuario actualizado con éxito, foto:', usuario.foto ? 'Presente' : 'No presente');
 

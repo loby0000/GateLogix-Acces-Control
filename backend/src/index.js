@@ -9,7 +9,10 @@ const historialRoutes = require('./routes/historialRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const guardiaRoutes = require('./routes/guardiaRoutes');
 const usuarioEquipoRoutes = require('./routes/usuarioEquipoRoutes');
+const cacheRoutes = require('./routes/cacheRoutes');
+const estadisticasRoutes = require('./routes/estadisticasRoutes');
 const initEmergencyAdmin = require('./config/initAdmin');
+const { createRedisClient, closeRedisConnection } = require('./config/redis');
 
 const app = express();
 
@@ -29,20 +32,59 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/guardia', guardiaRoutes);
 app.use('/api/usuario-equipo', usuarioEquipoRoutes);
 app.use('/api/historial', historialRoutes);
+app.use('/api/cache', cacheRoutes);
+app.use('/api/estadisticas', estadisticasRoutes);
 
 // Ruta base
 app.get('/', (req, res) => res.send('API funcionando'));
 
-// Conexión a MongoDB y creación del admin de emergencia
-mongoose.connect(process.env.MONGODB_URI)
-  .then(async () => {
+// Función para inicializar servicios
+const initializeServices = async () => {
+  try {
+    // Conectar a MongoDB
+    await mongoose.connect(process.env.MONGODB_URI);
     console.log('✅ Conectado a MongoDB');
-    await initEmergencyAdmin(); // 👈 Aquí se crea el admin si no existe
+    
+    // Inicializar Redis (opcional - no bloquea si falla)
+    await createRedisClient();
+    
+    // Crear admin de emergencia
+    await initEmergencyAdmin();
+    
+    // Iniciar servidor
     const PORT = process.env.PORT || 3000;
-    app.listen(PORT, () => {
+    const server = app.listen(PORT, () => {
       console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
+      console.log(`📊 Dashboard: http://localhost:${PORT}`);
+      console.log(`🔧 API Base: http://localhost:${PORT}/api`);
     });
-  })
-  .catch(err => {
-    console.error('❌ Error al conectar a MongoDB:', err);
-  });
+    
+    // Manejo de cierre graceful
+    process.on('SIGTERM', async () => {
+      console.log('🛑 Cerrando servidor...');
+      await closeRedisConnection();
+      await mongoose.connection.close();
+      server.close(() => {
+        console.log('✅ Servidor cerrado correctamente');
+        process.exit(0);
+      });
+    });
+    
+    process.on('SIGINT', async () => {
+      console.log('🛑 Cerrando servidor...');
+      await closeRedisConnection();
+      await mongoose.connection.close();
+      server.close(() => {
+        console.log('✅ Servidor cerrado correctamente');
+        process.exit(0);
+      });
+    });
+    
+  } catch (error) {
+    console.error('❌ Error inicializando servicios:', error);
+    process.exit(1);
+  }
+};
+
+// Inicializar aplicación
+initializeServices();

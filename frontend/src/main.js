@@ -5,6 +5,8 @@ import 'bootstrap/dist/css/bootstrap.min.css'
 import router from './router'
 import Toast from 'vue-toastification'
 import 'vue-toastification/dist/index.css'
+import httpCacheInterceptor from './services/httpInterceptor.js'
+import axios from 'axios'
 
 // Configuración global para manejar errores de red
 window.addEventListener('error', function(e) {
@@ -28,7 +30,16 @@ document.addEventListener('error', function(e) {
   }
 }, true);
 
+// Configurar interceptores HTTP con caché
+const configuredAxios = httpCacheInterceptor.setup(axios);
+
+// Configurar URL base para Axios
+configuredAxios.defaults.baseURL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
+// Hacer Axios disponible globalmente
 const app = createApp(App)
+app.config.globalProperties.$http = configuredAxios;
+app.provide('$http', configuredAxios);
 
 // Opciones de configuración para las notificaciones toast
 const toastOptions = {

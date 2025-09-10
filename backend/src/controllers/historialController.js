@@ -1,6 +1,8 @@
 const Historial = require("../models/Historial");
 const UsuarioEquipo = require("../models/UsuarioEquipo");
 const Guardia = require("../models/Guardia");
+const cacheService = require("../utils/cacheService");
+const { invalidarCacheEstadisticas } = require('./estadisticasController');
 
 // 📌 Registrar entrada o salida - OPTIMIZADO para alta concurrencia
 exports.registrarMovimiento = async (req, res) => {
@@ -51,6 +53,13 @@ exports.registrarMovimiento = async (req, res) => {
         }
       );
 
+      // 🔹 Invalidar caché de historial y estadísticas
+      await Promise.all([
+        cacheService.delHistoryPattern(),
+        invalidarCacheEstadisticas()
+      ]);
+      console.log('🗑️  Caché de historial y estadísticas invalidado (salida)');
+
       return res.json({ 
         msg: "✅ Salida registrada", 
         tipo: "salida",
@@ -70,6 +79,13 @@ exports.registrarMovimiento = async (req, res) => {
 
       await nuevoHistorial.save();
 
+      // 🔹 Invalidar caché de historial y estadísticas
+      await Promise.all([
+        cacheService.delHistoryPattern(),
+        invalidarCacheEstadisticas()
+      ]);
+      console.log('🗑️  Caché de historial y estadísticas invalidado (entrada)');
+
       return res.json({ 
         msg: "✅ Entrada registrada", 
         tipo: "entrada",
@@ -83,18 +99,50 @@ exports.registrarMovimiento = async (req, res) => {
   }
 };
 
-// 📌 Listar todos los registros
+// 📌 Listar historial con paginación y filtros - OPTIMIZADO con Redis
 exports.listarHistorial = async (req, res) => {
   try {
-    const historial = await Historial.find()
+    const { page = 1, limit = 50, usuario, fecha, tipo } = req.query;
+    const skip = (page - 1) * limit;
+
+    // 🔹 Generar clave de caché
+    const cacheKey = `historial:list:${page}:${limit}:${usuario || ''}:${fecha || ''}:${tipo || ''}`;
+    
+    // 🔹 Intentar obtener del caché
+    const cachedData = await cacheService.getHistory(cacheKey);
+    if (cachedData) {
+      console.log(`⚡ Cache HIT: Lista historial página ${page}`);
+      return res.json(cachedData);
+    }
+
+    // 🚀 Construir filtros dinámicos
+    const filtros = {};
+    if (usuario) filtros["usuario.nombre"] = new RegExp(usuario, "i");
+    if (fecha) {
+      const fechaInicio = new Date(fecha);
+      const fechaFin = new Date(fecha);
+      fechaFin.setDate(fechaFin.getDate() + 1);
+      filtros.createdAt = { $gte: fechaInicio, $lt: fechaFin };
+    }
+    if (tipo) filtros.tipo = tipo;
+
+    const historial = await Historial.find(filtros)
       .populate("usuario", "nombre numeroDocumento email")
       .populate("guardia", "nombre documento")
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit))
+      .lean()
+      .maxTimeMS(5000);
+
+    // 🔹 Guardar en caché por 3 minutos
+    await cacheService.setHistory(cacheKey, historial, 180);
+    console.log(`💾 Historial guardado en caché: página ${page}`);
 
     res.json(historial);
   } catch (err) {
-    console.error("❌ Error listarHistorial:", err);
-    res.status(500).json({ msg: "Error en el servidor" });
+    console.error("❌ Error listarHistorial:", err.message);
+    res.status(500).json({ msg: "Error en el servidor", error: err.message });
   }
 };
 

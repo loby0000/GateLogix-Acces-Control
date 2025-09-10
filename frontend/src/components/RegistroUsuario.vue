@@ -221,20 +221,20 @@ export default {
           alt: 'Vigilante de seguridad registrando equipos de cómputo'
         },
         {
-          url: 'https://images.unsplash.com/photo-1573164713714-d95e436ab8d6?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&h=1080&q=80',
-          alt: 'Personal de seguridad verificando laptops y dispositivos'
+          url: 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&h=1080&q=80',
+          alt: 'Personal de seguridad en oficina corporativa'
         },
         {
           url: 'https://images.unsplash.com/photo-1551434678-e076c223a692?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&h=1080&q=80',
           alt: 'Centro de control de acceso con tecnología moderna'
         },
         {
-          url: 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&h=1080&q=80',
-          alt: 'Oficina corporativa con sistemas de registro'
+          url: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&h=1080&q=80',
+          alt: 'Edificio empresarial con sistemas de seguridad'
         },
         {
-          url: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&h=1080&q=80',
-          alt: 'Edificio empresarial con control de acceso'
+          url: 'https://images.unsplash.com/photo-1573164713714-d95e436ab8d6?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&h=1080&q=80',
+          alt: 'Sistemas de vigilancia y control de acceso'
         }
       ]
     };
@@ -690,10 +690,19 @@ async onScanDetected(scannedSerial) {
           this.toast.warning("No se pudo registrar la entrada automáticamente. Podrá hacerlo manualmente.");
         }
       }
+>>>>>>> 0cbe113c3e8084e85b3a87e4a4efa37bb58a28bc
     }
   }
 };
 </script>
+<style>
+body {
+  background: #000000 !important;
+  margin: 0;
+  padding: 0;
+}
+</style>
+
 <style scoped>
 .page {
   position: fixed;
@@ -710,7 +719,7 @@ async onScanDetected(scannedSerial) {
   overflow: hidden;
   box-sizing: border-box;
   z-index: 0;
-  background: #1e293b;
+  background: transparent;
 }
 
 .input-text.error,
@@ -757,6 +766,10 @@ async onScanDetected(scannedSerial) {
   background-position: center;
   background-repeat: no-repeat;
 }
+
+
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 2s ease-in-out;
 
 .background-image::before {
   content: '';
@@ -809,7 +822,7 @@ async onScanDetected(scannedSerial) {
   text-align: center;
 }
 .form-container {
-   background: rgba(255, 255, 255, 0.1);
+   background: rgba(0, 0, 0, 0.3);
    backdrop-filter: blur(20px);
    padding: 1.5rem;
    border-radius: 20px;
@@ -820,8 +833,8 @@ async onScanDetected(scannedSerial) {
    display: flex;
    flex-direction: column;
    gap: 0.8rem;
-   box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
-   border: 1px solid rgba(255, 255, 255, 0.2);
+   box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4);
+   border: 1px solid rgba(255, 255, 255, 0.1);
    position: relative;
    z-index: 2;
    scrollbar-width: thin;

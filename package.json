@@ -1,12 +1,14 @@
 {
   "name": "registro-portatil",
   "version": "1.0.0",
+  "type": "module",
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",
     "dev": "cd backend && nodemon src/index.js"
   },
   "dependencies": {
+    "@tailwindcss/postcss": "^4.1.13",
     "axios": "^1.11.0",
     "bcrypt": "^5.1.0",
     "bootstrap": "^5.3.7",

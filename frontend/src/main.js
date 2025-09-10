@@ -1,7 +1,7 @@
 import { createApp } from 'vue'
 import './style.css'
+import './responsive-utilities.css'
 import App from './App.vue'
-import 'bootstrap/dist/css/bootstrap.min.css'
 import router from './router'
 import Toast from 'vue-toastification'
 import 'vue-toastification/dist/index.css'

@@ -29,10 +29,10 @@ export default {
     if (code.length > 4) {  // los códigos suelen ser largos
       console.log("📸 Escaneado limpio:", code);
 
-      // Redirigir a la ruta con serial
+      // Redirigir a la ruta con serial como query parameter
       this.$router.push({
-        name: "RegistroUsuariosYaResgSerial",
-        params: { serial: code }
+        name: "RegistroUsuariosYaResg",
+        query: { serial: code }
       });
     }
     this.scannedInput = "";

@@ -173,6 +173,22 @@ async function confirmarRegistro() {
     if (res.ok) {
       alert('✅ Operación realizada con éxito')
       limpiarCampos()
+      // Emitir evento para actualizar la tabla de guardias en GestionGuardia.vue
+      const guardiasActualizadosEvent = new CustomEvent('guardias-actualizados')
+      document.dispatchEvent(guardiasActualizadosEvent)
+      window.dispatchEvent(guardiasActualizadosEvent)
+      
+      // Emitir evento específico para actualizar solo el contador de registros
+      if (tipoIngreso.value === 'guardia') {
+        const registrosActualizadosEvent = new CustomEvent('registros-actualizados', {
+          detail: {
+            guardiaId: data.guardiaId, // ID del guardia registrado
+            registros: data.registros || 0 // Contador actualizado
+          }
+        })
+        document.dispatchEvent(registrosActualizadosEvent)
+        window.dispatchEvent(registrosActualizadosEvent)
+      }
       router.push({ name: 'login' })
     } else {
       alert(data.message || '❌ Error en la operación')
@@ -391,7 +407,6 @@ function limpiarCampos() {
 .modal-content-confirm .btn-secondary:active {
   transform: translateY(0);
 }
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 /* Variables CSS */
 :root {

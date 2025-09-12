@@ -42,7 +42,7 @@ exports.obtenerEstadisticasDashboard = async (req, res) => {
       
       // Usuarios actualmente adentro
       Historial.countDocuments({
-        estado: 'Adentro',
+        estado: 'Ingreso',
         salida: null
       })
     ]);

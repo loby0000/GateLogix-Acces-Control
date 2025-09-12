@@ -275,8 +275,8 @@ async onScanDetected(scannedSerial) {
 
   try {
     // Usar URL relativa para evitar problemas de CORS y carga
-    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
-    const url = `${baseUrl}/usuario-equipo/buscar/${encodeURIComponent(serial)}`;
+    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+    const url = `${baseUrl}/api/usuario-equipo/buscar/${encodeURIComponent(serial)}`;
     
     const token = localStorage.getItem("token");
     if (!token) {
@@ -488,8 +488,8 @@ async onScanDetected(scannedSerial) {
         }
 
         // Usar URL relativa o desde variables de entorno
-        const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
-        const url = `${baseUrl}/usuario-equipo/registrar`;
+        const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+        const url = `${baseUrl}/api/usuario-equipo/registrar`;
         
         console.log('Enviando payload al backend:', JSON.stringify(payload).length, 'caracteres');
         console.log('Payload contiene foto:', payload.foto ? 'Sí' : 'No');
@@ -508,6 +508,9 @@ async onScanDetected(scannedSerial) {
         this.mostrarCodigoModal = true;
         this.codigoBarrasUrl = `data:image/png;base64,${res.data.codigoBarrasBase64}`;
         this.registroExitoso = true;
+        
+        // Emitir evento para actualizar la tabla de guardias
+        window.dispatchEvent(new CustomEvent('guardias-actualizados'));
       } catch (err) {
         console.error("❌ Error al registrar:", err.response?.data || err.message);
         
@@ -666,8 +669,8 @@ async onScanDetected(scannedSerial) {
         const payload = JSON.parse(atob(token.split('.')[1]));
         const docGuardia = payload.documento;
 
-        const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
-        const url = `${baseUrl}/historial/registrar`;
+        const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+        const url = `${baseUrl}/api/historial/entrada`;
 
         const response = await axios.post(url, {
           serial: serial,
@@ -690,7 +693,6 @@ async onScanDetected(scannedSerial) {
           this.toast.warning("No se pudo registrar la entrada automáticamente. Podrá hacerlo manualmente.");
         }
       }
->>>>>>> 0cbe113c3e8084e85b3a87e4a4efa37bb58a28bc
     }
   }
 };
@@ -770,7 +772,7 @@ body {
 
 .fade-enter-active, .fade-leave-active {
   transition: opacity 2s ease-in-out;
-
+}
 .background-image::before {
   content: '';
   position: absolute;

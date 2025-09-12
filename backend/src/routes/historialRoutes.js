@@ -3,8 +3,13 @@ const router = express.Router();
 const historialCtrl = require("../controllers/historialController");
 const { verifyToken } = require("../middleware/authMiddleware");
 
-// Registrar entrada/salida
+// Registrar entrada/salida - Ruta principal
 router.post("/registrar", verifyToken, historialCtrl.registrarMovimiento);
+
+// Rutas alternativas para compatibilidad con el frontend
+// Estas rutas son necesarias porque el frontend está haciendo solicitudes a estas URLs
+router.post("/entrada", verifyToken, historialCtrl.registrarMovimiento);
+router.post("/salida", verifyToken, historialCtrl.registrarMovimiento);
 
 // Listar historial
 router.get("/listar", verifyToken, historialCtrl.listarHistorial);

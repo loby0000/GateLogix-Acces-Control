@@ -19,6 +19,12 @@ router.get('/buscar/:documento', verifyToken, cacheMiddleware(600), guardiaCtrl.
 // PUT /api/guardia/estado/:id - Actualizar estado de guardia
 router.put('/estado/:id', verifyToken, guardiaCtrl.actualizarEstado);
 
+// PUT /api/guardia/registros/:id - Incrementar registros de guardia
+router.put('/registros/:id', verifyToken, guardiaCtrl.incrementarRegistros);
+
+// PUT /api/guardia/actualizar/:id - Actualizar datos de guardia (nombre y jornada)
+router.put('/actualizar/:id', verifyToken, guardiaCtrl.actualizarGuardia);
+
 // GET /api/guardia/perfil - Perfil del guardia autenticado
 router.get('/perfil', verifyToken, (req, res) => {
   res.json({ message: `Guardia autenticado: ${req.user.documento}` });

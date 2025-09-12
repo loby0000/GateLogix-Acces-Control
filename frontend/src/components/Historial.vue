@@ -46,30 +46,41 @@
       <!-- Estadísticas -->
       <div class="stats-bar">
         <span class="stat-item">
-          👥 Usuarios hoy: <strong>{{ totalRecords }}</strong>
+          👥 Usuarios hoy: <strong>{{ stats.total }}</strong>
+          </span>
+          <span class="stat-item" v-if="allRecords.length > 0">
+            📊 Total histórico: <strong>{{ allRecords.length }}</strong> registros
+          </span>
+          <span class="stat-item">
+            🟢 Adentro: <strong>{{ stats.adentro }}</strong>
+          </span>
+          <span class="stat-item">
+            🔴 Afuera: <strong>{{ stats.afuera }}</strong>
+          </span>
+          <span class="stat-item" v-if="searchQuery || selectedType">
+            🔍 Filtrados: <strong>{{ filteredRecords.length }}</strong> usuarios
         </span>
-        <span class="stat-item" v-if="allRecords.length > 0">
-          📊 Total histórico: <strong>{{ allRecords.length }}</strong> registros
-        </span>
-        <span class="stat-item" v-if="searchQuery || selectedType">
-          🔍 Filtrados: <strong>{{ filteredRecords.length }}</strong> usuarios
-        </span>
+        <button class="refresh-btn" @click="cargarHistorial" :disabled="loading" title="Actualizar datos">
+          <span class="refresh-icon" :class="{ 'spinning': loading }">🔄</span>
+          {{ loading ? 'Actualizando...' : 'Actualizar' }}
+        </button>
         <span class="stat-item info-text">
           💡 Haz clic en un nombre para ver el historial completo del usuario
         </span>
       </div>
 
       <!-- Tabla de historial -->
-      <table v-if="!loading && !error" class="records-table">
+      <div class="table-container">
+        <table v-if="!loading && !error" class="records-table">
         <thead>
           <tr>
              <th>Usuario</th>
              <th>Documento</th>
              <th>Serial del equipo</th>
-             <th>Entrada</th>
-             <th>Salida</th>
+             <th>Última Entrada</th>
+             <th>Última Salida</th>
              <th>Guardia</th>
-             <th>Tipo</th>
+             <th>Estado Actual</th>
            </tr>
         </thead>
         <tbody>
@@ -80,23 +91,27 @@
                </span>
              </td>
              <td>{{ record.documento }}</td>
-             <td class="serial-cell" :title="record.serial">{{ record.serial }}</td>
-             <td class="fecha-cell">{{ record.entrada }}</td>
-             <td class="fecha-cell">{{ record.salida || '---' }}</td>
-             <td :title="record.nombreGuardia">{{ record.docGuardia }}</td>
+             <td>{{ record.serial }}</td>
+             <td>{{ record.ultimaEntrada ? formatearFechaSimple(record.ultimaEntrada) : '---' }}</td>
+             <td>{{ record.ultimaSalida ? formatearFechaSimple(record.ultimaSalida) : '' }}</td>
+             <td>{{ record.nombreGuardia || '' }}</td>
              <td>
-               <span :class="['type-badge', record.tipo.toLowerCase()]">
-                 {{ record.tipo }}
-               </span>
-             </td>
+                <span :class="{
+                  'badge-entrada': record.estadoActual === 'Entrada',
+                  'badge-salida': record.estadoActual === 'Salida'
+                }">
+                  {{ record.estadoActual }}
+                </span>
+              </td>
            </tr>
            <tr v-if="filteredRecords.length === 0 && !loading">
-             <td colspan="7" class="no-results">
+             <td colspan="6" class="no-results">
                {{ searchQuery || selectedType ? 'No se encontraron registros con los filtros aplicados' : 'No hay registros de historial' }}
              </td>
            </tr>
         </tbody>
       </table>
+      </div>
     </div>
 
     <!-- Modal de historial completo del usuario -->
@@ -127,8 +142,8 @@
             <tbody>
               <tr v-for="(record, index) in userHistoryRecords" :key="record.id || index">
                 <td class="fecha-cell">{{ formatearFechaSolo(record.fechaCreacion) }}</td>
-                <td class="fecha-cell">{{ record.entrada }}</td>
-                <td class="fecha-cell">{{ record.salida || '---' }}</td>
+                <td class="fecha-cell">{{ record.entradaFormateada || '---' }}</td>
+                <td class="fecha-cell">{{ record.salidaFormateada || '---' }}</td>
                 <td>{{ record.nombreGuardia }}</td>
                 <td>
                   <span :class="['estado-badge', record.estado.toLowerCase()]">
@@ -177,14 +192,31 @@ export default {
       // Paginación
       currentPage: 1,
       recordsPerPage: 50,
-      totalRecords: 0
+      totalRecords: 0,
+      intervalId: null, // Para la actualización automática
+      stats: {
+        total: 0,
+        adentro: 0,
+        afuera: 0
+      }
     };
   },
   async mounted() {
     await this.cargarHistorial();
+    // 🔹 Actualización automática cada 30 segundos
+    this.intervalId = setInterval(() => {
+      this.cargarHistorial();
+    }, 30000);
+  },
+
+  beforeUnmount() {
+    // 🔹 Limpiar intervalo al destruir el componente
+    if (this.intervalId) {
+      clearInterval(this.intervalId);
+    }
   },
   methods: {
-    // 🔹 Cargar historial desde el backend (solo del día actual)
+    // 🔹 Cargar historial desde el backend
     async cargarHistorial() {
       this.loading = true;
       this.error = null;
@@ -196,8 +228,10 @@ export default {
           return;
         }
 
+        // Forzar refresco desde el servidor sin usar caché
+        const timestamp = new Date().getTime();
         const response = await axios.get(
-          'http://localhost:3000/api/historial/listar',
+          `http://localhost:3000/api/historial/listar?t=${timestamp}`,
           {
             headers: { Authorization: `Bearer ${token}` },
             timeout: 10000
@@ -211,53 +245,122 @@ export default {
           documento: record.usuario?.numeroDocumento || 'N/A',
           email: record.usuario?.email || 'N/A',
           serial: record.serial || 'N/A',
-          entrada: this.formatearFecha(record.entrada),
-          salida: record.salida ? this.formatearFecha(record.salida) : null,
+          entrada: record.entrada,
+          entradaFormateada: this.formatearFecha(record.entrada),
+          salida: record.salida,
+          salidaFormateada: record.salida ? this.formatearFecha(record.salida) : null,
           docGuardia: record.docGuardia || record.guardia?.documento || 'N/A',
           nombreGuardia: record.guardia?.nombre || 'N/A',
           estado: record.estado || 'N/A',
           tipo: this.determinarTipo(record),
           fechaCreacion: record.createdAt,
           fechaEntrada: new Date(record.entrada),
+          fechaSalida: record.salida ? new Date(record.salida) : null,
           usuarioId: record.usuario?._id,
           raw: record // Datos originales para referencia
         }));
 
-        // 🔹 Filtrar solo registros del día actual
-        const hoy = new Date();
-        hoy.setHours(0, 0, 0, 0);
-        const mañana = new Date(hoy);
-        mañana.setDate(mañana.getDate() + 1);
-
-        const registrosDelDia = allRecords.filter(record => {
-          const fechaRegistro = record.fechaEntrada;
-          return fechaRegistro >= hoy && fechaRegistro < mañana;
-        });
-
-        // 🔹 Agrupar por usuario y mostrar solo el último registro de cada uno
-        const usuariosUnicos = new Map();
+        // 🔹 Guardar TODOS los registros históricos para el modal
+        this.allRecords = allRecords;
         
-        registrosDelDia.forEach(record => {
+        // 🔹 Agrupar por usuario para mostrar solo el último estado de cada uno
+        const usuariosMap = new Map();
+        
+        // Agrupar todos los registros por usuario
+        allRecords.forEach(record => {
           const usuarioKey = record.usuarioId || record.documento;
-          const registroExistente = usuariosUnicos.get(usuarioKey);
           
-          // Si no existe o el registro actual es más reciente, lo reemplaza
-          if (!registroExistente || new Date(record.fechaCreacion) > new Date(registroExistente.fechaCreacion)) {
-            usuariosUnicos.set(usuarioKey, record);
+          if (!usuariosMap.has(usuarioKey)) {
+            // Inicializar el usuario con datos básicos
+            usuariosMap.set(usuarioKey, {
+              id: record.id,
+              usuario: record.usuario,
+              documento: record.documento,
+              email: record.email,
+              serial: record.serial,
+              ultimaEntrada: null,
+              ultimaSalida: null,
+              nombreGuardia: null,
+              estadoActual: null,
+              registros: [] // Todos los registros de este usuario
+            });
+          }
+          
+          // Añadir este registro a la lista de registros del usuario
+          const usuarioData = usuariosMap.get(usuarioKey);
+          usuarioData.registros.push(record);
+        });
+        
+        // Procesar cada usuario para determinar su último estado
+        usuariosMap.forEach(usuario => {
+          // Ordenar registros por fecha (más reciente primero)
+          usuario.registros.sort((a, b) => {
+            const fechaA = a.fechaEntrada;
+            const fechaB = b.fechaEntrada;
+            return fechaB - fechaA;
+          });
+          
+          // Encontrar la última entrada y salida
+          let ultimaEntrada = null;
+          let ultimaSalida = null;
+          let nombreGuardia = null;
+          
+          for (const registro of usuario.registros) {
+            // Si encontramos una entrada y aún no tenemos una última entrada
+            if (registro.entrada && (!ultimaEntrada || new Date(registro.entrada) > new Date(ultimaEntrada))) {
+              ultimaEntrada = registro.entrada;
+              nombreGuardia = registro.nombreGuardia;
+            }
+            
+            // Si encontramos una salida y aún no tenemos una última salida
+            if (registro.salida && (!ultimaSalida || new Date(registro.salida) > new Date(ultimaSalida))) {
+              ultimaSalida = registro.salida;
+              nombreGuardia = registro.nombreGuardia;
+            }
+          }
+          
+          usuario.ultimaEntrada = ultimaEntrada;
+          usuario.ultimaSalida = ultimaSalida;
+          usuario.nombreGuardia = nombreGuardia;
+          
+          // Determinar estado actual basado en la última acción
+          if (ultimaEntrada && ultimaSalida) {
+            // Si hay entrada y salida, comparar fechas
+            if (new Date(ultimaEntrada) > new Date(ultimaSalida)) {
+              usuario.estadoActual = 'Entrada';
+            } else {
+              usuario.estadoActual = 'Salida';
+            }
+          } else if (ultimaEntrada) {
+            usuario.estadoActual = 'Entrada';
+          } else {
+            usuario.estadoActual = 'Desconocido';
           }
         });
 
-        // Convertir el Map a array y ordenar por fecha más reciente
-        this.records = Array.from(usuariosUnicos.values())
-          .sort((a, b) => new Date(b.fechaCreacion) - new Date(a.fechaCreacion));
-
-        // Guardar todos los registros para el modal
-        this.allRecords = allRecords;
+        // Convertir a array y ordenar por entrada más reciente
+        this.records = Array.from(usuariosMap.values())
+          .sort((a, b) => {
+            const fechaA = a.ultimaEntrada ? new Date(a.ultimaEntrada) : new Date(0);
+            const fechaB = b.ultimaEntrada ? new Date(b.ultimaEntrada) : new Date(0);
+            return fechaB - fechaA;
+          });
         
         this.totalRecords = this.records.length;
         this.filteredRecords = [...this.records];
         
-        console.log(`✅ Usuarios únicos del día: ${this.records.length} (de ${registrosDelDia.length} movimientos totales)`);
+        // 🔹 Calcular estadísticas
+        const totalUsuarios = this.records.length;
+        const usuariosAdentro = this.records.filter(r => r.estadoActual === 'Entrada').length;
+        const usuariosAfuera = this.records.filter(r => r.estadoActual === 'Salida').length;
+        
+        this.stats = {
+          total: totalUsuarios,
+          adentro: usuariosAdentro,
+          afuera: usuariosAfuera
+        };
+       
+        console.log(`✅ Usuarios registrados: ${this.records.length} (${usuariosAdentro} adentro, ${usuariosAfuera} afuera)`);
         console.log(`📊 Total histórico: ${allRecords.length} registros`);
         
       } catch (err) {
@@ -319,6 +422,25 @@ export default {
         return fecha;
       }
     },
+    
+    // 🔹 Formatear fecha simplificada para la tabla principal
+    formatearFechaSimple(fecha) {
+      if (!fecha) return 'N/A';
+      
+      try {
+        const date = new Date(fecha);
+        return date.toLocaleString('es-ES', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+      } catch (err) {
+        console.error('Error formateando fecha:', err);
+        return fecha;
+      }
+    },
 
     // 🔹 Filtrar tabla con búsqueda mejorada
     filterTable() {
@@ -330,22 +452,23 @@ export default {
           record.usuario,
           record.documento,
           record.serial,
-          record.entrada,
-          record.salida,
-          record.docGuardia,
-          record.nombreGuardia,
-          record.email
+          record.email,
+          record.ultimaEntrada ? this.formatearFechaSimple(record.ultimaEntrada) : '',
+          record.ultimaSalida ? this.formatearFechaSimple(record.ultimaSalida) : '',
+          record.estadoActual
         ].some(field => 
           field && field.toString().toLowerCase().includes(query)
         );
         
         // Filtro por tipo
-        const matchesType = !this.selectedType || record.tipo === this.selectedType;
+        const matchesType = !this.selectedType || 
+          (this.selectedType === 'Entrada' && record.estadoActual === 'Entrada') ||
+          (this.selectedType === 'Salida' && record.estadoActual === 'Salida');
         
         return matchesSearch && matchesType;
       });
       
-      console.log(`🔍 Filtros aplicados: ${this.filteredRecords.length}/${this.records.length} registros`);
+      console.log(`🔍 Filtros aplicados: ${this.filteredRecords.length}/${this.records.length} usuarios`);
     },
 
     // 🔹 Recargar historial
@@ -374,12 +497,13 @@ export default {
       this.selectedUser = record;
       
       // Filtrar todos los registros históricos del usuario
+      // Incluir todos los registros del usuario, no solo los del día actual
       this.userHistoryRecords = this.allRecords.filter(r => 
         r.usuarioId === record.usuarioId || 
         (r.documento === record.documento && r.documento !== 'N/A')
       ).sort((a, b) => new Date(b.fechaCreacion) - new Date(a.fechaCreacion));
       
-      console.log(`📋 Mostrando historial de ${record.usuario}: ${this.userHistoryRecords.length} registros`);
+      console.log(`📋 Mostrando historial completo de ${record.usuario}: ${this.userHistoryRecords.length} registros`);
       this.showModal = true;
     },
 
@@ -493,15 +617,26 @@ select:focus {
   background-color: #545b62;
 }
 
+.table-container {
+  width: 100%;
+  max-height: 600px;
+  overflow-y: auto;
+  margin-top: 2rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+}
+
 .records-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 1.05rem;
-  margin-top: 2rem;
 }
 
 .records-table thead tr {
   background-color: #f0f4f8;
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
 .records-table th,
@@ -521,14 +656,19 @@ select:focus {
   user-select: none;
 }
 
+.type-badge.entrada {
+  background-color: #fff3e0;
+  color: #f57c00;
+}
+
+.type-badge.completo {
+  background-color: #e8f5e8;
+  color: #2e7d32;
+}
+
 .type-badge.salida {
   background-color: #fceaea;
   color: #d32f2f;
-}
-
-.type-badge.entrada {
-  background-color: #e6f4ea;
-  color: #388e3c;
 }
 
 .no-results {
@@ -761,11 +901,56 @@ select:focus {
 /* 🔹 Barra de estadísticas */
 .stats-bar {
   display: flex;
-  gap: 2rem;
-  padding: 1rem 0;
-  margin-bottom: 1rem;
-  border-bottom: 1px solid #eee;
   flex-wrap: wrap;
+  gap: 20px;
+  align-items: center;
+  padding: 15px 20px;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-radius: 12px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.refresh-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0,123,255,0.3);
+}
+
+.refresh-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #0056b3 0%, #004085 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0,123,255,0.4);
+}
+
+.refresh-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.refresh-icon {
+  display: inline-block;
+  transition: transform 0.3s ease;
+}
+
+.refresh-icon.spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 .stat-item {

@@ -20,6 +20,10 @@ const guardiaSchema = new mongoose.Schema({
     enum: ['activo', 'inactivo'],
     default: 'activo',
   },
+  registros: {
+    type: Number,
+    default: 0,
+  },
   clave: {
     type: String,
     required: true,

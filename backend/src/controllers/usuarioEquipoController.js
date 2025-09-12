@@ -83,6 +83,9 @@ exports.registrar = async (req, res) => {
       detalle: `Guardia ${guardia.nombre} registró a ${numeroDocumento}`,
     });
     
+    // Incrementar el contador de registros del guardia
+    await Guardia.findByIdAndUpdate(idGuardia, { $inc: { registros: 1 } });
+    
     // Crear el usuario en la base de datos
     const nuevo = await UsuarioEquipo.create(usuarioData);
     

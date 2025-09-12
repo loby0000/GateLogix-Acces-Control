@@ -92,22 +92,24 @@
     <!-- Botón interactivo Ingreso/Salida -->
     <div class="accion-btn" v-if="usuarios.length > 0">
       <button 
-        :class="['btn-movimiento', estadoUsuario === 'Afuera' ? 'btn-ingreso' : 'btn-salida']"
+        :class="{
+          'btn': true,
+          'btn-success': estadoUsuario === 'Egreso',
+          'btn-danger': estadoUsuario === 'Ingreso'
+        }"
         @click="registrarMovimiento"
         :disabled="cargandoMovimiento"
       >
-        <span class="btn-icon">{{ estadoUsuario === 'Afuera' ? '✅' : '❌' }}</span>
-        <span class="btn-text">
-          {{ cargandoMovimiento ? 'Procesando...' : (estadoUsuario === 'Afuera' ? 'Ingreso' : 'Salida') }}
-        </span>
+        <span v-if="cargandoMovimiento" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+        {{ estadoUsuario === 'Egreso' ? 'Ingreso ✅' : 'Salida ❌' }}
       </button>
       
       <!-- Información del estado actual -->
       <div class="estado-info">
         <p class="estado-actual">
           Estado actual: 
-          <span :class="['estado-badge', estadoUsuario === 'Adentro' ? 'estado-adentro' : 'estado-afuera']">
-            {{ estadoUsuario === 'Adentro' ? 'Dentro del edificio' : 'Fuera del edificio' }}
+          <span :class="['estado-badge', estadoUsuario === 'Ingreso' ? 'estado-adentro' : 'estado-afuera']">
+            {{ estadoUsuario === 'Ingreso' ? 'Dentro del edificio' : 'Fuera del edificio' }}
           </span>
         </p>
         <p v-if="ultimoMovimiento" class="ultimo-movimiento">
@@ -236,7 +238,7 @@ export default {
       fotoAmpliadaVisible: false,
       fotoAmpliada: null,
       // Variables para control de movimientos
-      estadoUsuario: 'Afuera', // 'Adentro' o 'Afuera'
+      estadoUsuario: 'Egreso', // 'Ingreso' o 'Egreso'
       ultimoMovimiento: null,
       cargandoMovimiento: false,
     };
@@ -400,13 +402,13 @@ export default {
         );
 
         if (response.data) {
-          this.estadoUsuario = response.data.estado || 'Afuera';
+          this.estadoUsuario = response.data.estado || 'Egreso';
           this.ultimoMovimiento = response.data.ultimoMovimiento;
         }
       } catch (err) {
         console.error("❌ Error al obtener estado del usuario:", err);
-        // Por defecto, asumir que está afuera
-        this.estadoUsuario = 'Afuera';
+        // Por defecto, asumir que está fuera
+        this.estadoUsuario = 'Egreso';
       }
     },
 
@@ -432,8 +434,11 @@ export default {
            return;
          }
 
+        const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+        const url = `${baseUrl}/api/historial/entrada`;
+        
         const response = await axios.post(
-          'http://localhost:3000/api/historial/registrar',
+          url,
           {
             serial: serial,
             docGuardia: docGuardia
@@ -449,8 +454,22 @@ export default {
         // 🔹 Obtener el estado real del backend después del registro
         await this.obtenerEstadoUsuario(serial);
 
-        const accion = this.estadoUsuario === 'Adentro' ? 'Ingreso' : 'Salida';
+        // Determinar la acción basada en la respuesta del servidor
+        const accion = response.data.tipo === 'entrada' ? 'Ingreso' : 'Salida';
         this.toast.success(`${accion} registrado correctamente`);
+        
+        // Emitir evento para actualizar la tabla de guardias
+        window.dispatchEvent(new CustomEvent('guardias-actualizados'));
+        
+        // Emitir evento específico para actualizar solo el contador de registros
+        const registrosActualizadosEvent = new CustomEvent('registros-actualizados', {
+          detail: {
+            guardiaId: response.data.guardiaId, // ID del guardia
+            registros: response.data.registros // Contador actualizado
+          }
+        });
+        document.dispatchEvent(registrosActualizadosEvent);
+        window.dispatchEvent(registrosActualizadosEvent);
 
       } catch (err) {
         console.error("❌ Error al registrar movimiento:", err);
@@ -492,8 +511,11 @@ export default {
         const payload = JSON.parse(atob(token.split('.')[1]));
         const docGuardia = payload.documento;
 
+        const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+        const url = `${baseUrl}/api/historial/entrada`;
+        
         const response = await axios.post(
-          'http://localhost:3000/api/historial/registrar',
+          url,
           {
             serial: serial,
             docGuardia: docGuardia
@@ -506,6 +528,9 @@ export default {
 
         console.log("✅ Entrada registrada automáticamente:", response.data);
         this.toast.success("Entrada registrada correctamente");
+        
+        // Emitir evento para actualizar la tabla de guardias
+        window.dispatchEvent(new CustomEvent('guardias-actualizados'));
         
       } catch (err) {
         console.error("❌ Error al registrar entrada automática:", err.response?.data || err.message);

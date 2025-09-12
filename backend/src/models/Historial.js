@@ -17,8 +17,8 @@ const historialSchema = new mongoose.Schema({
   docGuardia: { type: String, default: '' },
   estado: {
     type: String,
-    enum: ['Adentro', 'Afuera'],
-    default: 'Adentro'
+    enum: ['Ingreso', 'Egreso'],
+    default: 'Ingreso'
   }
 }, { timestamps: true });
 

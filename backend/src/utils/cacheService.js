@@ -152,6 +152,10 @@ class CacheService {
     return await this.del(`${this.prefixes.user}${userId}`);
   }
 
+  async delUserPattern() {
+    return await this.delPattern(`${this.prefixes.user}*`);
+  }
+
   // Caché de historial
   async getHistory(key) {
     return await this.get(`${this.prefixes.history}${key}`);
@@ -181,6 +185,14 @@ class CacheService {
 
   async setGuard(guardId, guardData, ttl = 900) { // 15 minutos
     return await this.set(`${this.prefixes.guard}${guardId}`, guardData, ttl);
+  }
+
+  async delGuard(guardId) {
+    return await this.del(`${this.prefixes.guard}${guardId}`);
+  }
+
+  async delGuardPattern() {
+    return await this.delPattern(`${this.prefixes.guard}*`);
   }
 
   // 🔹 Limpiar todo el caché

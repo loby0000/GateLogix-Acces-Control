@@ -12,7 +12,7 @@ const usuarioEquipoRoutes = require('./routes/usuarioEquipoRoutes');
 const cacheRoutes = require('./routes/cacheRoutes');
 const estadisticasRoutes = require('./routes/estadisticasRoutes');
 const initEmergencyAdmin = require('./config/initAdmin');
-const { createRedisClient, closeRedisConnection } = require('./config/redis');
+const { createClient, closeRedisConnection } = require('./config/redis');
 
 const app = express();
 
@@ -39,6 +39,9 @@ app.use('/api/estadisticas', estadisticasRoutes);
 app.get('/', (req, res) => res.send('API funcionando'));
 
 // Función para inicializar servicios
+console.log('🚀 Iniciando aplicación GateLogix...');
+console.log('🔍 Entorno de ejecución:', process.env.NODE_ENV || 'development');
+
 const initializeServices = async () => {
   try {
     // Conectar a MongoDB
@@ -46,14 +49,18 @@ const initializeServices = async () => {
     console.log('✅ Conectado a MongoDB');
     
     // Inicializar Redis (opcional - no bloquea si falla)
-    await createRedisClient();
+    await createClient();
     
     // Crear admin de emergencia
     await initEmergencyAdmin();
     
     // Iniciar servidor
     const PORT = process.env.PORT || 3000;
-    const server = app.listen(PORT, () => {
+    console.log(`🔍 Intentando iniciar servidor en puerto: ${PORT}`);
+    console.log(`🔍 Variables de entorno: NODE_ENV=${process.env.NODE_ENV}, PORT=${process.env.PORT}`);
+    
+    const server = app.listen(PORT, '0.0.0.0', () => {
+      console.log(`✅ Servidor escuchando exitosamente en puerto: ${PORT}`);
       console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
       console.log(`📊 Dashboard: http://localhost:${PORT}`);
       console.log(`🔧 API Base: http://localhost:${PORT}/api`);
@@ -82,6 +89,8 @@ const initializeServices = async () => {
     
   } catch (error) {
     console.error('❌ Error inicializando servicios:', error);
+    console.error('❌ Detalles del error:', error.message);
+    console.error('❌ Stack trace:', error.stack);
     process.exit(1);
   }
 };

@@ -1,0 +1,34 @@
+runtime: nodejs18
+
+instance_class: F2
+
+env_variables:
+  NODE_ENV: "production"
+  PORT: "8080"
+
+handlers:
+- url: /.*
+  script: auto
+
+automatic_scaling:
+  min_instances: 1
+  max_instances: 10
+  min_idle_instances: 1
+  max_concurrent_requests: 80
+  target_throughput_utilization: 0.8
+  target_cpu_utilization: 0.7
+
+readiness_check:
+  path: "/"
+  check_interval_sec: 5
+  timeout_sec: 4
+  failure_threshold: 2
+  success_threshold: 2
+  app_start_timeout_sec: 300
+
+liveness_check:
+  path: "/"
+  check_interval_sec: 30
+  timeout_sec: 4
+  failure_threshold: 2
+  success_threshold: 2

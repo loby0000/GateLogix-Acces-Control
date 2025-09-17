@@ -1,5 +1,6 @@
 // backend/src/config/redis.js
-const redis = require('redis');
+const { createClient } = require('redis');
+require('dotenv').config();
 
 // 🔹 Configuración de Redis
 const redisConfig = {
@@ -7,52 +8,54 @@ const redisConfig = {
   local: {
     host: process.env.REDIS_HOST || 'localhost',
     port: process.env.REDIS_PORT || 6379,
-    password: process.env.REDIS_PASSWORD || undefined,
-    db: process.env.REDIS_DB || 0
+    password: process.env.REDIS_PASSWORD || '',
   },
   
   // Configuración para Redis en la nube (Redis Cloud, AWS ElastiCache, etc.)
   cloud: {
-    url: process.env.REDIS_URL || undefined
+    url: process.env.REDIS_URL || '',
+    username: 'default',
+    password: process.env.REDIS_PASSWORD || 'Ic5G2TX9afohQ14VNkYALBjlXgrty0CE',
+    host: 'redis-18535.c124.us-central1-1.gce.redns.redis-cloud.com',
+    port: 18535
   },
   
   // Configuraciones generales
   options: {
     retryDelayOnFailover: 100,
-    enableReadyCheck: true,
+    connectTimeout: 10000,
+    commandTimeout: 5000,
     maxRetriesPerRequest: 3,
-    lazyConnect: true,
-    keepAlive: 30000,
-    connectTimeout: 5000,
-    commandTimeout: 3000,
-    // Limitar reintentos para evitar bucles infinitos
-    socket: {
-      reconnectStrategy: (retries) => {
-        if (retries > 5) {
-          console.log('⚠️  Redis: Máximo de reintentos alcanzado. Funcionando sin caché.');
-          return false; // Detener reintentos
-        }
-        return Math.min(retries * 50, 3000);
-      }
-    }
-  }
+    enableReadyCheck: true,
+    lazyConnect: false,
+  },
 };
 
 // 🔹 Cliente Redis
 let redisClient = null;
 
-// 🔹 Función para crear conexión Redis
-const createRedisClient = async () => {
+/**
+ * Crea y devuelve un cliente Redis
+ * @returns {Promise<Object>} Cliente Redis
+ */
+async function createRedisClient() {
   try {
-    let clientConfig;
-    
-    // Si hay URL de Redis (nube), usarla
+    // Si ya existe un cliente y está conectado, devolverlo
+    if (redisClient && redisClient.isOpen) {
+      return redisClient;
+    }
+
+    // Configuración del cliente
+    let clientConfig = {};
+
+    // Priorizar conexión a Redis en la nube si está configurada
     if (redisConfig.cloud.url) {
       console.log('🌐 Conectando a Redis en la nube...');
       clientConfig = {
         url: redisConfig.cloud.url,
         socket: {
-          tls: true,
+          // Si la URL comienza con rediss://, habilitar TLS
+          tls: redisConfig.cloud.url.startsWith('rediss://'),
           rejectUnauthorized: false,
           keepAlive: true,
           connectTimeout: 10000,
@@ -71,48 +74,48 @@ const createRedisClient = async () => {
         lazyConnect: false
       };
     } else {
-      // Usar configuración local
       console.log('🏠 Conectando a Redis local...');
-      clientConfig = {
-        socket: {
-          host: redisConfig.local.host,
-          port: redisConfig.local.port,
-          connectTimeout: redisConfig.options.connectTimeout,
-          commandTimeout: redisConfig.options.commandTimeout
+      // Usar la configuración directa proporcionada
+      clientConfig = { 
+        username: redisConfig.cloud.username, 
+        password: redisConfig.cloud.password, 
+        socket: { 
+          host: redisConfig.cloud.host, 
+          port: redisConfig.cloud.port,
+          reconnectStrategy: (retries) => {
+            if (retries > 5) {
+              console.log('⚠️  Redis: Máximo de reintentos alcanzado. Funcionando sin caché.');
+              return false;
+            }
+            return Math.min(retries * 1000, 5000);
+          }
         },
-        password: redisConfig.local.password,
-        database: redisConfig.local.db,
         ...redisConfig.options
       };
     }
-    
+
     // Crear cliente
-    redisClient = redis.createClient(clientConfig);
-    
-    // Eventos de conexión
+    redisClient = createClient(clientConfig);
+
+    // Eventos
+    redisClient.on('error', (err) => {
+      console.log(`❌ Redis Error: ${err}`);
+    });
+
     redisClient.on('connect', () => {
       console.log('🔗 Redis: Conectando...');
     });
-    
+
     redisClient.on('ready', () => {
       console.log('✅ Redis: Conexión establecida y lista');
     });
-    
-    redisClient.on('error', (err) => {
-      console.error('❌ Redis Error:', err.message);
-    });
-    
-    redisClient.on('end', () => {
-      console.log('🔌 Redis: Conexión cerrada');
-    });
-    
+
     redisClient.on('reconnecting', () => {
       console.log('🔄 Redis: Reconectando...');
     });
-    
+
     // Conectar
     await redisClient.connect();
-    
     return redisClient;
     
   } catch (error) {
@@ -123,31 +126,31 @@ const createRedisClient = async () => {
 };
 
 // 🔹 Función para obtener cliente Redis
-const getRedisClient = () => {
-  return redisClient;
-};
-
-// 🔹 Función para cerrar conexión
-const closeRedisConnection = async () => {
-  if (redisClient) {
-    try {
-      await redisClient.quit();
-      console.log('✅ Redis: Conexión cerrada correctamente');
-    } catch (error) {
-      console.error('❌ Error cerrando Redis:', error.message);
-    }
+async function getRedisClient() {
+  if (!redisClient || !redisClient.isOpen) {
+    return await createRedisClient();
   }
-};
+  return redisClient;
+}
 
-// 🔹 Función para verificar si Redis está disponible
-const isRedisAvailable = () => {
-  return redisClient && redisClient.isReady;
-};
+/**
+ * Cierra la conexión con Redis
+ */
+async function closeRedisConnection() {
+  try {
+    if (redisClient && redisClient.isOpen) {
+      await redisClient.quit();
+      console.log('👋 Conexión a Redis cerrada');
+    }
+  } catch (error) {
+    console.error('❌ Error al cerrar conexión Redis:', error.message);
+  }
+}
+
+
 
 module.exports = {
-  createRedisClient,
-  getRedisClient,
+  createClient: getRedisClient,
   closeRedisConnection,
-  isRedisAvailable,
   redisConfig
 };

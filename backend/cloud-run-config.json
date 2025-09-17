@@ -1,0 +1,24 @@
+{
+  "name": "gatelogix-backend",
+  "env": {
+    "PORT": "8080",
+    "NODE_ENV": "production"
+  },
+  "options": {
+    "memory": "1Gi",
+    "cpu": "1",
+    "maxInstances": 10,
+    "minInstances": 1,
+    "concurrency": 80,
+    "timeout": "300s",
+    "port": 8080,
+    "allowUnauthenticated": true
+  },
+  "healthCheck": {
+    "initialDelaySec": 10,
+    "timeoutSec": 5,
+    "periodSec": 15,
+    "failureThreshold": 3,
+    "successThreshold": 1
+  }
+}

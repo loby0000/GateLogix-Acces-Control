@@ -1,0 +1,65 @@
+steps:
+  # Instalar dependencias
+  - name: 'node:18'
+    entrypoint: npm
+    args: ['install']
+
+  # Crear archivo de verificación de salud
+  - name: 'bash'
+    args:
+      - '-c'
+      - |
+        cat > healthcheck.js << 'EOF'
+        const http = require('http');
+        const options = {
+          host: 'localhost',
+          port: process.env.PORT || 8080,
+          timeout: 2000,
+          path: '/',
+        };
+        const healthCheck = http.request(options, (res) => {
+          console.log(`HEALTHCHECK STATUS: ${res.statusCode}`);
+          if (res.statusCode === 200) {
+            process.exit(0);
+          } else {
+            process.exit(1);
+          }
+        });
+        healthCheck.on('error', function(err) {
+          console.error('ERROR en healthcheck:', err);
+          process.exit(1);
+        });
+        healthCheck.end();
+        EOF
+
+  # Desplegar en Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'gcloud'
+    args:
+      - 'run'
+      - 'deploy'
+      - '${_SERVICE_NAME}'
+      - '--source=.'
+      - '--region=${_DEPLOY_REGION}'
+      - '--platform=managed'
+      - '--allow-unauthenticated'
+      - '--memory=1Gi'
+      - '--cpu=1'
+      - '--max-instances=10'
+      - '--min-instances=1'
+      - '--port=8080'
+      - '--set-env-vars=NODE_ENV=production,PORT=8080,MONGODB_URI=${_MONGODB_URI}'
+      - '--timeout=300s'
+      - '--cpu-throttling'
+      - '--concurrency=80'
+      - '--min-instances=0'
+      - '--service-account=${_SERVICE_ACCOUNT}'
+
+substitutions:
+  _SERVICE_NAME: gatelogix
+  _DEPLOY_REGION: northamerica-south1
+  _MONGODB_URI: ${_MONGODB_URI}
+  _SERVICE_ACCOUNT: ${_SERVICE_ACCOUNT}
+
+options:
+  logging: CLOUD_LOGGING_ONLY

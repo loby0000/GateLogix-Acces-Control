@@ -55,15 +55,15 @@ const initializeServices = async () => {
     await initEmergencyAdmin();
     
     // Iniciar servidor
-    const PORT = process.env.PORT || 3000;
+    const PORT = process.env.PORT || 8080;
     console.log(`🔍 Intentando iniciar servidor en puerto: ${PORT}`);
     console.log(`🔍 Variables de entorno: NODE_ENV=${process.env.NODE_ENV}, PORT=${process.env.PORT}`);
     
     const server = app.listen(PORT, '0.0.0.0', () => {
       console.log(`✅ Servidor escuchando exitosamente en puerto: ${PORT}`);
-      console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
-      console.log(`📊 Dashboard: http://localhost:${PORT}`);
-      console.log(`🔧 API Base: http://localhost:${PORT}/api`);
+      console.log(`🚀 Servidor corriendo en puerto: ${PORT}`);
+      console.log(`📊 Dashboard disponible en la ruta raíz`);
+      console.log(`🔧 API Base: /api`);
     });
     
     // Manejo de cierre graceful

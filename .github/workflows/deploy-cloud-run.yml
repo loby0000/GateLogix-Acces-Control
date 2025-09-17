@@ -1,0 +1,65 @@
+name: Deploy to Cloud Run
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: '**/package-lock.json'
+
+    - name: Install backend dependencies
+      run: cd backend && npm ci
+
+    - name: Install frontend dependencies
+      run: cd frontend && npm ci
+
+    - name: Build frontend
+      run: cd frontend && npm run build
+
+    - name: Copy frontend build to backend
+      run: mkdir -p backend/public && cp -r frontend/dist/* backend/public/
+
+    - name: Set up Cloud SDK
+      uses: google-github-actions/setup-gcloud@v1
+      with:
+        project_id: ${{ secrets.GCP_PROJECT_ID }}
+        service_account_key: ${{ secrets.GCP_SA_KEY }}
+
+    - name: Authorize Docker push
+      run: gcloud auth configure-docker
+
+    - name: Build and push container
+      run: |
+        cd backend
+        docker build -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/gatelogix:${{ github.sha }} .
+        docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/gatelogix:${{ github.sha }}
+
+    - name: Deploy to Cloud Run
+      run: |
+        gcloud run deploy gatelogix \
+          --image gcr.io/${{ secrets.GCP_PROJECT_ID }}/gatelogix:${{ github.sha }} \
+          --region northamerica-south1 \
+          --platform managed \
+          --allow-unauthenticated \
+          --memory 1Gi \
+          --cpu 1 \
+          --max-instances 10 \
+          --min-instances 0 \
+          --port 8080 \
+          --set-env-vars="NODE_ENV=production,PORT=8080" \
+          --set-secrets="MONGODB_URI=mongodb-credentials:latest" \
+          --timeout 300s \
+          --cpu-throttling \
+          --concurrency 80

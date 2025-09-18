@@ -3,22 +3,22 @@ FROM node:18-slim
 # Crear directorio de la aplicación
 WORKDIR /app
 
-# Copiar archivos de dependencias
+# Copiar archivos de dependencias (desde backend/)
 COPY package*.json ./
 
-# Instalar dependencias
-RUN npm ci --only=production
+# Instalar dependencias sin devDependencies
+RUN npm ci --omit=dev
 
-# Copiar código fuente
+# Copiar el resto del código fuente
 COPY . .
 
-# Crear directorio para códigos de barras si no existe
+# Crear directorio para códigos de barras
 RUN mkdir -p /app/src/barcodes && chmod -R 755 /app/src/barcodes
 
-# Exponer puerto (debe coincidir con el puerto en cloudbuild.yaml)
+# Exponer el puerto que Cloud Run espera
 EXPOSE 8080
 
-# Configurar variables de entorno
+# Variables de entorno
 ENV NODE_ENV=production
 ENV PORT=8080
 
@@ -26,5 +26,5 @@ ENV PORT=8080
 RUN chown -R node:node /app
 USER node
 
-# Comando para iniciar la aplicación
-CMD ["node", "src/index.js"]
+# Comando de arranque
+CMD ["npm", "start"]

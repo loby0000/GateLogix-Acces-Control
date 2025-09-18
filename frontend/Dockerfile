@@ -10,8 +10,11 @@ RUN npm run build
 FROM nginx:alpine
 COPY --from=build /app/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY start.sh /start.sh
+RUN chmod +x /start.sh
 
-# Cloud Run ignora EXPOSE, pero lo dejamos como documentación
+# Cloud Run ignora EXPOSE, solo documentación
 EXPOSE 8080
 
-CMD ["nginx", "-g", "daemon off;"]
+# Usar el script para arrancar Nginx en el puerto de Cloud Run
+CMD ["/start.sh"]

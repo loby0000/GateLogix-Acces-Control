@@ -277,8 +277,7 @@ async onScanDetected(scannedSerial) {
 
   try {
     // Usar URL relativa para evitar problemas de CORS y carga
-    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-    const url = `${baseUrl}/api/usuario-equipo/buscar/${encodeURIComponent(serial)}`;
+    const url = getApiUrl(`api/usuario-equipo/buscar/${encodeURIComponent(serial)}`);
     
     const token = localStorage.getItem("token");
     if (!token) {
@@ -489,9 +488,8 @@ async onScanDetected(scannedSerial) {
           return;
         }
 
-        // Usar URL relativa o desde variables de entorno
-        const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-        const url = `${baseUrl}/api/usuario-equipo/registrar`;
+        // Usar la utilidad apiConfig para obtener la URL
+        const url = getApiUrl('api/usuario-equipo/registrar');
         
         console.log('Enviando payload al backend:', JSON.stringify(payload).length, 'caracteres');
         console.log('Payload contiene foto:', payload.foto ? 'Sí' : 'No');
@@ -671,8 +669,7 @@ async onScanDetected(scannedSerial) {
         const payload = JSON.parse(atob(token.split('.')[1]));
         const docGuardia = payload.documento;
 
-        const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-        const url = `${baseUrl}/api/historial/entrada`;
+        const url = getApiUrl('api/historial/entrada');
 
         const response = await axios.post(url, {
           serial: serial,

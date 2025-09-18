@@ -34,7 +34,12 @@ document.addEventListener('error', function(e) {
 const configuredAxios = httpCacheInterceptor.setup(axios);
 
 // Configurar URL base para Axios
-configuredAxios.defaults.baseURL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const apiUrl = import.meta.env.VITE_API_URL || 
+               (window.location.hostname === 'localhost' ? 
+                'http://localhost:3000' : 
+                'https://backend-app-115351146305.us-central1.run.app');
+console.log('🌐 API URL configurada:', apiUrl);
+configuredAxios.defaults.baseURL = apiUrl;
 
 // Hacer Axios disponible globalmente
 const app = createApp(App)

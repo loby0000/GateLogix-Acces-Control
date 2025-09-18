@@ -202,6 +202,7 @@
 <script>
 import axios from "axios";
 import barcodeScannerMixin from "../mixins/barcodeScannerMixin.js";
+import { getApiUrl } from '../utils/apiConfig';
 
 export default {
   name: "RegistroUsuariosYaResg",
@@ -272,7 +273,7 @@ export default {
       if (!this.buscarDocumento) return;
       try {
         const res = await axios.get(
-          `http://localhost:3000/api/usuario-equipo/buscar-documento/${this.buscarDocumento}`,
+          getApiUrl(`api/usuario-equipo/buscar-documento/${this.buscarDocumento}`),
           {
             headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
           }
@@ -297,7 +298,7 @@ export default {
     async buscarPorSerial(serial) {
       try {
         const res = await axios.get(
-          `http://localhost:3000/api/usuario-equipo/buscar/${serial}`,
+          getApiUrl(`api/usuario-equipo/buscar/${serial}`),
           {
             headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
           }
@@ -393,8 +394,8 @@ export default {
         const token = localStorage.getItem("token");
         if (!token) return;
 
-        const response = await axios.get(
-          `http://localhost:3000/api/historial/estado/${serial}`,
+        const response = await fetch(
+          getApiUrl(`api/historial/estado/${serial}`),
           {
             headers: { Authorization: `Bearer ${token}` },
             timeout: 5000

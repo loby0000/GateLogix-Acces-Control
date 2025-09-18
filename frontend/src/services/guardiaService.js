@@ -7,8 +7,13 @@ import axios from 'axios';
  */
 class GuardiaService {
   constructor() {
-    this.baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+    // Determinar la URL base según el entorno
+    this.baseUrl = import.meta.env.VITE_API_URL || 
+                  (window.location.hostname === 'localhost' ? 
+                   'http://localhost:3000' : 
+                   'https://backend-app-115351146305.us-central1.run.app');
     this.apiUrl = `${this.baseUrl}/api/guardia`;
+    console.log('🔗 GuardiaService usando API URL:', this.baseUrl);
   }
 
   /**

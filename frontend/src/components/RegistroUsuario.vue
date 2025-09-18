@@ -185,6 +185,8 @@ import axios from "axios";
 import barcodeScannerMixin from "../mixins/barcodeScannerMixin.js";
 import { useToast } from "vue-toastification";
 
+import { getApiUrl } from '../utils/apiConfig';
+
 export default {
   name: "RegistroUsuario",
   mixins: [barcodeScannerMixin],

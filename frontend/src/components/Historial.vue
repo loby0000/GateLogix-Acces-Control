@@ -176,6 +176,8 @@
 <script>
 import axios from 'axios';
 
+import { getApiUrl } from '../utils/apiConfig';
+
 export default {
   data() {
     return {
@@ -230,8 +232,8 @@ export default {
 
         // Forzar refresco desde el servidor sin usar caché
         const timestamp = new Date().getTime();
-        const response = await axios.get(
-          `http://localhost:3000/api/historial/listar?t=${timestamp}`,
+        const response = await fetch(
+        getApiUrl(`api/historial/listar?t=${timestamp}`),
           {
             headers: { Authorization: `Bearer ${token}` },
             timeout: 10000

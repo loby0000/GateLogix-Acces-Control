@@ -104,6 +104,8 @@ const password = ref('')
 const turno = ref('')
 const loading = ref(false)
 
+import { getApiUrl } from '../utils/apiConfig';
+
 async function onSubmit() {
   if (!tipoIngreso.value) return alert('Por favor, selecciona el tipo de usuario')
   if (!documento.value) return alert('Por favor, ingresa tu usuario o documento')
@@ -113,7 +115,8 @@ async function onSubmit() {
   loading.value = true
   try {
     if (tipoIngreso.value === 'guardia') {
-      const res = await fetch('http://localhost:3000/api/guardia/login', {
+      
+      const res = await fetch(getApiUrl('api/guardia/login'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -131,7 +134,7 @@ async function onSubmit() {
       }
 
     } else if (tipoIngreso.value === 'admin') {
-      const res = await fetch('http://localhost:3000/api/admin/login', {
+      const res = await fetch(getApiUrl('api/admin/login'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

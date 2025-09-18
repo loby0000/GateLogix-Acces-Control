@@ -106,6 +106,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import logo from '../assets/logo.png'
+import { getApiUrl } from '../utils/apiConfig'
 
 const router = useRouter()
 
@@ -140,8 +141,8 @@ async function confirmarRegistro() {
     let url = ''
     let body = {}
 
-    if (tipoIngreso.value === 'guardia') {
-      url = 'http://localhost:3000/api/guardia/registrar'
+    let url = getApiUrl('api/guardia/registrar')
+      if (tipoIngreso.value === 'guardia') {
       body = {
         documento: documento.value,
         nombre: nombre.value,
@@ -151,7 +152,7 @@ async function confirmarRegistro() {
         claveAdmin: claveExistente.value
       }
     } else if (tipoIngreso.value === 'admin') {
-      url = 'http://localhost:3000/api/admin/reemplazar'
+      url = getApiUrl('api/admin/reemplazar')
       body = {
         usuario: usuarioNuevoAdmin.value,
         documento: documentoNuevoAdmin.value,

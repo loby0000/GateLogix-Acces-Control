@@ -171,6 +171,8 @@
 </template>
 
 <script>
+import { getApiUrl } from '../utils/apiConfig';
+
 export default {
   data() {
     return {
@@ -305,7 +307,7 @@ export default {
           return;
         }
         
-        const url = new URL('http://localhost:3000/api/usuario-equipo/listar');
+        const url = new URL(getApiUrl('api/usuario-equipo/listar'));
         url.searchParams.append('page', this.pagination.page);
         url.searchParams.append('limit', this.pagination.limit);
         
@@ -462,7 +464,7 @@ export default {
         const fotoValidada = this.validarFoto(this.usuarioEdit.foto);
         console.log('Foto validada:', fotoValidada ? 'Foto válida presente' : 'Sin foto válida');
         
-        const response = await fetch(`http://localhost:3000/api/usuario-equipo/${this.usuarioEdit._id}`, {
+        const response = await fetch(getApiUrl(`api/usuario-equipo/${this.usuarioEdit._id}`), {
           method: 'PUT',
           headers: {
             'Authorization': `Bearer ${token}`,

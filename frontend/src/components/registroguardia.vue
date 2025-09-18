@@ -138,9 +138,8 @@ function abrirConfirmacion() {
 // Confirmar y enviar
 async function confirmarRegistro() {
   try {
-    let url = ''
     let body = {}
-
+    
     let url = getApiUrl('api/guardia/registrar')
       if (tipoIngreso.value === 'guardia') {
       body = {

@@ -323,7 +323,6 @@ function goToRegister() {
   -webkit-mask-composite: subtract;
   mask-composite: subtract;
   -webkit-interpolation-mode: bicubic;
-  interpolation-mode: bicubic;
   -ms-interpolation-mode: bicubic;
   transform-style: preserve-3d;
   -webkit-transform-style: preserve-3d;

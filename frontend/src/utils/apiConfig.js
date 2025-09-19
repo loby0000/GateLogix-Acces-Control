@@ -18,30 +18,11 @@ export function getApiBaseUrl() {
     return import.meta.env.VITE_API_URL;
   }
   
-  // Si estamos en localhost, intentamos conectar primero al puerto 3000 (desarrollo)
-  // y si falla, automáticamente intentará con el puerto 8080 (nube local)
+  // Si estamos en localhost, usamos directamente el puerto 8080
+  // ya que sabemos que el 3000 está fallando
   if (window.location.hostname === 'localhost') {
-    // Verificamos si el puerto 3000 está disponible
-    const testPort3000 = async () => {
-      try {
-        const response = await fetch(`${LOCAL_API_URL_DEV}/api/health`, { 
-          method: 'HEAD',
-          timeout: 1000
-        });
-        return response.ok;
-      } catch (e) {
-        return false;
-      }
-    };
-    
-    // Si el puerto 3000 no responde, usamos el 8080
-    if (!testPort3000()) {
-      console.log('🔄 Cambiando a puerto 8080 para backend local');
-      return LOCAL_API_URL_CLOUD;
-    }
-    
-    console.log('✅ Usando puerto 3000 para backend local');
-    return LOCAL_API_URL_DEV;
+    console.log('🔄 Usando puerto 8080 para backend local');
+    return LOCAL_API_URL_CLOUD;
   }
   
   // En producción usamos la URL de Cloud Run

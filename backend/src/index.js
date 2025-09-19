@@ -11,6 +11,7 @@ const guardiaRoutes = require('./routes/guardiaRoutes');
 const usuarioEquipoRoutes = require('./routes/usuarioEquipoRoutes');
 const cacheRoutes = require('./routes/cacheRoutes');
 const estadisticasRoutes = require('./routes/estadisticasRoutes');
+const equiposRoutes = require('./routes/equiposRoutes');
 const initEmergencyAdmin = require('./config/initAdmin');
 const { createClient, closeRedisConnection } = require('./config/redis');
 
@@ -39,6 +40,7 @@ app.use('/api/usuario-equipo', usuarioEquipoRoutes);
 app.use('/api/historial', historialRoutes);
 app.use('/api/cache', cacheRoutes);
 app.use('/api/estadisticas', estadisticasRoutes);
+app.use('/api/equipos', equiposRoutes);
 
 // Ruta base
 app.get('/', (req, res) => res.send('API funcionando'));

@@ -139,7 +139,7 @@
                 <th>Tipo</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody class="modal-table-body">
               <tr v-for="(record, index) in userHistoryRecords" :key="record.id || index">
                 <td class="fecha-cell">{{ formatearFechaSolo(record.fechaCreacion) }}</td>
                 <td class="fecha-cell">{{ record.entradaFormateada || '---' }}</td>
@@ -233,15 +233,32 @@ export default {
         // Forzar refresco desde el servidor sin usar caché
         const timestamp = new Date().getTime();
         const response = await fetch(
-        getApiUrl(`api/historial/listar?t=${timestamp}`),
+          getApiUrl(`api/historial/listar?t=${timestamp}`),
           {
             headers: { Authorization: `Bearer ${token}` },
             timeout: 10000
           }
         );
 
+        // Verificar si la respuesta es correcta
+        if (!response.ok) {
+          console.error('Error en la respuesta del servidor:', response.status);
+          this.mostrarError(`Error al cargar historial: ${response.statusText}`);
+          return;
+        }
+
+        // Convertir la respuesta a JSON
+        const data = await response.json();
+        
+        // Verificar si hay datos
+        if (!data || !Array.isArray(data)) {
+          console.error('Formato de respuesta incorrecto:', data);
+          this.mostrarError('Formato de respuesta incorrecto');
+          return;
+        }
+
         // Procesar y formatear los datos
-        const allRecords = response.data.map(record => ({
+        const allRecords = data.map(record => ({
           id: record._id,
           usuario: record.usuario?.nombre || 'N/A',
           documento: record.usuario?.numeroDocumento || 'N/A',
@@ -815,6 +832,7 @@ select:focus {
   flex: 1;
   overflow-y: auto;
   padding: 0;
+  max-height: 60vh; /* Altura máxima para asegurar scroll */
 }
 
 .modal-table {

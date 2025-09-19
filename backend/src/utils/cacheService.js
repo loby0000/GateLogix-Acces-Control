@@ -21,7 +21,12 @@ class CacheService {
         return null;
       }
 
-      const client = getRedisClient();
+      const client = await getRedisClient();
+      if (!client) {
+        console.log(`❌ Error obteniendo del caché [${key}]: cliente Redis no disponible`);
+        return null;
+      }
+
       const data = await client.get(key);
       
       if (data) {
@@ -42,10 +47,16 @@ class CacheService {
   async set(key, data, ttl = this.defaultTTL) {
     try {
       if (!isRedisAvailable()) {
+        console.log(`📭 Cache deshabilitado: no se pudo guardar ${key}`);
         return false;
       }
 
-      const client = getRedisClient();
+      const client = await getRedisClient();
+      if (!client) {
+        console.log(`❌ Cliente Redis no válido o no disponible`);
+        return false;
+      }
+
       const serializedData = JSON.stringify(data);
       
       await client.setEx(key, ttl, serializedData);
@@ -65,7 +76,12 @@ class CacheService {
         return false;
       }
 
-      const client = getRedisClient();
+      const client = await getRedisClient();
+      if (!client) {
+        console.log(`❌ Error eliminando del caché [${key}]: cliente Redis no disponible`);
+        return false;
+      }
+      
       const result = await client.del(key);
       
       if (result > 0) {
@@ -84,13 +100,23 @@ class CacheService {
   async delPattern(pattern) {
     try {
       if (!isRedisAvailable()) {
+        console.log(`📭 Cache deshabilitado: no se pudo eliminar patrón ${pattern}`);
         return 0;
       }
 
-      const client = getRedisClient();
+      const client = await getRedisClient();
+      if (!client) {
+        console.log(`❌ Error eliminando patrón del caché [${pattern}]: cliente Redis no disponible`);
+        return 0;
+      }
+      
       const keys = await client.keys(pattern);
       
-      if (keys.length > 0) {
+      if (keys && keys.length > 0) {
+        if (typeof client.del !== 'function') {
+          console.log(`❌ Error eliminando patrón del caché [${pattern}]: client.del is not a function`);
+          return 0;
+        }
         const result = await client.del(keys);
         console.log(`🗑️  Cache DEL Pattern: ${pattern} (${result} claves eliminadas)`);
         return result;

@@ -101,7 +101,7 @@
         :disabled="cargandoMovimiento"
       >
         <span v-if="cargandoMovimiento" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-        {{ estadoUsuario === 'Egreso' ? 'Ingreso ✅' : 'Salida ❌' }}
+        {{ estadoUsuario === 'Egreso' ? 'Registrar Ingreso ✅' : 'Registrar Salida ❌' }}
       </button>
       
       <!-- Información del estado actual -->
@@ -178,13 +178,53 @@
           Cargador
         </label>
 
-        <input type="file" @change="subirImagen" />
+        <!-- Sección para cargar imagen del equipo -->
+        <div class="file-section">
+          <div class="file-label">Insertar imagen del equipo</div>
+          <button type="button" class="file-upload-btn" @click="mostrarOpciones = true">📎 Agregar Foto</button>
+        </div>
+        
+        <!-- Vista previa de la imagen -->
+        <div v-if="nuevoEquipo.foto" class="image-preview">
+          <img :src="nuevoEquipo.foto" alt="Vista previa" style="max-width: 200px; max-height: 150px; margin-top: 10px; border-radius: 4px;" />
+        </div>
 
         <div class="modal-actions">
           <button class="guardar" @click="guardarNuevoEquipo">
             Registrar equipo nuevo
           </button>
           <button class="cancelar" @click="cerrarModal">Cancelar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal para opciones de foto/archivo -->
+    <div v-if="mostrarOpciones" class="modal-overlay">
+      <div class="modal-content modal-small">
+        <div class="modal-header">
+          <h3>Agregar imagen</h3>
+          <button class="close-btn" @click="mostrarOpciones = false">✕</button>
+        </div>
+        <div class="modal-body">
+          <button @click="abrirCamara" class="btn-action">Tomar Foto</button>
+          <button @click="subirArchivo" class="btn-action">Seleccionar Archivo</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cámara -->
+    <div v-if="mostrarCamara" class="modal-overlay">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Tomar foto</h3>
+          <button class="close-btn" @click="cerrarCamara">✕</button>
+        </div>
+        <div class="modal-body">
+          <video ref="video" autoplay style="width: 100%; max-width: 500px;"></video>
+          <div class="modal-footer">
+            <button @click="capturarFoto" class="btn-action">Capturar</button>
+            <button @click="cerrarCamara" class="btn-action">Cancelar</button>
+          </div>
         </div>
       </div>
     </div>
@@ -232,7 +272,7 @@ export default {
         caracteristicas: "",
         mouse: false,
         cargador: false,
-        imagen: null,
+        foto: null,
       },
       usuarios: [],
       // Variables para modal de foto ampliada
@@ -242,6 +282,9 @@ export default {
       estadoUsuario: 'Egreso', // 'Ingreso' o 'Egreso'
       ultimoMovimiento: null,
       cargandoMovimiento: false,
+      // Variables para manejo de fotos
+      mostrarOpciones: false,
+      mostrarCamara: false,
     };
   },
   watch: {
@@ -350,21 +393,90 @@ export default {
     },
     cerrarModal() {
       this.modalAbierto = false;
+      this.nuevoEquipo = {
+        nombre: "",
+        serial: "",
+        caracteristicas: "",
+        mouse: false,
+        cargador: false,
+        foto: null,
+      };
+      this.mostrarOpciones = false;
+      this.cerrarCamara();
     },
     subirImagen(event) {
+      // Este método ya no se usa, se reemplaza por subirArchivo
+      // Se mantiene para compatibilidad con código existente
       const file = event.target.files[0];
-      if (file) this.nuevoEquipo.imagen = file;
-    },
-    guardarNuevoEquipo() {
-      if (this.usuarioSeleccionado) {
-        if (!this.usuarioSeleccionado.equipos)
-          this.usuarioSeleccionado.equipos = [];
-        this.usuarioSeleccionado.equipos.push({
-          nombre: this.nuevoEquipo.nombre,
-          serial: this.nuevoEquipo.serial,
-        });
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          this.optimizarImagen(e.target.result);
+        };
+        reader.readAsDataURL(file);
       }
-      this.cerrarModal();
+    },
+    async guardarNuevoEquipo() {
+      if (!this.usuarioSeleccionado) {
+        this.toast.error("No se ha seleccionado un usuario");
+        return;
+      }
+      
+      if (!this.nuevoEquipo.nombre || !this.nuevoEquipo.serial) {
+        this.toast.error("La marca y el serial son obligatorios");
+        return;
+      }
+      
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          this.toast.error("No hay sesión activa");
+          return;
+        }
+        
+        // Preparar datos del equipo
+        const equipoData = {
+          usuarioId: this.usuarioSeleccionado._id || this.usuarioSeleccionado.id,
+          documento: this.usuarioSeleccionado.numeroDocumento,
+          marca: this.nuevoEquipo.nombre,
+          serial: this.nuevoEquipo.serial,
+          caracteristicas: this.nuevoEquipo.caracteristicas,
+          foto: this.nuevoEquipo.foto, // Añadir la foto al objeto de datos
+          accesorios: {
+            mouse: this.nuevoEquipo.mouse,
+            cargador: this.nuevoEquipo.cargador
+          }
+        };
+        
+        // Enviar al backend
+        const response = await axios.post(
+          getApiUrl('api/equipos/registrar'),
+          equipoData,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        
+        // Actualizar la UI
+        if (!this.usuarioSeleccionado.equipos) {
+          this.usuarioSeleccionado.equipos = [];
+        }
+        
+        this.usuarioSeleccionado.equipos.push({
+          marca: this.nuevoEquipo.nombre,
+          serial: this.nuevoEquipo.serial,
+          caracteristicas: this.nuevoEquipo.caracteristicas,
+          foto: this.nuevoEquipo.foto, // Añadir la foto al objeto para la UI
+          accesorios: {
+            mouse: this.nuevoEquipo.mouse,
+            cargador: this.nuevoEquipo.cargador
+          }
+        });
+        
+        this.toast.success("Equipo registrado correctamente");
+        this.cerrarModal();
+      } catch (error) {
+        console.error("❌ Error al guardar equipo:", error);
+        this.toast.error("Error al registrar el equipo: " + (error.response?.data?.message || error.message));
+      }
     },
 
     // 🔹 Métodos para manejo de fotos
@@ -387,6 +499,110 @@ export default {
         container.innerHTML = '<div class="no-photo"><span>Error al cargar</span></div>';
       }
     },
+    
+    // Métodos para manejo de cámara y fotos
+    abrirCamara() {
+      this.mostrarOpciones = false;
+      this.mostrarCamara = true;
+      
+      // Acceder a la cámara
+      setTimeout(() => {
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+          navigator.mediaDevices
+            .getUserMedia({ video: true })
+            .then(stream => {
+              if (this.$refs.video) {
+                this.$refs.video.srcObject = stream;
+              }
+            })
+            .catch(error => {
+              console.error("Error al acceder a la cámara:", error);
+              alert("No se pudo acceder a la cámara. Verifica los permisos.");
+              this.mostrarCamara = false;
+            });
+        } else {
+          alert("Tu navegador no soporta acceso a la cámara");
+          this.mostrarCamara = false;
+        }
+      }, 100);
+    },
+    
+    cerrarCamara() {
+      this.mostrarCamara = false;
+      // Detener el stream de video
+      if (this.$refs.video && this.$refs.video.srcObject) {
+        const tracks = this.$refs.video.srcObject.getTracks();
+        tracks.forEach(track => track.stop());
+        this.$refs.video.srcObject = null;
+      }
+    },
+    
+    capturarFoto() {
+      const video = this.$refs.video;
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      
+      // Optimizar la imagen antes de guardarla
+      this.optimizarImagen(canvas.toDataURL('image/jpeg'));
+      this.cerrarCamara();
+    },
+    
+    subirArchivo() {
+      this.mostrarOpciones = false;
+      
+      // Crear un input de archivo temporal
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      
+      input.onchange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            this.optimizarImagen(event.target.result);
+          };
+          reader.readAsDataURL(file);
+        }
+      };
+      
+      input.click();
+    },
+    
+    optimizarImagen(dataUrl) {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        
+        // Calcular dimensiones manteniendo la proporción
+        let width = img.width;
+        let height = img.height;
+        const maxDimension = 800;
+        
+        if (width > height && width > maxDimension) {
+          height = (height * maxDimension) / width;
+          width = maxDimension;
+        } else if (height > maxDimension) {
+          width = (width * maxDimension) / height;
+          height = maxDimension;
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        // Convertir a JPEG con calidad reducida para optimizar tamaño
+        const optimizedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+        this.nuevoEquipo.foto = optimizedDataUrl;
+      };
+      
+      img.src = dataUrl;
+    },
 
     // 🔹 Métodos para control de movimientos
     async obtenerEstadoUsuario(serial) {
@@ -397,14 +613,15 @@ export default {
         const response = await fetch(
           getApiUrl(`api/historial/estado/${serial}`),
           {
-            headers: { Authorization: `Bearer ${token}` },
-            timeout: 5000
+            headers: { Authorization: `Bearer ${token}` }
           }
         );
 
-        if (response.data) {
-          this.estadoUsuario = response.data.estado || 'Egreso';
-          this.ultimoMovimiento = response.data.ultimoMovimiento;
+        if (response.ok) {
+          const data = await response.json();
+          this.estadoUsuario = data.estado || 'Egreso';
+          this.ultimoMovimiento = data.ultimoMovimiento;
+          console.log('✅ Estado actualizado:', this.estadoUsuario);
         }
       } catch (err) {
         console.error("❌ Error al obtener estado del usuario:", err);
@@ -435,11 +652,11 @@ export default {
            return;
          }
 
-        const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-        const url = `${baseUrl}/api/historial/entrada`;
+        // Determinar si es entrada o salida basado en el estado actual
+        const endpoint = this.estadoUsuario === 'Egreso' ? 'entrada' : 'salida';
         
         const response = await axios.post(
-          url,
+          getApiUrl(`api/historial/${endpoint}`),
           {
             serial: serial,
             docGuardia: docGuardia

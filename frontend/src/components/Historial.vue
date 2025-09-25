@@ -243,7 +243,8 @@ export default {
         // Verificar si la respuesta es correcta
         if (!response.ok) {
           console.error('Error en la respuesta del servidor:', response.status);
-          this.mostrarError(`Error al cargar historial: ${response.statusText}`);
+          this.error = `Error al cargar historial: ${response.statusText}`;
+          this.loading = false;
           return;
         }
 
@@ -253,7 +254,8 @@ export default {
         // Verificar si hay datos
         if (!data || !Array.isArray(data)) {
           console.error('Formato de respuesta incorrecto:', data);
-          this.mostrarError('Formato de respuesta incorrecto');
+          this.error = 'Formato de respuesta incorrecto';
+          this.loading = false;
           return;
         }
 

@@ -5,6 +5,7 @@ const Log = require('../models/Logs');
 const { generarCodigoBarras } = require('../utils/barcodeGenerator'); // ✅ Importación corregida
 const Historial = require('../models/Historial');
 const cacheService = require('../utils/cacheService');
+const { invalidarCacheEstadisticas } = require('./estadisticasController');
 
 
 exports.registrar = async (req, res) => {
@@ -91,15 +92,21 @@ exports.registrar = async (req, res) => {
     
     // Crear entrada automática en historial (usuario recién registrado)
     try {
-      await Historial.create({
+      const historialEntrada = await Historial.create({
         usuario: nuevo._id,
         serial: equipo.serial,
         entrada: new Date(),
         salida: null,
-        guardia: guardia ? guardia._id : null,
-        docGuardia: guardia?.numeroDocumento || guardia?.documento || guardia?._id?.toString() || '',
-        estado: 'Adentro'
+        guardia: guardia._id,
+        docGuardia: guardia.documento || guardia.numeroDocumento || '',
+        estado: "Adentro"  // Estado correcto para que aparezca en el historial
       });
+      
+      console.log('✅ Historial automático creado para nuevo usuario:', historialEntrada._id);
+      
+      // Invalidar caché de historial para que aparezca en las listas
+      await cacheService.delHistoryPattern();
+      await invalidarCacheEstadisticas();
     } catch (histErr) {
       console.error('❌ Error al crear historial automático tras registro:', histErr);
       // no rompemos el flujo principal, simplemente logueamos

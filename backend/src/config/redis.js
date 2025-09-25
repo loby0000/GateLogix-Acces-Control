@@ -127,10 +127,15 @@ async function createRedisClient() {
 
 // 🔹 Función para obtener cliente Redis
 async function getRedisClient() {
-  if (!redisClient || !redisClient.isOpen) {
-    return await createRedisClient();
+  try {
+    if (!redisClient || !redisClient.isOpen) {
+      redisClient = await createRedisClient();
+    }
+    return redisClient;
+  } catch (error) {
+    console.error('❌ Error al obtener cliente Redis:', error.message);
+    return null;
   }
-  return redisClient;
 }
 
 /**
@@ -147,10 +152,18 @@ async function closeRedisConnection() {
   }
 }
 
-
+/**
+ * Verifica si Redis está disponible
+ * @returns {boolean} true si Redis está disponible, false en caso contrario
+ */
+function isRedisAvailable() {
+  return redisClient !== null && redisClient.isOpen === true;
+}
 
 module.exports = {
   createClient: getRedisClient,
+  getRedisClient,
   closeRedisConnection,
+  isRedisAvailable,
   redisConfig
 };

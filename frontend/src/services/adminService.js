@@ -1,5 +1,6 @@
 // frontend/src/services/adminService.js
 import axios from 'axios';
+import { getApiUrl } from '../utils/apiConfig';
 
 /**
  * Servicio para la gestión de administradores
@@ -7,11 +8,7 @@ import axios from 'axios';
  */
 class AdminService {
   constructor() {
-    // Determinar la URL base según el entorno
-    this.baseUrl = import.meta.env.VITE_API_URL || 
-                  (window.location.hostname === 'localhost' ? 
-                   'http://localhost:3000' : 
-                   'https://backend-app-115351146305.us-central1.run.app');
+    this.baseUrl = getApiUrl('').replace(/\/+$/, ''); // Eliminar slash final si existe
     this.apiUrl = `${this.baseUrl}/api/admin`;
     console.log('🔗 AdminService usando API URL:', this.baseUrl);
   }

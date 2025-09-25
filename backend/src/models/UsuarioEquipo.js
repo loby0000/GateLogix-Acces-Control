@@ -49,6 +49,22 @@ const usuarioEquipoSchema = new mongoose.Schema({
       cargador: { type: Boolean, default: false }
     }
   },
+  equipos: [{
+    serial: {
+      type: String,
+      required: [true, 'El serial es obligatorio']
+    },
+    marca: { type: String, trim: true },
+    caracteristicas: { type: String, trim: true },
+    accesorios: {
+      mouse: { type: Boolean, default: false },
+      cargador: { type: Boolean, default: false }
+    },
+    foto: {
+      type: String, // Almacenará la imagen en formato base64
+      default: null
+    }
+  }],
   fechaRegistro: {
     type: Date,
     default: Date.now

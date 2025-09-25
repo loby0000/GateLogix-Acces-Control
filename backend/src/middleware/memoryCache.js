@@ -222,10 +222,22 @@ const cacheBusqueda = {
  * Invalidar caché relacionado cuando se actualiza un usuario
  */
 const invalidateUserCache = (usuario) => {
+  // Invalidar caché para el equipo principal
   if (usuario.equipo?.serial) {
     cacheUsuario.delete(usuario.equipo.serial);
     cacheEstado.delete(usuario.equipo.serial);
   }
+  
+  // Invalidar caché para todos los equipos en el array
+  if (usuario.equipos && Array.isArray(usuario.equipos)) {
+    usuario.equipos.forEach(equipo => {
+      if (equipo.serial) {
+        cacheUsuario.delete(equipo.serial);
+        cacheEstado.delete(equipo.serial);
+      }
+    });
+  }
+  
   if (usuario.numeroDocumento) {
     cacheBusqueda.delete(usuario.numeroDocumento);
   }
@@ -246,8 +258,18 @@ const cacheInvalidationMiddleware = (req, res, next) => {
       if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
         // Invalidar caché relacionado basado en la ruta
         if (req.path.includes('usuario-equipo')) {
-          const serial = req.body?.equipo?.serial || req.params?.serial;
+          const serial = req.body?.equipo?.serial || req.body?.serialEquipo || req.params?.serial;
           const documento = req.body?.numeroDocumento || req.params?.numeroDocumento;
+          
+          // También invalidar para equipos en el array
+          if (req.body?.equipos && Array.isArray(req.body.equipos)) {
+            req.body.equipos.forEach(equipo => {
+              if (equipo.serial) {
+                cacheUsuario.delete(equipo.serial);
+                cacheEstado.delete(equipo.serial);
+              }
+            });
+          }
           
           if (serial) {
             cacheUsuario.delete(serial);

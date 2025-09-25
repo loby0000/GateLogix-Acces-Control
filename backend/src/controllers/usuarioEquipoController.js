@@ -52,6 +52,17 @@ exports.registrar = async (req, res) => {
     const codigoBarras = await generarCodigoBarras(equipo.serial);
 
     // Crear usuario con equipo
+    const equipoData = {
+      serial: equipo.serial,
+      marca: equipo.marca,
+      caracteristicas: equipo.caracteristicas,
+      accesorios: {
+        mouse: equipo.accesorios?.mouse || false,
+        cargador: equipo.accesorios?.cargador || false
+      },
+      fechaIngreso: new Date().toISOString()
+    };
+
     const usuarioData = {
       tipoUsuario,
       tipoDocumento,
@@ -59,15 +70,8 @@ exports.registrar = async (req, res) => {
       nombre,
       email,
       foto, // Añadimos la foto al objeto de usuario
-      equipo: {
-        serial: equipo.serial,
-        marca: equipo.marca,
-        caracteristicas: equipo.caracteristicas,
-        accesorios: {
-          mouse: equipo.accesorios?.mouse || false,
-          cargador: equipo.accesorios?.cargador || false
-        }
-      },
+      equipo: equipoData, // Equipo principal (para compatibilidad)
+      equipos: [equipoData], // ✅ Inicializar array equipos con el equipo principal
       guardiaRegistrador: guardia._id,
       codigoBarras,
       historialModificaciones: [
@@ -99,7 +103,7 @@ exports.registrar = async (req, res) => {
         salida: null,
         guardia: guardia._id,
         docGuardia: guardia.documento || guardia.numeroDocumento || '',
-        estado: "Adentro"  // Estado correcto para que aparezca en el historial
+        estado: "Ingreso"  // Debe ser "Ingreso" según el enum del modelo
       });
       
       console.log('✅ Historial automático creado para nuevo usuario:', historialEntrada._id);
@@ -320,7 +324,7 @@ exports.actualizar = async (req, res) => {
       usuario.foto = data.foto;
     }
 
-    // actualizamos equipo
+    // actualizamos equipo principal y array de equipos
     if (!usuario.equipo) usuario.equipo = {};
     usuario.equipo.serial = data.serialEquipo || usuario.equipo.serial;
     usuario.equipo.marca = data.marcaEquipo || usuario.equipo.marca;
@@ -329,6 +333,35 @@ exports.actualizar = async (req, res) => {
     if (!usuario.equipo.accesorios) usuario.equipo.accesorios = {};
     usuario.equipo.accesorios.mouse = data.mouse ?? usuario.equipo.accesorios.mouse;
     usuario.equipo.accesorios.cargador = data.cargador ?? usuario.equipo.accesorios.cargador;
+
+    // Sincronizar con el array de equipos
+    if (!usuario.equipos) usuario.equipos = [];
+    
+    // Buscar el equipo principal en el array
+    const equipoPrincipalIndex = usuario.equipos.findIndex(e => e.serial === usuario.equipo.serial);
+    
+    if (equipoPrincipalIndex !== -1) {
+      // Actualizar el equipo existente en el array
+      usuario.equipos[equipoPrincipalIndex] = {
+        ...usuario.equipos[equipoPrincipalIndex],
+        serial: usuario.equipo.serial,
+        marca: usuario.equipo.marca,
+        caracteristicas: usuario.equipo.caracteristicas,
+        accesorios: usuario.equipo.accesorios,
+        foto: usuario.equipo.foto
+      };
+    } else if (usuario.equipo.serial) {
+      // Agregar el equipo principal al array si no existe
+      usuario.equipos.push({
+        _id: usuario.equipo._id || `temp-principal-${Date.now()}`,
+        serial: usuario.equipo.serial,
+        marca: usuario.equipo.marca,
+        caracteristicas: usuario.equipo.caracteristicas,
+        accesorios: usuario.equipo.accesorios,
+        foto: usuario.equipo.foto,
+        fechaIngreso: usuario.equipo.fechaIngreso || new Date()
+      });
+    }
 
     // historial
     usuario.historialModificaciones.push({

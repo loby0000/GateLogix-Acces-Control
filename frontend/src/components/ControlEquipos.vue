@@ -56,15 +56,17 @@
               <td class="table-cell">{{ user.numeroDocumento || user.documento || 'Sin documento' }}</td>
               <td class="table-cell">
                 <div class="equipos-list">
-                  <span v-if="!user.equipo || (!user.equipo.serial && !user.equipo.marca)" class="no-equipos">
+                  <span v-if="(!user.equipos || user.equipos.length === 0)" class="no-equipos">
                     Sin equipos
                   </span>
                   <div v-else class="equipo-item">
-                    <span class="equipo-principal">
-                      <span class="equipo-info">{{ user.equipo.marca || user.equipo.nombre || 'Sin marca' }} ({{ user.equipo.serial || 'Sin serial' }})</span>
+                    <span v-if="user.equipos && user.equipos.length > 0" class="equipo-principal">
+                      <span class="equipo-info">{{ user.equipos[0].marca || user.equipos[0].nombre || 'Sin marca' }} ({{ user.equipos[0].serial || 'Sin serial' }})</span>
                       <span class="badge-principal">Principal</span>
                     </span>
-                    <!-- Se eliminó el texto de equipos adicionales -->
+                    <span v-if="user.equipos && user.equipos.length > 1" class="equipos-adicionales">
+                      {{ user.equipos.length - 1 }} equipo(s) adicional(es)
+                    </span>
                   </div>
                 </div>
               </td>
@@ -80,6 +82,13 @@
 
       <div v-if="filteredUsers.length === 0" class="no-results">
         {{ searchQuery ? 'No se encontraron usuarios con los filtros aplicados' : 'No hay usuarios registrados' }}
+      </div>
+
+      <!-- Botón para cargar más usuarios -->
+      <div v-if="usuarios.length < totalUsuarios && !loading" class="load-more-container">
+        <button @click="cargarMasUsuarios" class="btn-load-more">
+          Cargar más usuarios ({{ usuarios.length }}/{{ totalUsuarios }})
+        </button>
       </div>
     </div>
 
@@ -97,11 +106,12 @@
           </div>
           
           <div v-else class="equipos-grid">
-            <div v-for="(equipo, index) in usuarioSeleccionado.equipos" :key="index" class="equipo-card">
+            <div v-for="(equipo, index) in usuarioSeleccionado.equipos" :key="equipo._id || index" class="equipo-card">
               <div class="equipo-header">
                 <h4>
-                  <span v-if="index > 0" class="equipo-numero">#{{ index + 1 }}</span>
-                  {{ equipo.nombre }}
+                  <span v-if="index === 0" class="equipo-numero">Principal</span>
+                  <span v-else class="equipo-numero">#{{ index + 1 }}</span>
+                  {{ equipo.nombre || equipo.marca }}
                 </h4>
                 <span v-if="index === 0" class="badge-principal">Principal</span>
               </div>
@@ -111,10 +121,11 @@
               <div class="equipo-details">
                 <p><strong>Serial:</strong> {{ equipo.serial }}</p>
                 <p><strong>Características:</strong> {{ equipo.caracteristicas || 'No especificadas' }}</p>
-                <p><strong>Fecha de registro:</strong> {{ formatearFecha(equipo.fechaRegistro) }}</p>
+                <p v-if="equipo.fechaIngreso"><strong>Fecha de ingreso:</strong> {{ formatearFecha(equipo.fechaIngreso) }}</p>
+                <p v-else><strong>Fecha de ingreso:</strong> {{ obtenerFechaIngreso(usuarioSeleccionado._id, equipo.serial) }}</p>
                 <div class="equipo-accesorios">
-                  <span :class="['accesorio', equipo.mouse ? 'active' : '']">Mouse</span>
-                  <span :class="['accesorio', equipo.cargador ? 'active' : '']">Cargador</span>
+                  <span :class="['accesorio', equipo.mouse || equipo.accesorios?.mouse ? 'active' : '']">Mouse</span>
+                  <span :class="['accesorio', equipo.cargador || equipo.accesorios?.cargador ? 'active' : '']">Cargador</span>
                 </div>
               </div>
             </div>
@@ -253,13 +264,19 @@ export default {
         cargador: false,
         foto: null
       },
-      // Modal para opciones de foto
-      mostrarOpciones: false,
-      mostrarCamara: false,
-      // Paginación para mejorar rendimiento
+      // Paginación escalable para grandes volúmenes de datos
       paginaActual: 1,
-      usuariosPorPagina: 20,
-      totalUsuarios: 0
+      usuariosPorPagina: 100,  // Carga inicial
+      totalUsuarios: 0,
+      // Paginación para equipos
+      paginaEquipos: 1,
+      equiposPorPagina: 1000,  // Carga más equipos por lote
+      totalEquipos: 0,
+      equiposCargados: false,
+      // Caché para fechas de ingreso
+      fechasIngresoCache: {},
+      // URL de la API
+      apiUrl: getApiUrl('')
     };
   },
   computed: {
@@ -292,6 +309,86 @@ export default {
         year: 'numeric'
       });
     },
+    
+    // Métodos para manejo de fotos
+    abrirCamara() {
+      this.mostrarOpciones = false;
+      this.mostrarCamara = true;
+      
+      // Acceder a la cámara
+      navigator.mediaDevices.getUserMedia({ video: true })
+        .then(stream => {
+          this.$refs.video.srcObject = stream;
+          this.cameraStream = stream;
+        })
+        .catch(error => {
+          console.error('Error al acceder a la cámara:', error);
+          alert('No se pudo acceder a la cámara. Por favor, verifica los permisos.');
+          this.mostrarCamara = false;
+        });
+    },
+    
+    cerrarCamara() {
+      this.mostrarCamara = false;
+      
+      // Detener el stream de la cámara
+      if (this.cameraStream) {
+        this.cameraStream.getTracks().forEach(track => track.stop());
+        this.cameraStream = null;
+      }
+    },
+    
+    capturarFoto() {
+      const video = this.$refs.video;
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      
+      // Dibujar el frame actual del video en el canvas
+      const context = canvas.getContext('2d');
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      
+      // Convertir a base64
+      const fotoBase64 = canvas.toDataURL('image/jpeg');
+      this.nuevoEquipo.foto = fotoBase64;
+      
+      console.log('Foto capturada:', fotoBase64.substring(0, 50) + '...');
+      
+      // Cerrar la cámara
+      this.cerrarCamara();
+    },
+    
+    subirArchivo() {
+      this.mostrarOpciones = false;
+      
+      // Crear un input de archivo invisible
+      const fileInput = document.createElement('input');
+      fileInput.type = 'file';
+      fileInput.accept = 'image/*';
+      
+      // Manejar la selección de archivo
+      fileInput.onchange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        // Validar que sea una imagen
+        if (!file.type.startsWith('image/')) {
+          alert('Por favor, selecciona una imagen válida.');
+          return;
+        }
+        
+        // Leer el archivo como base64
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          this.nuevoEquipo.foto = event.target.result;
+          console.log('Archivo cargado:', this.nuevoEquipo.foto.substring(0, 50) + '...');
+        };
+        reader.readAsDataURL(file);
+      };
+      
+      // Simular clic en el input
+      fileInput.click();
+    },
     obtenerImagenEquipo(equipo) {
       // Si el equipo tiene una foto, la usamos
       if (equipo.foto) {
@@ -299,7 +396,72 @@ export default {
       }
       
       // Si no tiene foto, usamos una imagen por defecto
-      return '/logo-gatelogix.png'; // Imagen por defecto en la carpeta public
+      return '/logo-gatelogix.svg'; // Imagen por defecto en la carpeta public
+    },
+    
+    async obtenerFechaIngreso(usuarioId, serial) {
+      try {
+        if (!usuarioId || !serial) return 'No disponible';
+        
+        // Buscar en el historial local primero
+        const historialLocal = await this.obtenerHistorialLocal(usuarioId);
+        const primerIngreso = historialLocal.find(h => h.serial === serial && h.entrada);
+        
+        if (primerIngreso && primerIngreso.entrada) {
+          return this.formatearFecha(primerIngreso.entrada);
+        }
+        
+        return 'No disponible';
+      } catch (error) {
+        console.error('Error al obtener fecha de ingreso:', error);
+        return 'No disponible';
+      }
+    },
+    
+    async obtenerHistorialLocal(usuarioId) {
+      try {
+        // Verificar si ya tenemos el historial en caché
+        const cacheKey = `historial_${usuarioId}`;
+        if (this.fechasIngresoCache[cacheKey]) {
+          return this.fechasIngresoCache[cacheKey];
+        }
+        
+        // Obtener el token de autenticación
+        const token = localStorage.getItem('token');
+        if (!token) return [];
+        
+        // Consultar el historial para este usuario
+        const response = await fetch(getApiUrl('api/historial/listar'), {
+          headers: { 
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (!response.ok) {
+          console.error('Error al obtener historial:', response.status);
+          return [];
+        }
+        
+        // Verificar que la respuesta es JSON válido
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          console.error('La respuesta no es JSON válido');
+          return [];
+        }
+        
+        const data = await response.json();
+        
+        // Obtener todo el historial y no filtrar por usuario
+        const historialUsuario = Array.isArray(data) ? data : [];
+        
+        // Guardar en caché
+        this.fechasIngresoCache[cacheKey] = historialUsuario;
+        return historialUsuario;
+      } catch (error) {
+        console.error('Error al obtener historial local:', error);
+        return [];
+      }
     },
     abrirCamara() {
       this.mostrarOpciones = false;
@@ -446,7 +608,7 @@ export default {
         
         // Procesar usuarios para asegurar que todos tengan un array de equipos
         if (Array.isArray(this.usuarios)) {
-          this.usuarios.forEach(usuario => {
+          this.usuarios = this.usuarios.map(usuario => {
             // Asegurarse de que el usuario tenga un array de equipos
             if (!usuario.equipos) {
               usuario.equipos = [];
@@ -461,6 +623,7 @@ export default {
                 caracteristicas: usuario.equipo.caracteristicas || '',
                 mouse: usuario.equipo.accesorios?.mouse || usuario.mouse || false,
                 cargador: usuario.equipo.accesorios?.cargador || usuario.cargador || false,
+                foto: usuario.equipo.foto || null,
                 _id: usuario.equipo._id || `temp-${Date.now()}`
               };
               
@@ -486,6 +649,7 @@ export default {
                 caracteristicas: usuario.caracteristicas || '',
                 mouse: usuario.mouse || false,
                 cargador: usuario.cargador || false,
+                foto: null,
                 _id: usuario.equipo
               };
               
@@ -507,6 +671,7 @@ export default {
                 caracteristicas: usuario.caracteristicas || '',
                 mouse: usuario.mouse || false,
                 cargador: usuario.cargador || false,
+                foto: null,
                 _id: `temp-${Date.now()}`
               };
               
@@ -518,57 +683,24 @@ export default {
             } else {
               console.log(`Usuario ${usuario.nombre} no tiene equipo principal definido`);
             }
-          });
-        }
-        
-        // Ahora cargamos los equipos usando la nueva API
-        const equiposResponse = await axios.get(getApiUrl('api/equipos/listar'), {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        
-        console.log('📋 Respuesta de equipos:', equiposResponse.data);
-        
-        // Si tenemos equipos, los asociamos a sus usuarios correspondientes
-        if (equiposResponse.data && equiposResponse.data.equipos) {
-          // Crear un mapa de usuarios por documento para acceso rápido
-          const usuariosPorDocumento = {};
-          
-          if (Array.isArray(this.usuarios)) {
-            this.usuarios.forEach(usuario => {
-              if (usuario && (usuario.numeroDocumento || usuario.documento)) {
-                usuariosPorDocumento[usuario.numeroDocumento || usuario.documento] = usuario;
-              }
-            });
             
-            // Asociar cada equipo con su usuario
-            equiposResponse.data.equipos.forEach(equipo => {
-              const documento = equipo.usuario?.documento;
-              if (documento && usuariosPorDocumento[documento]) {
-                const usuario = usuariosPorDocumento[documento];
-                
-                // Verificar si el equipo ya existe en el array por serial
-                const equipoExistente = usuario.equipos.find(e => e.serial === equipo.serial);
-                if (!equipoExistente) {
-                  // Añadir el equipo al usuario
-                  usuario.equipos.push({
-                    nombre: equipo.marca,
-                    serial: equipo.serial,
-                    caracteristicas: equipo.caracteristicas,
-                    mouse: equipo.accesorios?.mouse || false,
-                    cargador: equipo.accesorios?.cargador || false,
-                    _id: equipo._id
-                  });
-                }
-              }
-            });
-          }
+            return usuario;
+          });
+
         }
+        
+        // Ahora cargamos los equipos usando paginación escalable
+        await this.cargarEquiposPaginados();
         
         console.log('✅ Usuarios y equipos cargados:', Array.isArray(this.usuarios) ? this.usuarios.length : 0);
         // Mostrar equipos de cada usuario para depuración
         if (Array.isArray(this.usuarios)) {
           this.usuarios.forEach(usuario => {
-            console.log(`👤 Usuario ${usuario.nombre}: Equipo principal: ${usuario.equipo?.serial || 'No tiene'}, Equipos adicionales: ${usuario.equipos?.length || 0}`);
+            console.log(`👤 Usuario ${usuario.nombre}: Equipos: ${usuario.equipos?.length || 0}`);
+            // Mostrar detalles de todos los equipos para depuración
+            if (usuario.equipos && usuario.equipos.length > 0) {
+              console.log(`   Equipos de ${usuario.nombre}:`, JSON.stringify(usuario.equipos.map(e => ({serial: e.serial, _id: e._id}))));
+            }
           });
         }
       } catch (err) {
@@ -578,24 +710,158 @@ export default {
         this.loading = false;
       }
     },
+
+    // Método para cargar equipos de forma paginada y escalable
+    async cargarEquiposPaginados() {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      try {
+        let paginaActual = 1;
+        let totalCargado = 0;
+        let hayMasPaginas = true;
+
+        // Crear mapa de usuarios por documento para acceso rápido
+        const usuariosPorDocumento = {};
+        if (Array.isArray(this.usuarios)) {
+          this.usuarios.forEach(usuario => {
+            if (usuario && (usuario.numeroDocumento || usuario.documento)) {
+              usuariosPorDocumento[usuario.numeroDocumento || usuario.documento] = usuario;
+            }
+          });
+        }
+
+        console.log('🔄 Iniciando carga paginada de equipos...');
+
+        while (hayMasPaginas && totalCargado < 50000) { // Límite de seguridad
+          const equiposResponse = await axios.get(
+            getApiUrl(`api/equipos/listar?page=${paginaActual}&limit=${this.equiposPorPagina}`), 
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+
+          if (equiposResponse.data && equiposResponse.data.equipos) {
+            const equipos = equiposResponse.data.equipos;
+            
+            // Procesar equipos de esta página
+            equipos.forEach(equipo => {
+              const documento = equipo.usuario?.documento;
+              if (documento && usuariosPorDocumento[documento]) {
+                const usuario = usuariosPorDocumento[documento];
+                
+                // Verificar si el equipo ya existe por serial
+                const equipoExistente = usuario.equipos.find(e => e.serial === equipo.serial);
+                if (!equipoExistente) {
+                  usuario.equipos.push({
+                    nombre: equipo.marca,
+                    serial: equipo.serial,
+                    caracteristicas: equipo.caracteristicas,
+                    mouse: equipo.accesorios?.mouse || false,
+                    cargador: equipo.accesorios?.cargador || false,
+                    foto: equipo.foto || null,
+                    _id: equipo._id
+                  });
+                }
+              }
+            });
+
+            totalCargado += equipos.length;
+            
+            // Verificar si hay más páginas
+            if (equipos.length < this.equiposPorPagina) {
+              hayMasPaginas = false;
+            } else {
+              paginaActual++;
+            }
+
+            console.log(`📦 Página ${paginaActual - 1}: ${equipos.length} equipos cargados. Total: ${totalCargado}`);
+          } else {
+            hayMasPaginas = false;
+          }
+        }
+
+        this.equiposCargados = true;
+        console.log(`✅ Carga de equipos completada. Total equipos procesados: ${totalCargado}`);
+        
+      } catch (error) {
+        console.error('❌ Error cargando equipos paginados:', error);
+      }
+    },
+
+    // Método para cargar más usuarios si es necesario
+    async cargarMasUsuarios() {
+      if (this.usuarios.length >= this.totalUsuarios) return;
+
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      try {
+        this.paginaActual++;
+        const usuariosResponse = await axios.get(
+          getApiUrl(`api/usuario-equipo/listar?page=${this.paginaActual}&limit=${this.usuariosPorPagina}`), 
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+        const nuevosUsuarios = Array.isArray(usuariosResponse.data) ? usuariosResponse.data : 
+                              (usuariosResponse.data && Array.isArray(usuariosResponse.data.usuarios) ? 
+                               usuariosResponse.data.usuarios : []);
+
+        if (nuevosUsuarios.length > 0) {
+          // Procesar nuevos usuarios
+          const usuariosProcesados = nuevosUsuarios.map(usuario => {
+            if (!usuario.equipos) {
+              usuario.equipos = [];
+            }
+            // Procesar equipo principal si existe
+            if (usuario.equipo && typeof usuario.equipo === 'object' && usuario.equipo.serial) {
+              const equipoPrincipal = {
+                nombre: usuario.equipo.marca || usuario.equipo.nombre || 'Equipo',
+                serial: usuario.equipo.serial || '',
+                caracteristicas: usuario.equipo.caracteristicas || '',
+                mouse: usuario.equipo.accesorios?.mouse || usuario.mouse || false,
+                cargador: usuario.equipo.accesorios?.cargador || usuario.cargador || false,
+                foto: usuario.equipo.foto || null,
+                _id: usuario.equipo._id || `temp-${Date.now()}`
+              };
+              usuario.equipos.unshift(equipoPrincipal);
+            }
+            return usuario;
+          });
+
+          this.usuarios.push(...usuariosProcesados);
+          console.log(`📄 Página ${this.paginaActual}: ${nuevosUsuarios.length} usuarios adicionales cargados`);
+        }
+      } catch (error) {
+        console.error('❌ Error cargando más usuarios:', error);
+      }
+    },
+
     abrirModalEquipos(usuario) {
       // Copia profunda del usuario
       this.usuarioSeleccionado = JSON.parse(JSON.stringify(usuario));
       console.log('Usuario seleccionado:', this.usuarioSeleccionado);
       
-      // Verificar si el usuario tiene un objeto equipo en lugar de un array equipos
-      if (this.usuarioSeleccionado.equipo && !this.usuarioSeleccionado.equipos) {
-        // Convertir el objeto equipo en un array equipos
-        this.usuarioSeleccionado.equipos = [{
-          nombre: this.usuarioSeleccionado.equipo.marca || 'Equipo',
-          serial: this.usuarioSeleccionado.equipo.serial || '',
-          caracteristicas: this.usuarioSeleccionado.equipo.caracteristicas || '',
-          mouse: this.usuarioSeleccionado.equipo.accesorios?.mouse || false,
-          cargador: this.usuarioSeleccionado.equipo.accesorios?.cargador || false
-        }];
-        console.log('Equipo convertido a array:', this.usuarioSeleccionado.equipos);
+      // Asegurarse de que equipos sea un array
+      if (!Array.isArray(this.usuarioSeleccionado.equipos)) {
+        this.usuarioSeleccionado.equipos = [];
       }
       
+      // Si el usuario tiene un objeto equipo pero no está en el array, agregarlo
+      if (this.usuarioSeleccionado.equipo && this.usuarioSeleccionado.equipo.serial) {
+        const equipoExistente = this.usuarioSeleccionado.equipos.find(e => e.serial === this.usuarioSeleccionado.equipo.serial);
+        if (!equipoExistente) {
+          const equipoPrincipal = {
+            nombre: this.usuarioSeleccionado.equipo.marca || 'Equipo',
+            serial: this.usuarioSeleccionado.equipo.serial || '',
+            caracteristicas: this.usuarioSeleccionado.equipo.caracteristicas || '',
+            mouse: this.usuarioSeleccionado.equipo.accesorios?.mouse || false,
+            cargador: this.usuarioSeleccionado.equipo.accesorios?.cargador || false,
+            foto: this.usuarioSeleccionado.equipo.foto || null
+          };
+          this.usuarioSeleccionado.equipos.unshift(equipoPrincipal);
+        }
+      }
+      
+      console.log('Equipos actualizados:', this.usuarioSeleccionado.equipos);
       this.modalEquiposAbierto = true;
     },
     
@@ -636,11 +902,30 @@ export default {
     // Guardar nuevo equipo
     async guardarNuevoEquipo() {
       if (!this.nuevoEquipo.nombre || !this.nuevoEquipo.serial) {
-        alert('Por favor complete los campos obligatorios');
+        alert('Por favor complete los campos obligatorios: Nombre y Serial del equipo');
         return;
       }
       
       try {
+        // Preparar la foto si existe
+        let foto = null;
+        if (this.nuevoEquipo.foto) {
+          // Usar la foto capturada o cargada
+          foto = this.nuevoEquipo.foto;
+          console.log('Foto preparada para enviar:', foto ? 'Foto presente (base64)' : 'Foto null');
+        } else {
+          console.log('No hay fotos para enviar');
+        }
+
+        // Asegurarse de que la foto sea una cadena base64 válida
+        let fotoFinal = null;
+        if (foto && typeof foto === 'string' && foto.startsWith('data:image')) {
+          fotoFinal = foto;
+          console.log('Foto válida detectada');
+        } else if (foto) {
+          console.log('Formato de foto no válido:', typeof foto);
+        }
+        
         // Preparar datos del equipo
         const equipoData = {
           marca: this.nuevoEquipo.nombre,
@@ -651,7 +936,9 @@ export default {
             cargador: this.nuevoEquipo.cargador || false
           },
           documento: this.usuarioSeleccionado.numeroDocumento || this.usuarioSeleccionado.documento,
-          foto: this.nuevoEquipo.foto // Incluir la foto en formato base64
+          foto: fotoFinal, // Incluir la foto validada en el payload
+          fechaIngreso: new Date().toISOString(), // Agregar fecha de ingreso
+          fechaRegistro: new Date().toISOString() // Agregar fecha de registro
         };
         
         // Guardar en el backend usando la nueva API
@@ -673,13 +960,31 @@ export default {
           caracteristicas: this.nuevoEquipo.caracteristicas,
           mouse: this.nuevoEquipo.mouse,
           cargador: this.nuevoEquipo.cargador,
-          foto: this.nuevoEquipo.foto
+          foto: this.nuevoEquipo.foto,
+          fechaRegistro: new Date().toISOString() // Agregar fecha de registro al objeto local
         });
         
         // Actualizar la lista de usuarios
-        const index = this.usuarios.findIndex(u => u._id === this.usuarioSeleccionado._id);
+        const index = this.usuarios.findIndex(u => 
+          u._id === this.usuarioSeleccionado._id || 
+          u.numeroDocumento === this.usuarioSeleccionado.numeroDocumento || 
+          u.documento === this.usuarioSeleccionado.documento
+        );
         if (index !== -1) {
-          this.usuarios[index].equipos = [...this.usuarioSeleccionado.equipos];
+          // Asegurarse de que el array de equipos exista
+          if (!this.usuarios[index].equipos) {
+            this.usuarios[index].equipos = [];
+          }
+          // Agregar el nuevo equipo al array de equipos del usuario
+          this.usuarios[index].equipos.push({
+            nombre: this.nuevoEquipo.nombre,
+            serial: this.nuevoEquipo.serial,
+            caracteristicas: this.nuevoEquipo.caracteristicas,
+            mouse: this.nuevoEquipo.mouse,
+            cargador: this.nuevoEquipo.cargador,
+            foto: this.nuevoEquipo.foto,
+            fechaRegistro: new Date().toISOString()
+          });
         }
         
         this.cerrarFormularioEquipo();
@@ -1197,6 +1502,35 @@ h1 {
 .error-container p {
   color: #d32f2f;
   margin-bottom: 1rem;
+}
+
+/* Load more button styles */
+.load-more-container {
+  display: flex;
+  justify-content: center;
+  padding: 2rem 0;
+  border-top: 1px solid #eee;
+  margin-top: 1rem;
+}
+
+.btn-load-more {
+  background: #1565c0;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-load-more:hover {
+  background: #0d47a1;
+}
+
+.btn-load-more:disabled {
+  background: #ccc;
+  cursor: not-allowed;
 }
 
 @media (max-width: 768px) {

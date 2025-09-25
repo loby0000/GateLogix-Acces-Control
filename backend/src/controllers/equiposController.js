@@ -6,7 +6,7 @@ const cacheService = require('../utils/cacheService');
 // Registrar un nuevo equipo para un usuario existente
 exports.registrarEquipo = async (req, res) => {
   try {
-    const { usuarioId, documento, marca, serial, caracteristicas, accesorios } = req.body;
+    const { usuarioId, documento, marca, serial, caracteristicas, accesorios, foto, fechaIngreso } = req.body;
     const idGuardia = req.user.id; // Viene del middleware JWT
 
     // Validaciones básicas
@@ -34,7 +34,9 @@ exports.registrarEquipo = async (req, res) => {
       accesorios: {
         mouse: accesorios?.mouse || false,
         cargador: accesorios?.cargador || false
-      }
+      },
+      foto: foto, // Guardar la foto del equipo
+      fechaIngreso: fechaIngreso || new Date().toISOString() // Usar la fecha proporcionada o generar una nueva
     };
 
     // Si el usuario no tiene un array de equipos, crearlo
@@ -47,7 +49,9 @@ exports.registrarEquipo = async (req, res) => {
           marca: usuario.equipo.marca,
           serial: usuario.equipo.serial,
           caracteristicas: usuario.equipo.caracteristicas,
-          accesorios: usuario.equipo.accesorios
+          accesorios: usuario.equipo.accesorios,
+          foto: usuario.equipo.foto,
+          fechaIngreso: usuario.equipo.fechaIngreso
         });
       }
     }
@@ -127,35 +131,46 @@ exports.listarEquipos = async (req, res) => {
     
     // Formatear la respuesta
     const equipos = [];
+    const serialsVistos = new Set(); // Para evitar duplicados
+    
     usuarios.forEach(usuario => {
       // Procesar array equipos si existe
       if (usuario.equipos && usuario.equipos.length > 0) {
         usuario.equipos.forEach(equipo => {
+          // Solo agregar si no hemos visto este serial antes
+          if (!serialsVistos.has(equipo.serial)) {
+            serialsVistos.add(equipo.serial);
+            equipos.push({
+              ...equipo,
+              usuario: {
+                id: usuario._id,
+                nombre: usuario.nombre,
+                documento: usuario.numeroDocumento
+              }
+            });
+          }
+        });
+      }
+      
+      // TAMBIÉN procesar objeto equipo si existe (sin else)
+      if (usuario.equipo && Object.keys(usuario.equipo).length > 0) {
+        // Solo agregar si no hemos visto este serial antes
+        if (!serialsVistos.has(usuario.equipo.serial)) {
+          serialsVistos.add(usuario.equipo.serial);
           equipos.push({
-            ...equipo,
+            _id: usuario.equipo._id || `temp-${Date.now()}`,
+            marca: usuario.equipo.marca || 'Equipo',
+            serial: usuario.equipo.serial || '',
+            caracteristicas: usuario.equipo.caracteristicas || '',
+            accesorios: usuario.equipo.accesorios || { mouse: false, cargador: false },
+            foto: usuario.equipo.foto || null,
             usuario: {
               id: usuario._id,
               nombre: usuario.nombre,
               documento: usuario.numeroDocumento
             }
           });
-        });
-      }
-      
-      // Procesar objeto equipo si existe
-      if (usuario.equipo && Object.keys(usuario.equipo).length > 0) {
-        equipos.push({
-          _id: usuario.equipo._id || `temp-${Date.now()}`,
-          marca: usuario.equipo.marca || 'Equipo',
-          serial: usuario.equipo.serial || '',
-          caracteristicas: usuario.equipo.caracteristicas || '',
-          accesorios: usuario.equipo.accesorios || { mouse: false, cargador: false },
-          usuario: {
-            id: usuario._id,
-            nombre: usuario.nombre,
-            documento: usuario.numeroDocumento
-          }
-        });
+        }
       }
     });
     
@@ -184,6 +199,8 @@ exports.equiposPorUsuario = async (req, res) => {
   try {
     const { documento } = req.params;
     
+    console.log(`🔍 Buscando equipos para usuario con documento: ${documento}`);
+    
     // Intentar obtener del caché primero
     const cacheKey = `equipos:usuario:${documento}`;
     const cachedResult = await cacheService.get(cacheKey);
@@ -193,27 +210,90 @@ exports.equiposPorUsuario = async (req, res) => {
       return res.json(cachedResult);
     }
     
-    // Buscar usuario por documento
-    const usuario = await UsuarioEquipo.findOne({ numeroDocumento: documento })
-      .select('nombre numeroDocumento equipos')
-      .lean();
+    // Buscar usuario por documento - SIN LEAN para poder acceder a todos los campos
+    const usuario = await UsuarioEquipo.findOne({ numeroDocumento: documento });
     
     if (!usuario) {
+      console.log(`❌ Usuario no encontrado con documento: ${documento}`);
       return res.status(404).json({ message: 'Usuario no encontrado' });
     }
     
-    // Formatear respuesta
+    console.log(`👤 Usuario encontrado: ${usuario.nombre}`);
+    console.log(`📋 Equipo principal:`, usuario.equipo);
+    console.log(`📋 Array equipos:`, usuario.equipos);
+    
+    // Inicializar array de equipos
+    let equipos = [];
+    
+    // Primero agregar todos los equipos del array equipos si existe
+    if (usuario.equipos && Array.isArray(usuario.equipos) && usuario.equipos.length > 0) {
+      equipos = usuario.equipos.map(equipo => ({
+        _id: equipo._id,
+        marca: equipo.marca || 'Equipo',
+        serial: equipo.serial || '',
+        caracteristicas: equipo.caracteristicas || '',
+        accesorios: equipo.accesorios || { mouse: false, cargador: false },
+        foto: equipo.foto || null,
+        fechaIngreso: equipo.fechaIngreso || null
+      }));
+      console.log(`📦 Equipos del array: ${equipos.length}`);
+    }
+    
+    // Luego agregar el equipo principal si existe y no está ya en el array
+    if (usuario.equipo && usuario.equipo.serial) {
+      const equipoPrincipal = {
+        _id: usuario.equipo._id || `temp-principal-${Date.now()}`,
+        marca: usuario.equipo.marca || 'Equipo',
+        serial: usuario.equipo.serial || '',
+        caracteristicas: usuario.equipo.caracteristicas || '',
+        accesorios: usuario.equipo.accesorios || { mouse: false, cargador: false },
+        foto: usuario.equipo.foto || null,
+        fechaIngreso: usuario.equipo.fechaIngreso || null,
+        principal: true
+      };
+      
+      // Verificar si el equipo principal ya existe en el array por serial
+      const equipoExistente = equipos.find(e => e.serial === equipoPrincipal.serial);
+      if (!equipoExistente) {
+        equipos.unshift(equipoPrincipal); // Agregar al inicio
+        console.log(`➕ Equipo principal agregado: ${equipoPrincipal.serial}`);
+      } else {
+        console.log(`⚠️ Equipo principal ya existe en el array: ${equipoPrincipal.serial}`);
+      }
+    }
+    
+    // También verificar campos legacy (serialEquipo, marcaEquipo, etc.)
+    if (usuario.serialEquipo && !equipos.find(e => e.serial === usuario.serialEquipo)) {
+      const equipoLegacy = {
+        _id: `temp-legacy-${Date.now()}`,
+        marca: usuario.marcaEquipo || 'Equipo',
+        serial: usuario.serialEquipo,
+        caracteristicas: usuario.caracteristicas || '',
+        accesorios: { 
+          mouse: usuario.mouse || false, 
+          cargador: usuario.cargador || false 
+        },
+        foto: null,
+        fechaIngreso: null,
+        legacy: true
+      };
+      equipos.unshift(equipoLegacy);
+      console.log(`➕ Equipo legacy agregado: ${equipoLegacy.serial}`);
+    }
+    
+    console.log(`📊 Total equipos encontrados: ${equipos.length}`);
+    
     const response = {
       usuario: {
         id: usuario._id,
         nombre: usuario.nombre,
         documento: usuario.numeroDocumento
       },
-      equipos: usuario.equipos || []
+      equipos: equipos
     };
     
-    // Guardar en caché
-    await cacheService.set(cacheKey, response, 600);
+    // Guardar en caché por menos tiempo para debugging
+    await cacheService.set(cacheKey, response, 60);
     
     res.json(response);
   } catch (error) {

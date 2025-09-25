@@ -68,7 +68,7 @@
 
           <!-- Celda de equipo con menú -->
           <td class="equipo-cell">
-            <span>{{ usuario.equipo?.marca || '-' }}</span>
+            <span>{{ getEquipoPrincipal(usuario)?.marca || '-' }}</span>
             <button
               class="kebab-btn"
               aria-label="Más opciones de equipo"
@@ -78,10 +78,10 @@
             </button>
           </td>
 
-          <td>{{ usuario.equipo?.serial || '-' }}</td>
-          <td>{{ usuario.equipo?.caracteristicas || '-' }}</td>
-          <td>{{ usuario.equipo?.accesorios?.mouse ? 'Sí' : 'No' }}</td>
-          <td>{{ usuario.equipo?.accesorios?.cargador ? 'Sí' : 'No' }}</td>
+          <td>{{ getEquipoPrincipal(usuario)?.serial || '-' }}</td>
+          <td>{{ getEquipoPrincipal(usuario)?.caracteristicas || '-' }}</td>
+          <td>{{ getEquipoPrincipal(usuario)?.accesorios?.mouse ? 'Sí' : 'No' }}</td>
+          <td>{{ getEquipoPrincipal(usuario)?.accesorios?.cargador ? 'Sí' : 'No' }}</td>
         </tr>
       </tbody>
     </table>
@@ -325,7 +325,8 @@ export default {
         this.usuarios = [res.data];
         
         // 🔹 Obtener el estado actual del usuario (solo consulta, sin registro automático)
-        const serial = res.data.equipo?.serial;
+        const equipoPrincipal = this.getEquipoPrincipal(res.data);
+        const serial = equipoPrincipal?.serial;
         if (serial) {
           await this.obtenerEstadoUsuario(serial);
         }
@@ -372,11 +373,52 @@ export default {
       if (!isMenu && !isBtn) this.equipoMenuAbierto = null;
     },
     defaultEquipos(usuario) {
-      return usuario.equipos?.length
-        ? usuario.equipos
-        : usuario.equipo
-        ? [{ marca: usuario.equipo.marca, serial: usuario.equipo.serial }]
-        : [];
+      let equiposArray = [];
+      
+      // Inicializar el array de equipos si no existe
+      if (!Array.isArray(usuario.equipos)) {
+        usuario.equipos = [];
+      }
+      
+      // Si el usuario tiene un equipo principal, asegurarse de que esté en el array
+      if (usuario.equipo && usuario.equipo.serial) {
+        const equipoPrincipal = {
+          nombre: usuario.equipo.marca || '',
+          marca: usuario.equipo.marca || '',
+          serial: usuario.equipo.serial || '',
+          caracteristicas: usuario.equipo.caracteristicas || '',
+          accesorios: usuario.equipo.accesorios || { mouse: false, cargador: false },
+          mouse: usuario.equipo.accesorios?.mouse || false,
+          cargador: usuario.equipo.accesorios?.cargador || false,
+          foto: usuario.equipo.foto || null,
+          _id: usuario.equipo._id
+        };
+        
+        // Verificar si el equipo principal ya existe en el array de equipos
+        const equipoExistente = usuario.equipos.find(e => e.serial === equipoPrincipal.serial);
+        if (!equipoExistente) {
+          usuario.equipos.unshift(equipoPrincipal);
+        }
+      }
+      
+      return usuario.equipos || [];
+    },
+    
+    // Función para obtener el equipo principal desde el array de equipos
+    getEquipoPrincipal(usuario) {
+      if (!usuario) return null;
+      
+      // Si hay equipos en el array, devolver el primero (que debería ser el principal)
+      if (usuario.equipos && Array.isArray(usuario.equipos) && usuario.equipos.length > 0) {
+        return usuario.equipos[0];
+      }
+      
+      // Fallback al campo equipo si existe
+      if (usuario.equipo && usuario.equipo.serial) {
+        return usuario.equipo;
+      }
+      
+      return null;
     },
     abrirModalNuevoEquipo(usuario) {
       this.usuarioSeleccionado = usuario;
@@ -442,6 +484,8 @@ export default {
           serial: this.nuevoEquipo.serial,
           caracteristicas: this.nuevoEquipo.caracteristicas,
           foto: this.nuevoEquipo.foto, // Añadir la foto al objeto de datos
+          fechaIngreso: new Date().toISOString(), // Añadir fecha de ingreso
+          fechaRegistro: new Date().toISOString(), // Añadir fecha de registro
           accesorios: {
             mouse: this.nuevoEquipo.mouse,
             cargador: this.nuevoEquipo.cargador
@@ -645,7 +689,8 @@ export default {
         // Obtener información del guardia desde el token
         const payload = JSON.parse(atob(token.split('.')[1]));
         const docGuardia = payload.documento;
-        const serial = this.usuarios[0].equipo?.serial;
+        const equipoPrincipal = this.getEquipoPrincipal(this.usuarios[0]);
+        const serial = equipoPrincipal?.serial;
 
         if (!serial) {
            this.toast.error("No se encontró el serial del equipo");

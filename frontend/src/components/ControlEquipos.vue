@@ -697,9 +697,10 @@ export default {
         let equipos = [];
         let equiposProcesados = 0;
         
+        // Validar y extraer equipos de forma segura ANTES del try-catch
+        equipos = equiposResponse?.data?.equipos || [];
+        
         try {
-          // Validar y extraer equipos de forma segura
-          equipos = equiposResponse?.data?.equipos || [];
           
           if (Array.isArray(equipos) && equipos.length > 0) {
             const serialsVistos = new Set(); // Evitar duplicados globalmente

@@ -319,13 +319,12 @@ export default {
   mounted() {
     this.cargarUsuariosYEquipos();
   },
-  
-  // Método para buscar
-  onSearch() {
-    // La búsqueda se maneja automáticamente a través de la propiedad computada filteredUsers
-    console.log('Buscando:', this.searchQuery);
-  },
   methods: {
+    // Método para buscar
+    onSearch() {
+      // La búsqueda se maneja automáticamente a través de la propiedad computada filteredUsers
+      console.log('Buscando:', this.searchQuery);
+    },
     formatearFecha(fecha) {
       if (!fecha) return 'No disponible';
       return new Date(fecha).toLocaleDateString('es-ES', {
@@ -764,7 +763,10 @@ export default {
           this.usuariosCache = this.usuarios.map(u => ({ ...u, equipos: [...u.equipos] })); // Copia optimizada
           this.equiposCache = Array.isArray(equipos) ? equipos : [];
           this.cacheTimestamp = Date.now();
-        console.log('💾 Datos guardados en caché');
+          console.log('💾 Datos guardados en caché');
+        } catch (cacheError) {
+          console.error('❌ Error guardando en caché:', cacheError);
+        }
         
       } catch (err) {
         console.error('❌ Error cargando usuarios y equipos:', err);

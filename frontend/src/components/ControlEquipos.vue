@@ -24,28 +24,72 @@
       </button>
     </div>
 
-    <!-- Estado de carga mejorado -->
+    <!-- Estado de carga mejorado y moderno -->
     <div v-if="loading" class="loading-container">
-      <div class="loading-content">
-        <div class="loading-spinner"></div>
-        <div class="loading-text">
-          <p>Cargando usuarios y equipos...</p>
-          <div class="loading-progress">
-            <div class="progress-bar">
-              <div class="progress-fill"></div>
+      <div class="loading-hero">
+        <div class="loading-animation">
+          <div class="pulse-ring"></div>
+          <div class="pulse-ring delay-1"></div>
+          <div class="pulse-ring delay-2"></div>
+          <div class="loading-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 2L13.09 8.26L20 9L13.09 9.74L12 16L10.91 9.74L4 9L10.91 8.26L12 2Z" fill="#1565c0"/>
+              <path d="M19 15L19.91 18.26L23 19L19.91 19.74L19 23L18.09 19.74L15 19L18.09 18.26L19 15Z" fill="#42a5f5"/>
+              <path d="M5 6L5.91 9.26L9 10L5.91 10.74L5 14L4.09 10.74L1 10L4.09 9.26L5 6Z" fill="#64b5f6"/>
+            </svg>
+          </div>
+        </div>
+        
+        <div class="loading-content">
+          <h3 class="loading-title">Cargando Control de Equipos</h3>
+          <p class="loading-subtitle">Procesando usuarios y equipos del sistema...</p>
+          
+          <div class="loading-stats">
+            <div class="stat-item">
+              <div class="stat-icon">👥</div>
+              <span>Usuarios</span>
             </div>
-            <small>Optimizando carga de datos...</small>
+            <div class="stat-item">
+              <div class="stat-icon">💻</div>
+              <span>Equipos</span>
+            </div>
+            <div class="stat-item">
+              <div class="stat-icon">🔄</div>
+              <span>Sincronizando</span>
+            </div>
+          </div>
+          
+          <div class="loading-progress-modern">
+            <div class="progress-track">
+              <div class="progress-fill-modern"></div>
+            </div>
+            <div class="progress-dots">
+              <div class="dot active"></div>
+              <div class="dot"></div>
+              <div class="dot"></div>
+            </div>
           </div>
         </div>
       </div>
       
-      <!-- Skeleton loader para la tabla -->
-      <div class="skeleton-table">
-        <div class="skeleton-header">
-          <div class="skeleton-cell" v-for="n in 5" :key="n"></div>
+      <!-- Skeleton loader mejorado para la tabla -->
+      <div class="skeleton-preview">
+        <div class="skeleton-header-modern">
+          <div class="skeleton-title">Vista previa de la tabla</div>
         </div>
-        <div class="skeleton-row" v-for="n in 6" :key="n">
-          <div class="skeleton-cell" v-for="m in 5" :key="m"></div>
+        <div class="skeleton-table-modern">
+          <div class="skeleton-table-header">
+            <div class="skeleton-cell-modern header" v-for="n in 5" :key="'header-' + n">
+              <div class="skeleton-shimmer"></div>
+            </div>
+          </div>
+          <div class="skeleton-table-body">
+            <div class="skeleton-row-modern" v-for="n in 4" :key="'row-' + n">
+              <div class="skeleton-cell-modern" v-for="m in 5" :key="'cell-' + n + '-' + m">
+                <div class="skeleton-shimmer" :style="{ animationDelay: (n * 0.1 + m * 0.05) + 's' }"></div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -1489,112 +1533,327 @@ h1 {
   background: #0d47a1;
 }
 
-/* Loading and error styles - MEJORADO */
+/* Loading and error styles - COMPLETAMENTE RENOVADO */
 .loading-container {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 3rem 1rem;
-  text-align: center;
-  min-height: 400px;
+  justify-content: flex-start;
+  padding: 2rem 1rem;
+  min-height: 70vh;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  border-radius: 16px;
+  margin: 1rem 0;
 }
 
-.loading-content {
+.loading-hero {
   display: flex;
   flex-direction: column;
   align-items: center;
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.loading-animation {
+  position: relative;
+  width: 120px;
+  height: 120px;
   margin-bottom: 2rem;
 }
 
-.loading-text {
-  margin-left: 1rem;
+.pulse-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 80px;
+  height: 80px;
+  border: 3px solid rgba(21, 101, 192, 0.3);
+  border-radius: 50%;
+  animation: pulse-ring 2s cubic-bezier(0.455, 0.03, 0.515, 0.955) infinite;
 }
 
-.loading-text p {
-  margin: 0 0 1rem 0;
-  font-size: 1.1rem;
-  color: #333;
+.pulse-ring.delay-1 {
+  animation-delay: 0.3s;
+  border-color: rgba(66, 165, 245, 0.3);
 }
 
-.loading-progress {
+.pulse-ring.delay-2 {
+  animation-delay: 0.6s;
+  border-color: rgba(100, 181, 246, 0.3);
+}
+
+@keyframes pulse-ring {
+  0% {
+    transform: translate(-50%, -50%) scale(0.8);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(2);
+    opacity: 0;
+  }
+}
+
+.loading-icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 48px;
+  height: 48px;
+  background: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 32px rgba(21, 101, 192, 0.2);
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translate(-50%, -50%) translateY(0px); }
+  50% { transform: translate(-50%, -50%) translateY(-10px); }
+}
+
+.loading-content {
+  max-width: 400px;
+}
+
+.loading-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0 0 0.5rem 0;
+  background: linear-gradient(135deg, #1565c0, #42a5f5);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.loading-subtitle {
+  font-size: 1rem;
+  color: #64748b;
+  margin: 0 0 2rem 0;
+  line-height: 1.5;
+}
+
+.loading-stats {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.stat-item {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 0.5rem;
+  padding: 1rem;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  min-width: 80px;
+  animation: stat-bounce 2s ease-in-out infinite;
 }
 
-.progress-bar {
-  width: 200px;
-  height: 4px;
-  background: #e0e0e0;
-  border-radius: 2px;
-  overflow: hidden;
+.stat-item:nth-child(1) { animation-delay: 0s; }
+.stat-item:nth-child(2) { animation-delay: 0.2s; }
+.stat-item:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes stat-bounce {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-5px); }
 }
 
-.progress-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #1565c0, #42a5f5);
-  border-radius: 2px;
-  animation: progress 2s ease-in-out infinite;
+.stat-icon {
+  font-size: 1.5rem;
+  filter: grayscale(0.3);
 }
 
-@keyframes progress {
-  0% { width: 0%; }
-  50% { width: 70%; }
-  100% { width: 100%; }
+.stat-item span {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
-.loading-progress small {
-  color: #666;
-  font-size: 0.9rem;
-}
-
-/* Skeleton loader styles */
-.skeleton-table {
-  width: 100%;
-  margin-top: 2rem;
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.skeleton-header,
-.skeleton-row {
+.loading-progress-modern {
   display: flex;
+  flex-direction: column;
+  align-items: center;
   gap: 1rem;
+}
+
+.progress-track {
+  width: 200px;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 3px;
+  overflow: hidden;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.progress-fill-modern {
+  height: 100%;
+  background: linear-gradient(90deg, #1565c0, #42a5f5, #64b5f6);
+  background-size: 200% 100%;
+  border-radius: 3px;
+  animation: progress-modern 2s ease-in-out infinite;
+}
+
+@keyframes progress-modern {
+  0% { 
+    width: 0%; 
+    background-position: 0% 50%;
+  }
+  50% { 
+    width: 70%; 
+    background-position: 100% 50%;
+  }
+  100% { 
+    width: 100%; 
+    background-position: 0% 50%;
+  }
+}
+
+.progress-dots {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #cbd5e1;
+  animation: dot-pulse 1.5s ease-in-out infinite;
+}
+
+.dot.active {
+  background: #1565c0;
+}
+
+.dot:nth-child(1) { animation-delay: 0s; }
+.dot:nth-child(2) { animation-delay: 0.2s; }
+.dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes dot-pulse {
+  0%, 100% { 
+    transform: scale(1);
+    opacity: 0.7;
+  }
+  50% { 
+    transform: scale(1.2);
+    opacity: 1;
+  }
+}
+
+/* Skeleton loader moderno */
+.skeleton-preview {
+  width: 100%;
+  max-width: 800px;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.skeleton-header-modern {
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.skeleton-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #64748b;
+  text-align: center;
+}
+
+.skeleton-table-modern {
   padding: 1rem;
 }
 
-.skeleton-header {
-  background: #f5f5f5;
+.skeleton-table-header {
+  display: grid;
+  grid-template-columns: 1fr 2fr 1.5fr 2fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #f1f5f9;
 }
 
-.skeleton-row {
-  border-bottom: 1px solid #eee;
+.skeleton-table-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
 }
 
-.skeleton-cell {
+.skeleton-row-modern {
+  display: grid;
+  grid-template-columns: 1fr 2fr 1.5fr 2fr 1fr;
+  gap: 1rem;
+  padding: 0.75rem 0;
+}
+
+.skeleton-cell-modern {
   height: 20px;
-  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-  background-size: 200% 100%;
-  border-radius: 4px;
-  animation: skeleton-loading 1.5s infinite;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #f1f5f9;
 }
 
-.skeleton-header .skeleton-cell {
+.skeleton-cell-modern.header {
   height: 16px;
-  background: #e0e0e0;
+  background: #e2e8f0;
 }
 
-.skeleton-cell:nth-child(1) { flex: 0 0 80px; }
-.skeleton-cell:nth-child(2) { flex: 1; }
-.skeleton-cell:nth-child(3) { flex: 0 0 120px; }
-.skeleton-cell:nth-child(4) { flex: 1; }
-.skeleton-cell:nth-child(5) { flex: 0 0 100px; }
+.skeleton-shimmer {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.8) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s ease-in-out infinite;
+}
 
-@keyframes skeleton-loading {
+@keyframes shimmer {
   0% { background-position: -200% 0; }
   100% { background-position: 200% 0; }
+}
+
+/* Responsive design para loading */
+@media (max-width: 768px) {
+  .loading-stats {
+    gap: 1rem;
+  }
+  
+  .stat-item {
+    min-width: 60px;
+    padding: 0.75rem;
+  }
+  
+  .stat-icon {
+    font-size: 1.2rem;
+  }
+  
+  .skeleton-table-header,
+  .skeleton-row-modern {
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 0.5rem;
+  }
+  
+  .skeleton-cell-modern:nth-child(4),
+  .skeleton-cell-modern:nth-child(5) {
+    display: none;
+  }
 }
 
 .error-container {

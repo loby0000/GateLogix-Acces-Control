@@ -803,14 +803,10 @@ export default {
         console.log('✅ Usuarios y equipos cargados:', this.usuarios.length);
         
         // 🚀 OPTIMIZACIÓN: Guardar en caché de forma más eficiente y segura
-        try {
-          this.usuariosCache = this.usuarios.map(u => ({ ...u, equipos: [...u.equipos] })); // Copia optimizada
-          this.equiposCache = Array.isArray(equipos) ? equipos : [];
-          this.cacheTimestamp = Date.now();
-          console.log('💾 Datos guardados en caché');
-        } catch (cacheError) {
-          console.error('❌ Error guardando en caché:', cacheError);
-        }
+        this.usuariosCache = this.usuarios.map(u => ({ ...u, equipos: [...u.equipos] })); // Copia optimizada
+        this.equiposCache = Array.isArray(equipos) ? equipos : [];
+        this.cacheTimestamp = Date.now();
+        console.log('💾 Datos guardados en caché');
         
       } catch (err) {
         console.error('❌ Error cargando usuarios y equipos:', err);

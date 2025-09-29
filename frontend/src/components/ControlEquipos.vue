@@ -695,8 +695,8 @@ export default {
         this.usuarios = procesarUsuariosEnLotes(usuariosData);
         
         // 🚀 OPTIMIZACIÓN: Procesar equipos de forma más eficiente con menos memoria
-        if (equiposResponse.data?.equipos?.length) {
-          const equipos = equiposResponse.data.equipos;
+        const equipos = equiposResponse.data?.equipos || [];
+        if (equipos.length) {
           const serialsVistos = new Set(); // Evitar duplicados globalmente
           
           // 🚀 OPTIMIZACIÓN: Procesar equipos en lotes para mejor rendimiento

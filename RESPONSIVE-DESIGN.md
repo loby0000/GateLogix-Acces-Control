@@ -31,7 +31,7 @@
 1280px - Desktop Small
 1440px - Desktop Medium
 1920px - Desktop Large
-2560px - Desktop Ultra-wide
+2560px - Desktop Ultra-widw
 ```
 
 ### 🎨 **Utilidades Responsive Avanzadas**

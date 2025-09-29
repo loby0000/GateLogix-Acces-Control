@@ -694,54 +694,76 @@ export default {
         
         this.usuarios = procesarUsuariosEnLotes(usuariosData);
         
-        // 🚀 OPTIMIZACIÓN: Procesar equipos de forma más eficiente con menos memoria
-        const equipos = equiposResponse.data?.equipos || [];
-        if (equipos.length) {
-          const serialsVistos = new Set(); // Evitar duplicados globalmente
+        // 🚀 OPTIMIZACIÓN: Declarar equipos en el scope correcto para evitar ReferenceError
+        let equipos = [];
+        let equiposProcesados = 0;
+        
+        try {
+          // Validar y extraer equipos de forma segura
+          equipos = equiposResponse?.data?.equipos || [];
           
-          // 🚀 OPTIMIZACIÓN: Procesar equipos en lotes para mejor rendimiento
-          const procesarEquiposEnLotes = (equipos, tamanioLote = 100) => {
-            let equiposProcesados = 0;
+          if (Array.isArray(equipos) && equipos.length > 0) {
+            const serialsVistos = new Set(); // Evitar duplicados globalmente
             
-            for (let i = 0; i < equipos.length; i += tamanioLote) {
-              const lote = equipos.slice(i, i + tamanioLote);
+            // 🚀 OPTIMIZACIÓN: Procesar equipos en lotes para mejor rendimiento
+            const procesarEquiposEnLotes = (equiposArray, tamanioLote = 100) => {
+              let procesados = 0;
               
-              lote.forEach(equipo => {
-                const documento = equipo.usuario?.documento;
-                if (documento && usuariosPorDocumento.has(documento) && !serialsVistos.has(equipo.serial)) {
-                  serialsVistos.add(equipo.serial);
-                  const usuario = usuariosPorDocumento.get(documento);
-                  
-                  // Verificar duplicados de forma más eficiente usando Set
-                  if (!usuario.equipos.some(e => e.serial === equipo.serial)) {
-                    usuario.equipos.push({
-                      nombre: equipo.marca,
-                      serial: equipo.serial,
-                      caracteristicas: equipo.caracteristicas,
-                      mouse: equipo.accesorios?.mouse || false,
-                      cargador: equipo.accesorios?.cargador || false,
-                      foto: equipo.foto || null,
-                      _id: equipo._id
-                    });
-                    equiposProcesados++;
+              if (!Array.isArray(equiposArray)) {
+                console.warn('⚠️ equiposArray no es un array válido');
+                return 0;
+              }
+              
+              for (let i = 0; i < equiposArray.length; i += tamanioLote) {
+                const lote = equiposArray.slice(i, i + tamanioLote);
+                
+                lote.forEach(equipo => {
+                  try {
+                    const documento = equipo?.usuario?.documento;
+                    if (documento && usuariosPorDocumento.has(documento) && !serialsVistos.has(equipo.serial)) {
+                      serialsVistos.add(equipo.serial);
+                      const usuario = usuariosPorDocumento.get(documento);
+                      
+                      // Verificar duplicados de forma más eficiente usando Set
+                      if (!usuario.equipos.some(e => e.serial === equipo.serial)) {
+                        usuario.equipos.push({
+                          nombre: equipo.marca || 'Sin marca',
+                          serial: equipo.serial || 'Sin serial',
+                          caracteristicas: equipo.caracteristicas || '',
+                          mouse: equipo.accesorios?.mouse || false,
+                          cargador: equipo.accesorios?.cargador || false,
+                          foto: equipo.foto || null,
+                          _id: equipo._id
+                        });
+                        procesados++;
+                      }
+                    }
+                  } catch (equipoError) {
+                    console.warn('⚠️ Error procesando equipo individual:', equipoError);
                   }
-                }
-              });
-            }
+                });
+              }
+              
+              return procesados;
+            };
             
-            return equiposProcesados;
-          };
-          
-          const equiposProcesados = procesarEquiposEnLotes(equipos);
-          console.log(`✅ ${equiposProcesados} equipos procesados en paralelo (de ${equipos.length} totales)`);
+            equiposProcesados = procesarEquiposEnLotes(equipos);
+            console.log(`✅ ${equiposProcesados} equipos procesados en paralelo (de ${equipos.length} totales)`);
+          } else {
+            console.log('ℹ️ No hay equipos para procesar');
+          }
+        } catch (equiposError) {
+          console.error('❌ Error procesando equipos:', equiposError);
+          equipos = []; // Asegurar que equipos sea un array vacío en caso de error
         }
         
         console.log('✅ Usuarios y equipos cargados:', this.usuarios.length);
         
-        // 🚀 OPTIMIZACIÓN: Guardar en caché de forma más eficiente
-        this.usuariosCache = this.usuarios.map(u => ({ ...u, equipos: [...u.equipos] })); // Copia optimizada
-        this.equiposCache = equipos;
-        this.cacheTimestamp = Date.now();
+        // 🚀 OPTIMIZACIÓN: Guardar en caché de forma más eficiente y segura
+        try {
+          this.usuariosCache = this.usuarios.map(u => ({ ...u, equipos: [...u.equipos] })); // Copia optimizada
+          this.equiposCache = Array.isArray(equipos) ? equipos : [];
+          this.cacheTimestamp = Date.now();
         console.log('💾 Datos guardados en caché');
         
       } catch (err) {

@@ -24,10 +24,30 @@
       </button>
     </div>
 
-    <!-- Estado de carga -->
+    <!-- Estado de carga mejorado -->
     <div v-if="loading" class="loading-container">
-      <div class="loading-spinner"></div>
-      <p>Cargando usuarios y equipos...</p>
+      <div class="loading-content">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">
+          <p>Cargando usuarios y equipos...</p>
+          <div class="loading-progress">
+            <div class="progress-bar">
+              <div class="progress-fill"></div>
+            </div>
+            <small>Optimizando carga de datos...</small>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Skeleton loader para la tabla -->
+      <div class="skeleton-table">
+        <div class="skeleton-header">
+          <div class="skeleton-cell" v-for="n in 5" :key="n"></div>
+        </div>
+        <div class="skeleton-row" v-for="n in 6" :key="n">
+          <div class="skeleton-cell" v-for="m in 5" :key="m"></div>
+        </div>
+      </div>
     </div>
 
     <!-- Mensaje de error -->
@@ -275,6 +295,11 @@ export default {
       equiposCargados: false,
       // Caché para fechas de ingreso
       fechasIngresoCache: {},
+      // Caché para datos de API
+      usuariosCache: null,
+      equiposCache: null,
+      cacheTimestamp: null,
+      cacheExpiry: 5 * 60 * 1000, // 5 minutos en milisegundos
       // URL de la API
       apiUrl: getApiUrl('')
     };
@@ -578,7 +603,7 @@ export default {
       
       img.src = dataUrl;
     },
-    // Cargar usuarios desde el backend
+    // Cargar usuarios desde el backend - OPTIMIZADO CON CACHÉ
     async cargarUsuariosYEquipos() {
       this.loading = true;
       this.error = null;
@@ -591,118 +616,134 @@ export default {
           return;
         }
         
-        // Cargamos la lista de usuarios con paginación para mejorar rendimiento
-        const usuariosResponse = await axios.get(getApiUrl(`api/usuario-equipo/listar?page=${this.paginaActual}&limit=${this.usuariosPorPagina}`), {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        // 🚀 OPTIMIZACIÓN: Verificar caché antes de hacer llamadas API
+        const ahora = Date.now();
+        if (this.usuariosCache && this.equiposCache && this.cacheTimestamp && 
+            (ahora - this.cacheTimestamp) < this.cacheExpiry) {
+          console.log('📦 Usando datos del caché');
+          this.usuarios = this.usuariosCache;
+          this.loading = false;
+          return;
+        }
         
-        // Asegurarnos de que this.usuarios sea un array
-        this.usuarios = Array.isArray(usuariosResponse.data) ? usuariosResponse.data : 
-                       (usuariosResponse.data && Array.isArray(usuariosResponse.data.usuarios) ? 
-                        usuariosResponse.data.usuarios : []);
+        console.log('🔄 Cargando datos desde API...');
+        
+        // 🚀 OPTIMIZACIÓN: Cargar usuarios y equipos en paralelo
+        const [usuariosResponse, equiposResponse] = await Promise.all([
+          axios.get(getApiUrl(`api/usuario-equipo/listar?page=${this.paginaActual}&limit=${this.usuariosPorPagina}`), {
+            headers: { Authorization: `Bearer ${token}` }
+          }),
+          axios.get(getApiUrl(`api/equipos/listar?page=1&limit=1000`), {
+            headers: { Authorization: `Bearer ${token}` }
+          })
+        ]);
+        
+        // 🚀 OPTIMIZACIÓN: Procesar usuarios de forma más eficiente
+        const usuariosData = Array.isArray(usuariosResponse.data) ? usuariosResponse.data : 
+                            (usuariosResponse.data?.usuarios || []);
         
         // Actualizar total de usuarios si está disponible
-        if (usuariosResponse.data && usuariosResponse.data.total) {
+        if (usuariosResponse.data?.total) {
           this.totalUsuarios = usuariosResponse.data.total;
         }
         
-        // Procesar usuarios para asegurar que todos tengan un array de equipos
-        if (Array.isArray(this.usuarios)) {
-          this.usuarios = this.usuarios.map(usuario => {
-            // Asegurarse de que el usuario tenga un array de equipos
-            if (!usuario.equipos) {
-              usuario.equipos = [];
+        // 🚀 OPTIMIZACIÓN: Crear mapa de usuarios por documento para acceso O(1)
+        const usuariosPorDocumento = new Map();
+        
+        // Procesar usuarios en lotes para evitar bloqueo del hilo principal
+        const procesarUsuariosEnLotes = (usuarios, tamanioLote = 50) => {
+          const usuariosProcesados = [];
+          
+          for (let i = 0; i < usuarios.length; i += tamanioLote) {
+            const lote = usuarios.slice(i, i + tamanioLote);
+            
+            lote.forEach(usuario => {
+              // Inicializar array de equipos de forma más eficiente
+              usuario.equipos = usuario.equipos || [];
+              
+              // Procesar equipo principal solo si existe
+              if (usuario.equipo?.serial) {
+                const equipoPrincipal = {
+                  nombre: usuario.equipo.marca || usuario.equipo.nombre || 'Equipo',
+                  serial: usuario.equipo.serial,
+                  caracteristicas: usuario.equipo.caracteristicas || '',
+                  mouse: usuario.equipo.accesorios?.mouse || usuario.mouse || false,
+                  cargador: usuario.equipo.accesorios?.cargador || usuario.cargador || false,
+                  foto: usuario.equipo.foto || null,
+                  _id: usuario.equipo._id || `temp-${Date.now()}-${i}`
+                };
+                
+                // Verificar duplicados de forma más eficiente
+                if (!usuario.equipos.some(e => e.serial === usuario.equipo.serial)) {
+                  usuario.equipos.unshift(equipoPrincipal);
+                }
+              }
+              
+              // Agregar al mapa para acceso rápido
+              const documento = usuario.numeroDocumento || usuario.documento;
+              if (documento) {
+                usuariosPorDocumento.set(documento, usuario);
+              }
+              
+              usuariosProcesados.push(usuario);
+            });
+          }
+          
+          return usuariosProcesados;
+        };
+        
+        this.usuarios = procesarUsuariosEnLotes(usuariosData);
+        
+        // 🚀 OPTIMIZACIÓN: Procesar equipos de forma más eficiente con menos memoria
+        if (equiposResponse.data?.equipos?.length) {
+          const equipos = equiposResponse.data.equipos;
+          const serialsVistos = new Set(); // Evitar duplicados globalmente
+          
+          // 🚀 OPTIMIZACIÓN: Procesar equipos en lotes para mejor rendimiento
+          const procesarEquiposEnLotes = (equipos, tamanioLote = 100) => {
+            let equiposProcesados = 0;
+            
+            for (let i = 0; i < equipos.length; i += tamanioLote) {
+              const lote = equipos.slice(i, i + tamanioLote);
+              
+              lote.forEach(equipo => {
+                const documento = equipo.usuario?.documento;
+                if (documento && usuariosPorDocumento.has(documento) && !serialsVistos.has(equipo.serial)) {
+                  serialsVistos.add(equipo.serial);
+                  const usuario = usuariosPorDocumento.get(documento);
+                  
+                  // Verificar duplicados de forma más eficiente usando Set
+                  if (!usuario.equipos.some(e => e.serial === equipo.serial)) {
+                    usuario.equipos.push({
+                      nombre: equipo.marca,
+                      serial: equipo.serial,
+                      caracteristicas: equipo.caracteristicas,
+                      mouse: equipo.accesorios?.mouse || false,
+                      cargador: equipo.accesorios?.cargador || false,
+                      foto: equipo.foto || null,
+                      _id: equipo._id
+                    });
+                    equiposProcesados++;
+                  }
+                }
+              });
             }
             
-            // Si el usuario tiene un objeto equipo, asegurarse de que esté correctamente formateado
-            if (usuario.equipo && typeof usuario.equipo === 'object' && usuario.equipo.serial) {
-              // Crear un objeto de equipo principal completo
-              const equipoPrincipal = {
-                nombre: usuario.equipo.marca || usuario.equipo.nombre || 'Equipo',
-                serial: usuario.equipo.serial || '',
-                caracteristicas: usuario.equipo.caracteristicas || '',
-                mouse: usuario.equipo.accesorios?.mouse || usuario.mouse || false,
-                cargador: usuario.equipo.accesorios?.cargador || usuario.cargador || false,
-                foto: usuario.equipo.foto || null,
-                _id: usuario.equipo._id || `temp-${Date.now()}`
-              };
-              
-              // Verificar si el equipo principal ya existe en el array por serial
-              const equipoExistenteIndex = usuario.equipos.findIndex(e => e.serial === usuario.equipo.serial);
-              
-              if (equipoExistenteIndex >= 0) {
-                // Actualizar el equipo existente y asegurarse de que esté en la primera posición
-                usuario.equipos.splice(equipoExistenteIndex, 1);
-                usuario.equipos.unshift(equipoPrincipal);
-              } else {
-                // Añadir el equipo principal al inicio del array de equipos
-                usuario.equipos.unshift(equipoPrincipal);
-              }
-            } else if (usuario.equipo && typeof usuario.equipo === 'string') {
-              // Si equipo es un string (posiblemente un ID), crear un objeto equipo básico
-              console.log(`Usuario ${usuario.nombre} tiene equipo principal como string: ${usuario.equipo}`);
-              
-              // Crear objeto de equipo
-              const equipoPrincipal = {
-                nombre: usuario.marcaEquipo || 'Equipo',
-                serial: usuario.serialEquipo || 'Equipo-' + usuario.equipo.substring(0, 8),
-                caracteristicas: usuario.caracteristicas || '',
-                mouse: usuario.mouse || false,
-                cargador: usuario.cargador || false,
-                foto: null,
-                _id: usuario.equipo
-              };
-              
-              // Actualizar el equipo del usuario
-              usuario.equipo = equipoPrincipal;
-              
-              // Añadir al array de equipos si no existe
-              const equipoExistente = usuario.equipos.find(e => e.serial === equipoPrincipal.serial);
-              if (!equipoExistente) {
-                usuario.equipos.unshift(equipoPrincipal);
-              }
-            } else if (usuario.serialEquipo) {
-              // Si no hay equipo pero hay datos de serialEquipo, crear un equipo a partir de esos datos
-              console.log(`Usuario ${usuario.nombre} tiene datos de equipo en campos separados`);
-              
-              const equipoPrincipal = {
-                nombre: usuario.marcaEquipo || 'Equipo',
-                serial: usuario.serialEquipo,
-                caracteristicas: usuario.caracteristicas || '',
-                mouse: usuario.mouse || false,
-                cargador: usuario.cargador || false,
-                foto: null,
-                _id: `temp-${Date.now()}`
-              };
-              
-              // Actualizar el equipo del usuario
-              usuario.equipo = equipoPrincipal;
-              
-              // Añadir al array de equipos
-              usuario.equipos.unshift(equipoPrincipal);
-            } else {
-              console.log(`Usuario ${usuario.nombre} no tiene equipo principal definido`);
-            }
-            
-            return usuario;
-          });
-
+            return equiposProcesados;
+          };
+          
+          const equiposProcesados = procesarEquiposEnLotes(equipos);
+          console.log(`✅ ${equiposProcesados} equipos procesados en paralelo (de ${equipos.length} totales)`);
         }
         
-        // Ahora cargamos los equipos usando paginación escalable
-        await this.cargarEquiposPaginados();
+        console.log('✅ Usuarios y equipos cargados:', this.usuarios.length);
         
-        console.log('✅ Usuarios y equipos cargados:', Array.isArray(this.usuarios) ? this.usuarios.length : 0);
-        // Mostrar equipos de cada usuario para depuración
-        if (Array.isArray(this.usuarios)) {
-          this.usuarios.forEach(usuario => {
-            console.log(`👤 Usuario ${usuario.nombre}: Equipos: ${usuario.equipos?.length || 0}`);
-            // Mostrar detalles de todos los equipos para depuración
-            if (usuario.equipos && usuario.equipos.length > 0) {
-              console.log(`   Equipos de ${usuario.nombre}:`, JSON.stringify(usuario.equipos.map(e => ({serial: e.serial, _id: e._id}))));
-            }
-          });
-        }
+        // 🚀 OPTIMIZACIÓN: Guardar en caché de forma más eficiente
+        this.usuariosCache = this.usuarios.map(u => ({ ...u, equipos: [...u.equipos] })); // Copia optimizada
+        this.equiposCache = equipos;
+        this.cacheTimestamp = Date.now();
+        console.log('💾 Datos guardados en caché');
+        
       } catch (err) {
         console.error('❌ Error cargando usuarios y equipos:', err);
         this.error = 'Error al cargar los datos. Verifique su conexión.';
@@ -711,106 +752,33 @@ export default {
       }
     },
 
-    // Método para cargar equipos de forma paginada y escalable
-    async cargarEquiposPaginados() {
-      const token = localStorage.getItem('token');
-      if (!token) return;
-
-      try {
-        let paginaActual = 1;
-        let totalCargado = 0;
-        let hayMasPaginas = true;
-
-        // Crear mapa de usuarios por documento para acceso rápido
-        const usuariosPorDocumento = {};
-        if (Array.isArray(this.usuarios)) {
-          this.usuarios.forEach(usuario => {
-            if (usuario && (usuario.numeroDocumento || usuario.documento)) {
-              usuariosPorDocumento[usuario.numeroDocumento || usuario.documento] = usuario;
-            }
-          });
-        }
-
-        console.log('🔄 Iniciando carga paginada de equipos...');
-
-        while (hayMasPaginas && totalCargado < 50000) { // Límite de seguridad
-          const equiposResponse = await axios.get(
-            getApiUrl(`api/equipos/listar?page=${paginaActual}&limit=${this.equiposPorPagina}`), 
-            { headers: { Authorization: `Bearer ${token}` } }
-          );
-
-          if (equiposResponse.data && equiposResponse.data.equipos) {
-            const equipos = equiposResponse.data.equipos;
-            
-            // Procesar equipos de esta página
-            equipos.forEach(equipo => {
-              const documento = equipo.usuario?.documento;
-              if (documento && usuariosPorDocumento[documento]) {
-                const usuario = usuariosPorDocumento[documento];
-                
-                // Verificar si el equipo ya existe por serial
-                const equipoExistente = usuario.equipos.find(e => e.serial === equipo.serial);
-                if (!equipoExistente) {
-                  usuario.equipos.push({
-                    nombre: equipo.marca,
-                    serial: equipo.serial,
-                    caracteristicas: equipo.caracteristicas,
-                    mouse: equipo.accesorios?.mouse || false,
-                    cargador: equipo.accesorios?.cargador || false,
-                    foto: equipo.foto || null,
-                    _id: equipo._id
-                  });
-                }
-              }
-            });
-
-            totalCargado += equipos.length;
-            
-            // Verificar si hay más páginas
-            if (equipos.length < this.equiposPorPagina) {
-              hayMasPaginas = false;
-            } else {
-              paginaActual++;
-            }
-
-            console.log(`📦 Página ${paginaActual - 1}: ${equipos.length} equipos cargados. Total: ${totalCargado}`);
-          } else {
-            hayMasPaginas = false;
-          }
-        }
-
-        this.equiposCargados = true;
-        console.log(`✅ Carga de equipos completada. Total equipos procesados: ${totalCargado}`);
-        
-      } catch (error) {
-        console.error('❌ Error cargando equipos paginados:', error);
-      }
-    },
-
-    // Método para cargar más usuarios si es necesario
+    // Método optimizado para cargar más usuarios cuando sea necesario
     async cargarMasUsuarios() {
-      if (this.usuarios.length >= this.totalUsuarios) return;
-
-      const token = localStorage.getItem('token');
-      if (!token) return;
-
+      if (this.loading || this.usuarios.length >= this.totalUsuarios) return;
+      
+      this.loading = true;
       try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+        
         this.paginaActual++;
+        
         const usuariosResponse = await axios.get(
           getApiUrl(`api/usuario-equipo/listar?page=${this.paginaActual}&limit=${this.usuariosPorPagina}`), 
           { headers: { Authorization: `Bearer ${token}` } }
         );
-
+        
         const nuevosUsuarios = Array.isArray(usuariosResponse.data) ? usuariosResponse.data : 
                               (usuariosResponse.data && Array.isArray(usuariosResponse.data.usuarios) ? 
                                usuariosResponse.data.usuarios : []);
-
+        
+        // Procesar nuevos usuarios y agregar al array existente
         if (nuevosUsuarios.length > 0) {
-          // Procesar nuevos usuarios
-          const usuariosProcesados = nuevosUsuarios.map(usuario => {
+          nuevosUsuarios.forEach(usuario => {
             if (!usuario.equipos) {
               usuario.equipos = [];
             }
+            
             // Procesar equipo principal si existe
             if (usuario.equipo && typeof usuario.equipo === 'object' && usuario.equipo.serial) {
               const equipoPrincipal = {
@@ -822,16 +790,24 @@ export default {
                 foto: usuario.equipo.foto || null,
                 _id: usuario.equipo._id || `temp-${Date.now()}`
               };
-              usuario.equipos.unshift(equipoPrincipal);
+              
+              const equipoExistente = usuario.equipos.find(e => e.serial === usuario.equipo.serial);
+              if (!equipoExistente) {
+                usuario.equipos.unshift(equipoPrincipal);
+              }
             }
-            return usuario;
           });
-
-          this.usuarios.push(...usuariosProcesados);
-          console.log(`📄 Página ${this.paginaActual}: ${nuevosUsuarios.length} usuarios adicionales cargados`);
+          
+          // Agregar nuevos usuarios al array existente
+          this.usuarios.push(...nuevosUsuarios);
+          
+          console.log(`✅ ${nuevosUsuarios.length} usuarios adicionales cargados`);
         }
+        
       } catch (error) {
         console.error('❌ Error cargando más usuarios:', error);
+      } finally {
+        this.loading = false;
       }
     },
 
@@ -988,6 +964,10 @@ export default {
         }
         
         this.cerrarFormularioEquipo();
+        
+        // 🚀 OPTIMIZACIÓN: Invalidar caché después de agregar equipo
+        this.invalidarCache();
+        
         console.log('✅ Equipo agregado correctamente:', response.data);
       } catch (err) {
         console.error('❌ Error al guardar equipo:', err);
@@ -1017,6 +997,9 @@ export default {
           this.usuarios[userIndex].equipos = [...this.usuarioSeleccionado.equipos];
         }
         
+        // 🚀 OPTIMIZACIÓN: Invalidar caché después de eliminar equipo
+        this.invalidarCache();
+        
         console.log('✅ Equipo eliminado correctamente');
       } catch (err) {
         console.error('❌ Error al eliminar equipo:', err);
@@ -1027,6 +1010,14 @@ export default {
     // Volver al dashboard
     volverDashboard() {
       this.$router.push({ path: '/dashboard' });
+    },
+    
+    // 🚀 OPTIMIZACIÓN: Método para invalidar caché
+    invalidarCache() {
+      this.usuariosCache = null;
+      this.equiposCache = null;
+      this.cacheTimestamp = null;
+      console.log('🗑️ Caché invalidado');
     }
   },
 };
@@ -1473,8 +1464,114 @@ h1 {
   background: #0d47a1;
 }
 
-/* Loading and error styles */
-.loading-container,
+/* Loading and error styles - MEJORADO */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1rem;
+  text-align: center;
+  min-height: 400px;
+}
+
+.loading-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.loading-text {
+  margin-left: 1rem;
+}
+
+.loading-text p {
+  margin: 0 0 1rem 0;
+  font-size: 1.1rem;
+  color: #333;
+}
+
+.loading-progress {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.progress-bar {
+  width: 200px;
+  height: 4px;
+  background: #e0e0e0;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #1565c0, #42a5f5);
+  border-radius: 2px;
+  animation: progress 2s ease-in-out infinite;
+}
+
+@keyframes progress {
+  0% { width: 0%; }
+  50% { width: 70%; }
+  100% { width: 100%; }
+}
+
+.loading-progress small {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+/* Skeleton loader styles */
+.skeleton-table {
+  width: 100%;
+  margin-top: 2rem;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.skeleton-header,
+.skeleton-row {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.skeleton-header {
+  background: #f5f5f5;
+}
+
+.skeleton-row {
+  border-bottom: 1px solid #eee;
+}
+
+.skeleton-cell {
+  height: 20px;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  border-radius: 4px;
+  animation: skeleton-loading 1.5s infinite;
+}
+
+.skeleton-header .skeleton-cell {
+  height: 16px;
+  background: #e0e0e0;
+}
+
+.skeleton-cell:nth-child(1) { flex: 0 0 80px; }
+.skeleton-cell:nth-child(2) { flex: 1; }
+.skeleton-cell:nth-child(3) { flex: 0 0 120px; }
+.skeleton-cell:nth-child(4) { flex: 1; }
+.skeleton-cell:nth-child(5) { flex: 0 0 100px; }
+
+@keyframes skeleton-loading {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
 .error-container {
   display: flex;
   flex-direction: column;

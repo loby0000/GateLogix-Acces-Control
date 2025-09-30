@@ -132,13 +132,21 @@
           <button class="close-btn" @click="equipoMenuAbierto = null">✕</button>
         </div>
         <div class="equipo-list">
+          <div v-if="usuarios[equipoMenuAbierto] && defaultEquipos(usuarios[equipoMenuAbierto]).length === 0" class="no-equipos-message">
+            <p>No hay equipos registrados para este usuario</p>
+          </div>
           <div
             v-for="(eq, i) in defaultEquipos(usuarios[equipoMenuAbierto])"
-            :key="i"
+            :key="eq._id || eq.serial || i"
             class="equipo-item"
           >
-            <div class="equipo-item-nombre">{{ eq.marca }}</div>
-            <div class="equipo-item-serial">{{ eq.serial }}</div>
+            <div class="equipo-item-nombre">{{ eq.marca || eq.nombre || 'Sin marca' }}</div>
+            <div class="equipo-item-serial">{{ eq.serial || 'Sin serial' }}</div>
+            <div v-if="eq.caracteristicas" class="equipo-item-caracteristicas">{{ eq.caracteristicas }}</div>
+            <div v-if="eq.accesorios" class="equipo-item-accesorios">
+              <span v-if="eq.accesorios.mouse || eq.mouse" class="accesorio-badge">🖱️ Mouse</span>
+              <span v-if="eq.accesorios.cargador || eq.cargador" class="accesorio-badge">🔌 Cargador</span>
+            </div>
           </div>
         </div>
         <button
@@ -483,6 +491,11 @@ export default {
     toggleEquipoMenu(index) {
       this.equipoMenuAbierto =
         this.equipoMenuAbierto === index ? null : index;
+      
+      // Si se está abriendo el menú, cargar los equipos completos del usuario
+      if (this.equipoMenuAbierto === index && this.usuarios[index]) {
+        this.cargarEquiposCompletos(this.usuarios[index]);
+      }
     },
     handleClickOutside(e) {
       const isMenu = e.target.closest(".equipo-menu");
@@ -490,12 +503,24 @@ export default {
       if (!isMenu && !isBtn) this.equipoMenuAbierto = null;
     },
     defaultEquipos(usuario) {
+      console.log('🔍 defaultEquipos - Usuario recibido:', usuario);
+      
+      // Si el usuario ya tiene equipos cargados desde el endpoint específico, usarlos
+      if (usuario.equiposCompletos && Array.isArray(usuario.equiposCompletos)) {
+        console.log('📦 Usando equipos completos ya cargados:', usuario.equiposCompletos);
+        return usuario.equiposCompletos;
+      }
+      
       let equiposArray = [];
       
       // Inicializar el array de equipos si no existe
       if (!Array.isArray(usuario.equipos)) {
         usuario.equipos = [];
+        console.log('⚠️ Inicializando array de equipos vacío');
       }
+      
+      console.log('📋 Equipos existentes en usuario.equipos:', usuario.equipos);
+      console.log('🖥️ Equipo principal en usuario.equipo:', usuario.equipo);
       
       // Si el usuario tiene un equipo principal, asegurarse de que esté en el array
       if (usuario.equipo && usuario.equipo.serial) {
@@ -511,14 +536,72 @@ export default {
           _id: usuario.equipo._id
         };
         
+        console.log('🔧 Equipo principal procesado:', equipoPrincipal);
+        
         // Verificar si el equipo principal ya existe en el array de equipos
         const equipoExistente = usuario.equipos.find(e => e.serial === equipoPrincipal.serial);
         if (!equipoExistente) {
           usuario.equipos.unshift(equipoPrincipal);
+          console.log('✅ Equipo principal agregado al inicio del array');
+        } else {
+          console.log('ℹ️ Equipo principal ya existe en el array');
         }
       }
       
-      return usuario.equipos || [];
+      // Agregar todos los equipos adicionales del usuario
+      if (usuario.equipos && Array.isArray(usuario.equipos)) {
+        equiposArray = [...usuario.equipos];
+      }
+      
+      console.log('📦 Array final de equipos a mostrar:', equiposArray);
+      console.log('🔢 Total de equipos:', equiposArray.length);
+      
+      return equiposArray;
+    },
+
+    // Nuevo método para cargar todos los equipos del usuario
+    async cargarEquiposCompletos(usuario) {
+      try {
+        console.log('🔄 Cargando equipos completos para usuario:', usuario.numeroDocumento);
+        
+        // Agregar parámetro para evitar caché y obtener datos frescos
+        const timestamp = Date.now();
+        const response = await axios.get(
+          getApiUrl(`api/equipos/usuario/${usuario.numeroDocumento}?_t=${timestamp}`),
+          {
+            headers: { 
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+              'Cache-Control': 'no-cache',
+              'Pragma': 'no-cache'
+            },
+          }
+        );
+        
+        console.log('📦 Equipos completos recibidos:', response.data);
+        
+        // El backend devuelve {usuario: {...}, equipos: [...]}
+        // Necesitamos extraer solo el array de equipos
+        let equiposArray = [];
+        
+        if (response.data && response.data.equipos && Array.isArray(response.data.equipos)) {
+          equiposArray = response.data.equipos;
+          console.log('✅ Equipos extraídos del response:', equiposArray);
+          console.log('🔢 Total de equipos encontrados:', equiposArray.length);
+        } else {
+          console.log('⚠️ No se encontraron equipos en la respuesta');
+        }
+        
+        // Guardar los equipos completos en el usuario
+        usuario.equiposCompletos = equiposArray;
+        
+        // Forzar actualización del componente
+        this.$forceUpdate();
+        
+        return equiposArray;
+      } catch (error) {
+        console.error('❌ Error al cargar equipos completos:', error);
+        return [];
+      }
     },
     
     // Función para obtener el equipo principal desde el array de equipos
@@ -2290,6 +2373,38 @@ export default {
   max-height: 80vh;
   object-fit: contain;
   border-radius: 8px;
+}
+
+/* ===== Estilos para el modal de equipos ===== */
+.no-equipos-message {
+  text-align: center;
+  padding: 20px;
+  color: #666;
+  font-style: italic;
+}
+
+.equipo-item-caracteristicas {
+  font-size: 12px;
+  color: #666;
+  margin-top: 4px;
+  font-style: italic;
+}
+
+.equipo-item-accesorios {
+  margin-top: 8px;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.accesorio-badge {
+  background: #e3f2fd;
+  color: #1976d2;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+  border: 1px solid #bbdefb;
 }
 
 /* ===== Animaciones ===== */

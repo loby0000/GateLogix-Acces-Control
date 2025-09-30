@@ -20,4 +20,7 @@ router.get("/estado/:serial", verifyToken, historialCtrl.obtenerEstadoPorSerial)
 // Buscar historial por documento de usuario
 router.get("/buscar/:documento", verifyToken, historialCtrl.buscarPorDocumento);
 
+// Obtener historial completo por serial de equipo
+router.get("/equipo/:serial", verifyToken, historialCtrl.historialPorSerial);
+
 module.exports = router;

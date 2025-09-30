@@ -300,6 +300,24 @@
         Volver al Dashboard
       </button>
     </div>
+
+    <!-- Modal para código de barras -->
+    <div v-if="mostrarCodigoModal" class="modal-overlay" @click.self="cerrarCodigoModal">
+      <div class="modal-content" style="text-align:center; max-width:400px; margin:auto;">
+        <div class="modal-header">
+          <h3>Código de Barras Generado</h3>
+          <button class="modal-close-btn" @click="cerrarCodigoModal">✕</button>
+        </div>
+        <div class="modal-body">
+          <img :src="codigoBarrasUrl" alt="Código de Barras" style="max-width:300px; display:block; margin:15px auto;" />
+          <div style="margin-top:20px;">
+            <button @click="descargarCodigo" class="btn primary" style="margin-right:10px;">Descargar</button>
+            <button @click="imprimirCodigo" class="btn primary" style="margin-right:10px;">Imprimir</button>
+            <button @click="cerrarCodigoModal" class="btn secondary">Cerrar</button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -345,7 +363,10 @@ export default {
       cacheTimestamp: null,
       cacheExpiry: 5 * 60 * 1000, // 5 minutos en milisegundos
       // URL de la API
-      apiUrl: getApiUrl('')
+      apiUrl: getApiUrl(''),
+      // Variables para modal de código de barras
+      mostrarCodigoModal: false,
+      codigoBarrasUrl: null
     };
   },
   computed: {
@@ -1033,6 +1054,28 @@ export default {
         this.invalidarCache();
         
         console.log('✅ Equipo agregado correctamente:', response.data);
+        console.log('🔍 DEBUG - Respuesta completa del backend:', JSON.stringify(response.data, null, 2));
+        console.log('🔍 DEBUG - ¿Tiene codigoBarras?', !!response.data.codigoBarras);
+        console.log('🔍 DEBUG - Valor de codigoBarras:', response.data.codigoBarras);
+        
+        // 🔹 Mostrar modal de código de barras si se generó correctamente
+        if (response.data.codigoBarras) {
+          console.log('✅ FRONTEND DEBUG - Mostrando modal de código de barras');
+          console.log('🔍 FRONTEND DEBUG - Antes - mostrarCodigoModal:', this.mostrarCodigoModal);
+          this.codigoBarrasUrl = response.data.codigoBarras;
+          this.mostrarCodigoModal = true;
+          console.log('🔍 FRONTEND DEBUG - Después - mostrarCodigoModal:', this.mostrarCodigoModal);
+          console.log('🔍 FRONTEND DEBUG - codigoBarrasUrl longitud:', this.codigoBarrasUrl.length);
+          
+          // Verificar que el DOM se actualice
+          this.$nextTick(() => {
+            console.log('🔍 FRONTEND DEBUG - NextTick - mostrarCodigoModal:', this.mostrarCodigoModal);
+            const modalElement = document.querySelector('.modal-overlay');
+            console.log('🔍 FRONTEND DEBUG - Elemento modal encontrado:', !!modalElement);
+          });
+        } else {
+          console.log('❌ FRONTEND DEBUG - No se recibió código de barras del backend');
+        }
       } catch (err) {
         console.error('❌ Error al guardar equipo:', err);
         alert('Error al guardar el equipo: ' + (err.response?.data?.message || 'Intente nuevamente.'));
@@ -1082,6 +1125,49 @@ export default {
       this.equiposCache = null;
       this.cacheTimestamp = null;
       console.log('🗑️ Caché invalidado');
+    },
+
+    // Métodos para el modal de código de barras
+    descargarCodigo() {
+      const link = document.createElement("a");
+      link.href = this.codigoBarrasUrl;
+      link.download = "codigo_barras.png";
+      link.click();
+    },
+
+    imprimirCodigo() {
+      const win = window.open("", "_blank");
+      win.document.write(`<img src="${this.codigoBarrasUrl}" style="max-width:100%;"/>`);
+      win.print();
+      win.close();
+    },
+
+    cerrarCodigoModal() {
+      this.mostrarCodigoModal = false;
+      
+      // Generar entrada de registro automática al cerrar el modal
+      this.generarEntradaRegistro();
+      
+      // Redirigir a RegistroUsuarios
+      this.$router.push({ name: 'RegistroUsuariosYaResg' });
+    },
+
+    async generarEntradaRegistro() {
+      try {
+        const token = localStorage.getItem('token');
+        await axios.post(
+          getApiUrl('api/historial/registrar-movimiento'),
+          {
+            serial: this.nuevoEquipo.serial,
+            tipo: 'Ingreso',
+            observaciones: 'Entrada automática por registro de nuevo equipo'
+          },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        console.log('✅ Entrada de registro generada automáticamente');
+      } catch (error) {
+        console.error('❌ Error al generar entrada de registro:', error);
+      }
     }
   },
 };

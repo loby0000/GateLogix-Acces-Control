@@ -152,19 +152,22 @@ exports.buscarPorSerial = async (req, res) => {
     }
 
     // 🚀 Optimización: consulta ultra-rápida con índice y proyección mínima
-    const usuario = await UsuarioEquipo.findOne(
-      { "equipo.serial": serial },
-      {
-        tipoUsuario: 1,
-        tipoDocumento: 1,
-        numeroDocumento: 1,
-        nombre: 1,
-        email: 1,
-        equipo: 1,
-        foto: 1,
-        guardiaRegistrador: 1
-      }
-    )
+    const usuario = await UsuarioEquipo.findOne({
+      $or: [
+        { "equipo.serial": serial },
+        { "equipos.serial": serial }
+      ]
+    }, {
+      tipoUsuario: 1,
+      tipoDocumento: 1,
+      numeroDocumento: 1,
+      nombre: 1,
+      email: 1,
+      equipo: 1,
+      equipos: 1,
+      foto: 1,
+      guardiaRegistrador: 1
+    })
     .populate("guardiaRegistrador", "nombre email")
     .lean() // 50% más rápido, menos memoria
     .maxTimeMS(5000); // Timeout de 5 segundos

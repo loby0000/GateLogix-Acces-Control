@@ -11,10 +11,12 @@ exports.registrarMovimiento = async (req, res) => {
 
     // 🚀 Consultas paralelas para mejor rendimiento
     const [usuario, guardia] = await Promise.all([
-      UsuarioEquipo.findOne(
-        { "equipo.serial": serial },
-        { _id: 1, nombre: 1, numeroDocumento: 1 }
-      ).lean().maxTimeMS(3000),
+      UsuarioEquipo.findOne({
+        $or: [
+          { "equipo.serial": serial },
+          { "equipos.serial": serial }
+        ]
+      }, { _id: 1, nombre: 1, numeroDocumento: 1 }).lean().maxTimeMS(3000),
       
       Guardia.findOne(
         { documento: docGuardia },
@@ -183,10 +185,12 @@ exports.obtenerEstadoPorSerial = async (req, res) => {
     const { serial } = req.params;
 
     // 🚀 Primero buscar usuario por serial
-    const usuario = await UsuarioEquipo.findOne(
-      { "equipo.serial": serial },
-      { _id: 1, nombre: 1, numeroDocumento: 1 }
-    ).lean().maxTimeMS(2000);
+    const usuario = await UsuarioEquipo.findOne({
+      $or: [
+        { "equipo.serial": serial },
+        { "equipos.serial": serial }
+      ]
+    }, { _id: 1, nombre: 1, numeroDocumento: 1 }).lean().maxTimeMS(2000);
 
     if (!usuario) {
       return res.status(404).json({ msg: "Usuario no encontrado con ese serial" });
@@ -262,5 +266,36 @@ exports.buscarPorDocumento = async (req, res) => {
   } catch (err) {
     console.error("❌ Error buscarPorDocumento:", err);
     res.status(500).json({ msg: "Error en el servidor" });
+  }
+};
+
+// 📌 Obtener historial completo por serial de equipo
+exports.historialPorSerial = async (req, res) => {
+  try {
+    const { serial } = req.params;
+    
+    console.log(`🔍 Buscando historial para equipo con serial: ${serial}`);
+    
+    // Buscar historial por serial del equipo
+    const historial = await Historial.find({ serial: serial })
+      .populate("usuario", "nombre numeroDocumento email")
+      .populate("guardia", "nombre documento")
+      .sort({ createdAt: -1 })
+      .lean()
+      .maxTimeMS(5000);
+    
+    if (!historial || historial.length === 0) {
+      return res.status(404).json({ 
+        msg: "No se encontró historial para este equipo",
+        serial: serial 
+      });
+    }
+    
+    console.log(`📋 Encontrados ${historial.length} registros de historial para el equipo ${serial}`);
+    
+    res.json(historial);
+  } catch (err) {
+    console.error("❌ Error historialPorSerial:", err.message);
+    res.status(500).json({ msg: "Error en el servidor", error: err.message });
   }
 };

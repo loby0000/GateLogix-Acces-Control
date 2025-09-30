@@ -1,7 +1,11 @@
 // backend/src/controllers/equiposController.js
 const UsuarioEquipo = require('../models/UsuarioEquipo');
+const Historial = require('../models/Historial');
+const Guardia = require('../models/Guardia');
 const Log = require('../models/Logs');
 const cacheService = require('../utils/cacheService');
+const { generarCodigoBarras } = require('../utils/barcodeGenerator');
+const { invalidarCacheEstadisticas } = require('./estadisticasController');
 
 // Registrar un nuevo equipo para un usuario existente
 exports.registrarEquipo = async (req, res) => {
@@ -26,6 +30,24 @@ exports.registrarEquipo = async (req, res) => {
       return res.status(404).json({ message: 'Usuario no encontrado' });
     }
 
+    // Buscar información del guardia
+    const guardia = await Guardia.findById(idGuardia);
+    if (!guardia) {
+      return res.status(404).json({ message: 'Guardia no encontrado' });
+    }
+
+    // 🔹 Generar código de barras automáticamente
+    let codigoBarras = null;
+    try {
+      console.log('🔍 DEBUG - Generando código de barras para serial:', serial);
+      codigoBarras = await generarCodigoBarras(serial);
+      console.log('✅ Código de barras generado para equipo:', serial);
+      console.log('🔍 DEBUG - Código de barras generado:', codigoBarras ? 'SÍ' : 'NO');
+    } catch (barcodeError) {
+      console.error('❌ Error generando código de barras:', barcodeError);
+      // Continuar sin código de barras si hay error
+    }
+
     // Crear el nuevo equipo
     const nuevoEquipo = {
       marca,
@@ -36,7 +58,8 @@ exports.registrarEquipo = async (req, res) => {
         cargador: accesorios?.cargador || false
       },
       foto: foto, // Guardar la foto del equipo
-      fechaIngreso: fechaIngreso || new Date().toISOString() // Usar la fecha proporcionada o generar una nueva
+      fechaIngreso: fechaIngreso || new Date().toISOString(), // Usar la fecha proporcionada o generar una nueva
+      codigoBarras: codigoBarras // Agregar código de barras al equipo
     };
 
     // Si el usuario no tiene un array de equipos, crearlo
@@ -51,7 +74,8 @@ exports.registrarEquipo = async (req, res) => {
           caracteristicas: usuario.equipo.caracteristicas,
           accesorios: usuario.equipo.accesorios,
           foto: usuario.equipo.foto,
-          fechaIngreso: usuario.equipo.fechaIngreso
+          fechaIngreso: usuario.equipo.fechaIngreso,
+          codigoBarras: usuario.equipo.codigoBarras
         });
       }
     }
@@ -69,6 +93,28 @@ exports.registrarEquipo = async (req, res) => {
     // Guardar los cambios
     await usuario.save();
 
+    // 🔹 Crear entrada automática en historial para el nuevo equipo
+    try {
+      const historialEntrada = await Historial.create({
+        usuario: usuario._id,
+        serial: serial,
+        entrada: new Date(),
+        salida: null,
+        guardia: guardia._id,
+        docGuardia: guardia.documento || guardia.numeroDocumento || '',
+        estado: "Ingreso"
+      });
+      
+      console.log('✅ Entrada automática creada para nuevo equipo:', historialEntrada._id);
+      
+      // Invalidar caché de historial y estadísticas
+      await cacheService.delHistoryPattern();
+      await invalidarCacheEstadisticas();
+    } catch (histErr) {
+      console.error('❌ Error al crear entrada automática para nuevo equipo:', histErr);
+      // No interrumpir el flujo principal
+    }
+
     // Limpiar caché relacionada
     await cacheService.delPattern(`users:*`);
     await cacheService.delPattern(`equipos:*`);
@@ -76,14 +122,31 @@ exports.registrarEquipo = async (req, res) => {
     // Registrar log
     await Log.create({
       tipo: 'Registro de equipo',
-      detalle: `Equipo ${marca} (${serial}) registrado para usuario ${usuario.nombre} (${documento})`,
-      usuario: req.user.documento,
-      ip: req.ip
+      detalle: `Equipo ${marca} (${serial}) registrado para usuario ${usuario.nombre} (${documento}) por guardia ${req.user.documento}`,
+      usuario: usuario._id,
+      guardia: idGuardia
+    });
+
+    console.log('🔍 DEBUG - Respuesta que se enviará al frontend:', {
+      message: 'Equipo registrado exitosamente',
+      equipo: nuevoEquipo,
+      codigoBarras: codigoBarras,
+      usuario: {
+        id: usuario._id,
+        nombre: usuario.nombre,
+        documento: usuario.numeroDocumento
+      }
     });
 
     res.status(201).json({
       message: 'Equipo registrado exitosamente',
-      equipo: nuevoEquipo
+      equipo: nuevoEquipo,
+      codigoBarras: codigoBarras,
+      usuario: {
+        id: usuario._id,
+        nombre: usuario.nombre,
+        documento: usuario.numeroDocumento
+      }
     });
 
   } catch (error) {

@@ -375,8 +375,16 @@ export default {
   --text-secondary: #3d3d3d;
   --text-muted: #666666;
   
-  --border-light: rgba(139, 69, 19, 0.15);
-  --border-medium: rgba(139, 69, 19, 0.25);
+  --border-light: rgba(148, 163, 184, 0.2);
+  --border-medium: rgba(148, 163, 184, 0.3);
+  --border-primary: rgba(139, 69, 19, 0.2);
+  --border-secondary: rgba(139, 69, 19, 0.3);
+  
+  --bg-hover: rgba(139, 69, 19, 0.1);
+  --text-accent: #2c5aa0;
+  --accent-blue: #1e3a8a;
+  --text-white: #ffffff;
+  --text-contrast: #000000;
   
   --primary-blue: #2c5aa0;
   --success-green: #1e7e34;
@@ -407,7 +415,8 @@ export default {
   overflow: hidden;
   margin: 0;
   padding: 0;
-  transition: all 0.3s ease;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  line-height: 1.5;
 }
 
 /* Chart Section */
@@ -418,7 +427,7 @@ export default {
   margin-bottom: clamp(1.5rem, 3vw, 2rem);
   border: 1px solid var(--border-light);
   box-shadow: var(--shadow-light);
-  transition: all 0.3s ease;
+  transition: box-shadow 0.3s ease, border-color 0.3s ease;
 }
 
 .chart-section:hover {
@@ -430,7 +439,7 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: clamp(1rem, 3vw, 1.5rem);
+  margin-bottom: 1.5rem;
   flex-wrap: wrap;
   gap: 1rem;
 }
@@ -439,12 +448,12 @@ export default {
   margin: 0;
   color: var(--text-primary);
   font-weight: 600;
-  font-size: clamp(1.1rem, 2.5vw, 1.3rem);
+  font-size: 1.3rem;
 }
 
 .chart-header span {
   color: var(--text-secondary);
-  font-size: clamp(0.85rem, 2vw, 0.95rem);
+  font-size: 0.95rem;
 }
 
 .historial-btn {
@@ -722,7 +731,7 @@ export default {
   color: var(--text-primary);
   border-radius: 6px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
   font-size: clamp(0.7rem, 1.5vw, 0.8rem);
   display: flex;
   align-items: center;
@@ -825,11 +834,11 @@ export default {
   border-right: 1px solid var(--border-light);
   display: flex;
   flex-direction: column;
-  padding: clamp(1rem, 3vw, 1.5rem);
+  padding: 1.5rem;
   box-sizing: border-box;
   box-shadow: var(--shadow-light);
   position: relative;
-  transition: all 0.3s ease;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .sidebar::before {
@@ -935,7 +944,7 @@ export default {
   color: var(--text-primary);
   font-weight: 600;
   border-radius: 12px;
-  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transition: background-color 0.3s ease, color 0.3s ease;
   position: relative;
   overflow: hidden;
   font-size: clamp(0.9rem, 2vw, 1rem);
@@ -972,6 +981,42 @@ export default {
   border-color: var(--primary-blue);
 }
 
+.nav-menu li:last-child {
+  background: var(--primary-gradient);
+  color: var(--text-white);
+  border-color: var(--primary-blue);
+}
+
+.nav-menu li:last-child:hover {
+  background: var(--primary-gradient);
+  filter: brightness(1.1);
+}
+
+/* Asegurar que el texto sea visible en tema claro */
+.app-container:not(.dark-theme) .nav-menu li:last-child {
+  color: var(--text-white);
+}
+
+.app-container:not(.dark-theme) .nav-menu li:first-child {
+  color: var(--text-white);
+}
+
+/* Asegurar consistencia en el espaciado del sidebar para ambos temas */
+.app-container:not(.dark-theme) .sidebar {
+  padding: clamp(1rem, 3vw, 1.5rem);
+  box-sizing: border-box;
+}
+
+.app-container:not(.dark-theme) .profile {
+  margin-bottom: 2rem;
+  padding: 1rem;
+}
+
+.app-container:not(.dark-theme) .nav-menu li {
+  margin-bottom: clamp(0.3rem, 1vw, 0.5rem);
+  padding: clamp(0.8rem, 2vw, 1rem) clamp(1rem, 2.5vw, 1.2rem);
+}
+
 
 
 
@@ -979,7 +1024,7 @@ export default {
 /* Main content */
 .main-content {
   flex: 1;
-  padding: clamp(1.5rem, 4vw, 2rem);
+  padding: 2rem;
   overflow-y: auto;
   background: var(--bg-secondary);
   transition: all 0.3s ease;
@@ -988,8 +1033,8 @@ export default {
 .top-cards {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: clamp(1rem, 3vw, 1.5rem);
-  margin-bottom: clamp(1.5rem, 3vw, 2rem);
+  gap: 1.5rem;
+  margin-bottom: 2rem;
 }
 
 @media (max-width: 768px) {
@@ -1003,10 +1048,10 @@ export default {
   backdrop-filter: blur(20px) saturate(120%);
   border: 1px solid var(--border-medium);
   border-radius: 16px;
-  padding: clamp(1.5rem, 4vw, 2rem);
+  padding: 2rem;
   text-align: center;
   box-shadow: var(--shadow-medium);
-  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transition: box-shadow 0.3s ease, border-color 0.3s ease;
   position: relative;
   overflow: hidden;
 }
@@ -1028,17 +1073,17 @@ export default {
 }
 
 .card h3 {
-  margin: 0 0 clamp(0.8rem, 2vw, 1rem) 0;
+  margin: 0 0 1rem 0;
   color: var(--text-primary);
   font-weight: 700;
-  font-size: clamp(1rem, 2vw, 1.1rem);
+  font-size: 1.1rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
 .card .number {
   margin: 0;
-  font-size: clamp(2rem, 5vw, 2.5rem);
+  font-size: 2.5rem;
   font-weight: 700;
   color: var(--text-primary);
   letter-spacing: -1px;
@@ -1050,9 +1095,9 @@ export default {
   backdrop-filter: blur(20px) saturate(120%);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 16px;
-  padding: clamp(1.5rem, 4vw, 2rem);
+  padding: 2rem;
   box-shadow: var(--shadow-light);
-  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transition: box-shadow 0.3s ease, background-color 0.3s ease;
   position: relative;
   overflow: hidden;
 }
@@ -1068,7 +1113,6 @@ export default {
 }
 
 .chart-section:hover {
-  transform: translateY(-2px);
   box-shadow: var(--shadow-medium);
   background: rgba(255, 255, 255, 0.1);
 }
@@ -1084,65 +1128,64 @@ export default {
 
 .chart-header h4 {
   margin: 0;
-  color: white;
+  color: var(--text-primary);
   font-weight: 600;
   font-size: clamp(1.1rem, 2.5vw, 1.3rem);
 }
 
 .chart-header span {
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--text-secondary);
   font-size: clamp(0.85rem, 2vw, 0.95rem);
 }
 
 .historial-btn {
   background: var(--primary-gradient);
-  color: white;
+  color: var(--text-primary);
   border: none;
-  padding: clamp(0.5rem, 1.5vw, 0.75rem) clamp(1rem, 2.5vw, 1.5rem);
+  padding: 0.75rem 1.5rem;
   border-radius: 8px;
   cursor: pointer;
   font-weight: 500;
-  transition: all 0.3s ease;
-  font-size: clamp(0.8rem, 2vw, 0.9rem);
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+  font-size: 0.9rem;
 }
 
 .historial-btn:hover {
-  transform: translateY(-2px);
   box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
 }
 
 .chart-container {
   display: flex;
   flex-direction: column;
-  gap: clamp(1rem, 3vw, 1.5rem);
+  gap: 1.5rem;
 }
 
 .chart-bars {
   display: flex;
   justify-content: space-between;
   align-items: end;
-  height: clamp(200px, 25vw, 300px);
-  padding: clamp(1rem, 3vw, 1.5rem);
+  height: 300px;
+  padding: 1.5rem;
   background: rgba(255, 255, 255, 0.05);
   border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   overflow-x: auto;
-  gap: clamp(0.5rem, 1.5vw, 1rem);
+  gap: 1rem;
 }
 
 .bar-group {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: clamp(0.3rem, 1vw, 0.5rem);
-  min-width: clamp(40px, 8vw, 60px);
+  gap: 0.5rem;
+  min-width: 60px;
 }
 
 .bar {
-  width: clamp(20px, 4vw, 30px);
+  width: 30px;
   min-height: 10px;
   border-radius: 4px 4px 0 0;
-  transition: all 0.3s ease;
+  transition: filter 0.3s ease;
   cursor: pointer;
   position: relative;
 }
@@ -1158,12 +1201,11 @@ export default {
 }
 
 .bar:hover {
-  transform: scaleY(1.05);
   filter: brightness(1.1);
 }
 
 .month-label {
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--text-primary);
   font-size: clamp(0.7rem, 1.5vw, 0.8rem);
   font-weight: 500;
   text-align: center;
@@ -1180,7 +1222,7 @@ export default {
   display: flex;
   align-items: center;
   gap: clamp(0.3rem, 1vw, 0.5rem);
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--text-primary);
   font-size: clamp(0.8rem, 2vw, 0.9rem);
 }
 
@@ -1219,7 +1261,7 @@ export default {
   border-radius: 16px;
   padding: clamp(1.5rem, 4vw, 2rem);
   box-shadow: var(--shadow-light);
-  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transition: box-shadow 0.3s ease, background-color 0.3s ease;
   position: relative;
   overflow: hidden;
 }
@@ -1235,7 +1277,6 @@ export default {
 }
 
 .entrada-salida-panel:hover, .guardias-activos-panel:hover {
-  transform: translateY(-2px);
   box-shadow: var(--shadow-medium);
   background: rgba(255, 255, 255, 0.1);
 }
@@ -1264,17 +1305,16 @@ export default {
   border-radius: 12px;
   padding: clamp(1rem, 3vw, 1.5rem);
   text-align: center;
-  transition: all 0.3s ease;
+  transition: background-color 0.3s ease;
 }
 
 .count-box:hover {
   background: rgba(255, 255, 255, 0.08);
-  transform: translateY(-2px);
 }
 
 .count-box h4 {
   margin: 0 0 clamp(0.5rem, 2vw, 1rem) 0;
-  color: white;
+  color: var(--text-primary);
   font-weight: 600;
   font-size: clamp(1rem, 2.5vw, 1.2rem);
 }
@@ -1299,25 +1339,24 @@ export default {
   justify-content: space-between;
   align-items: center;
   margin-bottom: clamp(1rem, 3vw, 1.5rem);
-  color: white;
+  color: var(--text-primary);
   font-weight: 600;
   font-size: clamp(1rem, 2.5vw, 1.2rem);
 }
 
 .calendar-header button {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: white;
+  background: var(--bg-glass);
+  border: 1px solid var(--border-light);
+  color: var(--text-primary);
   border-radius: 6px;
   padding: clamp(0.3rem, 1vw, 0.5rem) clamp(0.5rem, 1.5vw, 0.8rem);
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: background-color 0.3s ease;
   font-size: clamp(0.8rem, 2vw, 1rem);
 }
 
 .calendar-header button:hover {
   background: rgba(255, 255, 255, 0.2);
-  transform: scale(1.05);
 }
 
 .calendar-days {
@@ -1354,9 +1393,9 @@ export default {
 .date-btn {
   flex: 1;
   aspect-ratio: 1;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: white;
+  background: var(--bg-glass);
+  border: 1px solid var(--border-light);
+  color: var(--text-primary);
   border-radius: 6px;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -1368,7 +1407,6 @@ export default {
 
 .date-btn:hover {
   background: rgba(255, 255, 255, 0.15);
-  transform: scale(1.05);
 }
 
 .date-btn.selected {
@@ -1379,19 +1417,18 @@ export default {
 
 .btn-gestion-usuarios, .btn-gestion-guardias {
   background: var(--success-gradient);
-  color: white;
+  color: var(--text-primary);
   border: none;
   padding: clamp(0.8rem, 2vw, 1rem) clamp(1rem, 2.5vw, 1.5rem);
   border-radius: 12px;
   cursor: pointer;
   font-weight: 600;
-  transition: all 0.3s ease;
+  transition: box-shadow 0.3s ease, filter 0.3s ease;
   font-size: clamp(0.9rem, 2vw, 1rem);
   text-align: center;
 }
 
 .btn-gestion-usuarios:hover, .btn-gestion-guardias:hover {
-  transform: translateY(-2px);
   box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
   filter: brightness(1.1);
 }
@@ -1405,7 +1442,7 @@ export default {
 
 .guardias-activos-panel h4 {
   margin: 0 0 clamp(1rem, 3vw, 1.5rem) 0;
-  color: white;
+  color: var(--text-primary);
   font-weight: 600;
   font-size: clamp(1.1rem, 2.5vw, 1.3rem);
 }
@@ -1459,23 +1496,50 @@ export default {
   }
 }
 
+/* Media Queries para Responsive Design */
+
+/* Laptops pequeños (768px - 1024px) */
+@media (max-width: 1024px) {
+  .sidebar {
+    width: 250px;
+    padding: 1.2rem;
+  }
+  
+  .main-content {
+    padding: 1.5rem;
+  }
+  
+  .card {
+    padding: 1.5rem;
+  }
+  
+  .chart-section {
+    padding: 1.5rem;
+  }
+  
+  .entrada-salida-panel, .guardias-activos-panel {
+    padding: 1.5rem;
+  }
+}
+
+/* Tablets (481px - 768px) */
 @media (max-width: 768px) {
   .app-container {
     flex-direction: column;
-    height: auto;
-    min-height: 100vh;
-    position: relative;
   }
   
   .sidebar {
     width: 100%;
     padding: 1rem;
+    border-right: none;
+    border-bottom: 1px solid var(--border-light);
   }
   
   .nav-menu ul {
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
+    justify-content: center;
   }
   
   .nav-menu li {
@@ -1483,24 +1547,266 @@ export default {
     min-width: 120px;
     text-align: center;
     margin-bottom: 0;
+    padding: 0.5rem;
+    background: var(--bg-glass);
+    border-radius: 8px;
+    font-size: 0.85rem;
   }
   
   .main-content {
     padding: 1rem;
   }
+  
+  .top-cards {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .card {
+    padding: 1.2rem;
+  }
+  
+  .card h3 {
+    font-size: 1rem;
+  }
+  
+  .card .number {
+    font-size: 2rem;
+  }
+  
+  .chart-section {
+    padding: 1.2rem;
+  }
+  
+  .chart-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  .chart-header h4 {
+    font-size: 1.1rem;
+  }
+  
+  .chart-bars {
+    height: 250px;
+    padding: 1rem;
+    gap: 0.5rem;
+  }
+  
+  .bar-group {
+    min-width: 40px;
+    gap: 0.3rem;
+  }
+  
+  .bar {
+    width: 20px;
+  }
+  
+  .month-label {
+    font-size: 0.7rem;
+  }
+  
+  .chart-legend {
+    gap: 1rem;
+  }
+  
+  .legend-item {
+    font-size: 0.8rem;
+  }
+  
+  .bottom-panels {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    margin-top: 1.5rem;
+  }
+  
+  .entrada-salida-panel {
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1.2rem;
+  }
+  
+  .guardias-activos-panel {
+    padding: 1.2rem;
+  }
+  
+  .count-box {
+    padding: 1rem;
+  }
+  
+  .count-box h4 {
+    font-size: 1rem;
+  }
+  
+  .calendar {
+    padding: 1rem;
+  }
+  
+  .calendar-header {
+    font-size: 1rem;
+    margin-bottom: 1rem;
+  }
+  
+  .calendar-header button {
+    padding: 0.4rem 0.6rem;
+    font-size: 0.9rem;
+  }
+  
+  .btn-gestion-usuarios, .btn-gestion-guardias {
+    padding: 0.8rem 1.2rem;
+    font-size: 0.9rem;
+  }
 }
 
+/* Móviles (≤480px) */
 @media (max-width: 480px) {
+  .sidebar {
+    padding: 0.8rem;
+  }
+  
+  .nav-menu ul {
+    gap: 0.3rem;
+  }
+  
+  .nav-menu li {
+    min-width: 100px;
+    font-size: 0.8rem;
+    padding: 0.4rem;
+  }
+  
+  .main-content {
+    padding: 0.8rem;
+  }
+  
+  .card {
+    padding: 1rem;
+  }
+  
+  .card h3 {
+    font-size: 0.9rem;
+    margin-bottom: 0.8rem;
+  }
+  
+  .card .number {
+    font-size: 1.8rem;
+  }
+  
+  .chart-section {
+    padding: 1rem;
+  }
+  
+  .chart-header h4 {
+    font-size: 1rem;
+  }
+  
   .chart-bars {
-    padding: 0.5rem;
+    height: 200px;
+    padding: 0.8rem;
+    gap: 0.3rem;
   }
   
   .bar-group {
     min-width: 30px;
+    gap: 0.2rem;
   }
   
   .bar {
     width: 15px;
+  }
+  
+  .month-label {
+    font-size: 0.65rem;
+  }
+  
+  .chart-legend {
+    gap: 0.8rem;
+  }
+  
+  .legend-item {
+    font-size: 0.75rem;
+    gap: 0.3rem;
+  }
+  
+  .legend-color {
+    width: 12px;
+    height: 12px;
+  }
+  
+  .entrada-salida-panel, .guardias-activos-panel {
+    padding: 1rem;
+  }
+  
+  .count-box {
+    padding: 0.8rem;
+  }
+  
+  .count-box h4 {
+    font-size: 0.9rem;
+    margin-bottom: 0.8rem;
+  }
+  
+  .calendar {
+    padding: 0.8rem;
+  }
+  
+  .calendar-header {
+    font-size: 0.9rem;
+    margin-bottom: 0.8rem;
+  }
+  
+  .calendar-header button {
+    padding: 0.3rem 0.5rem;
+    font-size: 0.8rem;
+  }
+  
+  .day-label {
+    font-size: 0.7rem;
+    padding: 0.3rem;
+  }
+  
+  .date-btn {
+    font-size: 0.7rem;
+  }
+  
+  .btn-gestion-usuarios, .btn-gestion-guardias {
+    padding: 0.7rem 1rem;
+    font-size: 0.85rem;
+  }
+}
+
+/* Móviles en horizontal (≤768px y landscape) */
+@media (max-width: 768px) and (orientation: landscape) {
+  .sidebar {
+    padding: 0.8rem;
+  }
+  
+  .nav-menu ul {
+    justify-content: space-around;
+  }
+  
+  .nav-menu li {
+    min-width: 80px;
+    font-size: 0.75rem;
+    padding: 0.3rem;
+  }
+  
+  .main-content {
+    padding: 0.8rem;
+  }
+  
+  .top-cards {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.8rem;
+  }
+  
+  .chart-bars {
+    height: 180px;
+  }
+  
+  .bottom-panels {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.8rem;
   }
 }
 
@@ -1543,6 +1849,13 @@ export default {
   border-top: 1px solid var(--border-primary);
 }
 
+/* Asegurar consistencia en el tema claro */
+.app-container:not(.dark-theme) .sidebar-theme-toggle {
+  border-top: 1px solid var(--border-primary);
+  padding: 1rem 0;
+  margin-top: auto;
+}
+
 .theme-toggle-sidebar {
   width: 100%;
   background: var(--bg-card);
@@ -1551,7 +1864,7 @@ export default {
   padding: 0.75rem 1rem;
   color: var(--text-primary);
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
   display: flex;
   align-items: center;
   gap: 0.75rem;
@@ -1562,7 +1875,6 @@ export default {
 .theme-toggle-sidebar:hover {
   background: var(--bg-hover);
   border-color: var(--border-accent);
-  transform: translateY(-1px);
   box-shadow: var(--shadow-medium);
 }
 
@@ -1571,7 +1883,7 @@ export default {
   height: 18px;
   stroke-width: 2;
   color: var(--text-accent);
-  transition: all 0.3s ease;
+  transition: color 0.3s ease;
 }
 
 .theme-text {
@@ -1581,7 +1893,6 @@ export default {
 
 .theme-toggle-sidebar:hover .theme-icon {
   color: var(--accent-blue);
-  transform: scale(1.1);
 }
 
 .theme-toggle-sidebar:hover .theme-text {

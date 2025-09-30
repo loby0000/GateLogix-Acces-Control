@@ -2,183 +2,283 @@
   <div class="page">
     <!-- Background carousel -->
     <div class="background-carousel">
-      <transition name="fade">
-        <div 
-          :key="currentImageIndex" 
-          class="background-image"
-          :style="{ backgroundImage: `url(${backgroundImages[currentImageIndex].url})` }"
-          loading="lazy"
-          @error="handleImageError(currentImageIndex)"
-        ></div>
-      </transition>
+      <div 
+        v-for="(image, index) in backgroundImages" 
+        :key="index"
+        class="background-image"
+        :class="{ active: index === currentImageIndex }"
+        :style="{ backgroundImage: `url(${image.url})` }"
+      ></div>
     </div>
     
-    <div class="form-container responsive-container">
-      <!-- Logo -->
-      <div class="logo-section">
+    <div class="form-container-wrapper">
+      <!-- Logo en la parte superior -->
+      <div class="header-section">
+        <div class="logo-section">
           <img src="/logo-gatelogix.png" alt="GateLogix Logo" class="logo-img" loading="eager" fetchpriority="high">
         </div>
-      <h2 class="form-title">Registro de Usuario </h2>
- <div v-if="usuarioEncontradoMsg" 
-           class="user-found-message">
-        ✔ Usuario encontrado. Redirigiendo...
-      </div>
-      <!-- Select tipo de registro -->
-      <select v-model="tipoRegistro" class="input-select">
-        <option disabled value="">Tipo de registro</option>
-        <option>Registrar</option>
-        <option>Registrado</option>
-      </select>
-
-      <!-- Select tipo de usuario -->
-      <select v-model="tipoUsuario" class="input-select" required>
-        <option disabled value="">Tipo de usuario</option>
-        <option value="Personal de planta">Personal de planta</option>
-        <option value="Visitante">Visitante</option>
-        <option value="Instructor">Instructor</option>
-        <option value="Aprendiz">Aprendiz</option>
-      </select>
-
-      <!-- Select tipo de documento -->
-      <select v-model="tipoDocumento" class="input-select" required>
-        <option disabled value="">Tipo de documento</option>
-        <option value="Cédula De Ciudadanía">Cédula De Ciudadanía</option>
-        <option value="Cédula De Extranjería">Cédula De Extranjería</option>
-        <option value="Tarjeta De Identidad">Tarjeta De Identidad</option>
-      </select>
-
-      <!-- Documento con validación -->
-      <input
-        type="text"
-        v-model="numeroDocumento"
-        placeholder="Documento (8-10 dígitos)"
-        :class="['input-text', errores.numeroDocumento ? 'error' : '']"
-        maxlength="10"
-        @input="validarDocumento"
-        required
-      />
-      <p v-if="errores.numeroDocumento" class="error-message">
-        {{ errores.numeroDocumento }}
-      </p>
-
-      <input 
-        type="text" 
-        v-model="nombre" 
-        placeholder="Nombre (mínimo 3 caracteres)" 
-        :class="['input-text', errores.nombre ? 'error' : '']" 
-        @input="validarNombre"
-        required 
-      />
-      <p v-if="errores.nombre" class="error-message">
-        {{ errores.nombre }}
-      </p>
-      
-      <input 
-        type="email" 
-        v-model="email" 
-        placeholder="Correo electrónico" 
-        :class="['input-text', errores.email ? 'error' : '']" 
-        @input="validarEmail"
-        required 
-      />
-      <p v-if="errores.email" class="error-message">
-        {{ errores.email }}
-      </p>
-      
-      <input 
-        type="text" 
-        v-model="serialEquipo" 
-        placeholder="Serial Del Equipo (12-16 caracteres)" 
-        :class="['input-text', errores.serialEquipo ? 'error' : '']" 
-        @input="validarSerial"
-        required 
-      />
-      <p v-if="errores.serialEquipo" class="error-message">
-        {{ errores.serialEquipo }}
-      </p>
-
-      <select v-model="marcaEquipo" class="input-select">
-        <option disabled value="">Marca Del Equipo</option>
-        <option value="Dell">Dell</option>
-        <option value="HP">HP</option>
-        <option value="Lenovo">Lenovo</option>
-        <option value="Asus">Asus</option>
-        <option value="Acer">Acer</option>
-        <option value="Apple">Apple</option>
-        <option value="Samsung">Samsung</option>
-        <option value="Huawei">Huawei</option>
-        <option value="Toshiba">Toshiba</option>
-        <option value="MSI">MSI</option>
-        <option value="Otro">Otro</option>
-      </select>
-
-      <input type="text" v-model="caracteristicas" placeholder="Características" class="input-text" />
-
-      <div class="checkbox-group">
-        <label class="custom-check" :class="{ checked: mouse }">
-          <input type="checkbox" v-model="mouse" style="display:none;" />
-          <span class="icon-text"><span>Mouse</span></span>
-        </label>
-        <label class="custom-check" :class="{ checked: cargador }">
-          <input type="checkbox" v-model="cargador" style="display:none;" />
-          <span class="icon-text"><span>Cargador</span></span>
-        </label>
-      </div>
-
-      <div class="file-section">
-        <div class="file-label">Insertar imagen o archivo</div>
-        <button type="button" class="file-upload-btn" @click="mostrarOpciones = true">📎 Agregar Foto o Archivo</button>
-      </div>
-
-      <!-- Modal flotante (fotos/archivos) -->
-      <div v-if="mostrarOpciones" class="modal">
-        <div class="modal-content">
-          <button @click="abrirCamara">Tomar Foto</button>
-          <button @click="subirArchivo">Seleccionar Archivo</button>
-          <button class="cerrar" @click="mostrarOpciones = false">Cancelar</button>
+        <h2 class="form-title">Usuarios Por Registrar</h2>
+        
+        <div v-if="usuarioEncontradoMsg" class="user-found-message">
+          ✔ Usuario encontrado. Redirigiendo...
         </div>
       </div>
 
-      <!-- Cámara -->
-      <div v-if="mostrarCamara" class="camara-container">
-        <video ref="video" autoplay></video>
-        <button @click="capturarFoto">Capturar</button>
-        <button @click="cerrarCamara">Cerrar</button>
-      </div>
+      <!-- Formulario dividido en dos columnas -->
+      <div class="form-container">
+        <!-- Columna izquierda: Información del usuario -->
+        <div class="left-column">
+          <div class="column-title">
+            <span class="icon">👤</span>
+            Información del Usuario
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">Tipo de Registro</label>
+            <select v-model="tipoRegistro" class="input-select" required>
+              <option disabled value="">Seleccionar tipo de registro</option>
+              <option value="registrar">Registrar</option>
+              <option value="registrado">Registrado</option>
+            </select>
+          </div>
 
-      <!-- Fotos cargadas -->
-      <div v-if="fotos.length" style="margin-bottom:8px; display:flex; flex-wrap:wrap; gap:10px; justify-content:center;">
-        <div v-for="(img, idx) in fotos" :key="idx" style="text-align:center;">
-          <img :src="img.data" alt="Imagen cargada" style="max-width:120px; display:block; margin:auto; border-radius:6px;" />
-          <div v-if="img.nombre" style="font-size:13px; color:#444;">{{ img.nombre }}</div>
+          <div class="form-group">
+            <label class="form-label">Tipo De Usuario</label>
+            <select v-model="tipoUsuario" class="input-select" required>
+              <option disabled value="">Seleccionar tipo</option>
+              <option value="Personal de planta">Personal de planta</option>
+              <option value="Visitante">Visitante</option>
+              <option value="Instructor">Instructor</option>
+              <option value="Aprendiz">Aprendiz</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Tipo De Documento</label>
+            <select v-model="tipoDocumento" class="input-select" required>
+              <option disabled value="">Seleccionar documento</option>
+              <option value="Cédula De Ciudadanía">Cédula De Ciudadanía</option>
+              <option value="Cédula De Extranjería">Cédula De Extranjería</option>
+              <option value="Tarjeta De Identidad">Tarjeta De Identidad</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Nombre</label>
+            <input 
+              type="text" 
+              v-model="nombre" 
+              placeholder="Mínimo 3 caracteres" 
+              :class="['input-text', errores.nombre ? 'error' : '']" 
+              @input="validarNombre"
+              required 
+            />
+            <p v-if="errores.nombre" class="error-message">
+              {{ errores.nombre }}
+            </p>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Documento</label>
+            <input
+              type="text"
+              v-model="numeroDocumento"
+              placeholder="8-10 dígitos"
+              :class="['input-text', errores.numeroDocumento ? 'error' : '']"
+              maxlength="10"
+              @input="validarDocumento"
+              required
+            />
+            <p v-if="errores.numeroDocumento" class="error-message">
+              {{ errores.numeroDocumento }}
+            </p>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Correo Electrónico</label>
+            <input
+              type="email"
+              v-model="correoElectronico"
+              placeholder="ejemplo@correo.com"
+              :class="['input-text', errores.correoElectronico ? 'error' : '']"
+              @input="validarCorreo"
+              required
+            />
+            <p v-if="errores.correoElectronico" class="error-message">
+              {{ errores.correoElectronico }}
+            </p>
+          </div>
+        </div>
+
+        <!-- Columna derecha: Información del equipo -->
+        <div class="right-column">
+          <div class="column-title">
+            <span class="icon">💻</span>
+            Información del Equipo
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">Serial Del Equipo</label>
+            <input 
+              type="text" 
+              v-model="serialEquipo" 
+              placeholder="Serial del equipo" 
+              :class="['input-text', errores.serialEquipo ? 'error' : '']" 
+              @input="validarSerial"
+              required 
+            />
+            <p v-if="errores.serialEquipo" class="error-message">
+              {{ errores.serialEquipo }}
+            </p>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Marca Del Equipo</label>
+            <select v-model="marcaEquipo" class="input-select" required>
+              <option disabled value="">Seleccionar marca</option>
+              <option value="HP">HP</option>
+              <option value="Dell">Dell</option>
+              <option value="Lenovo">Lenovo</option>
+              <option value="Asus">Asus</option>
+              <option value="Acer">Acer</option>
+              <option value="Apple">Apple</option>
+              <option value="Toshiba">Toshiba</option>
+              <option value="Samsung">Samsung</option>
+              <option value="Sony">Sony</option>
+              <option value="MSI">MSI</option>
+              <option value="Otra">Otra</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Características</label>
+            <textarea 
+              v-model="caracteristicas" 
+              placeholder="Descripción del equipo"
+              class="input-textarea"
+              rows="3"
+            ></textarea>
+          </div>
+
+          <!-- Checkboxes para accesorios -->
+          <div class="accessories-section">
+            <div class="checkbox-group">
+              <input type="checkbox" v-model="mouse" id="mouse" class="checkbox-input">
+              <label for="mouse" class="checkbox-label">Mouse</label>
+            </div>
+            
+            <div class="checkbox-group">
+              <input type="checkbox" v-model="cargador" id="cargador" class="checkbox-input">
+              <label for="cargador" class="checkbox-label">Cargador</label>
+            </div>
+          </div>
+
+          <!-- Image Upload Section -->
+          <div class="image-section">
+            <div class="image-upload-area">
+              <span class="upload-text">Insertar imagen</span>
+              <div class="upload-buttons">
+                <button 
+                  type="button" 
+                  class="upload-btn camera-btn" 
+                  @click="openCamera"
+                >
+                  {{ cameraButtonText }}
+                </button>
+                <button 
+                  type="button" 
+                  class="upload-btn file-btn"
+                  @click="openFileSelector"
+                >
+                  Subir Imagen
+                </button>
+              </div>
+              
+              <!-- Vista previa de la imagen -->
+              <div v-if="capturedImage" class="image-preview-container">
+                <div class="image-preview-header">
+                  <span class="preview-title">Vista previa:</span>
+                  <button 
+                    type="button" 
+                    class="remove-image-btn"
+                    @click="removeImage"
+                    title="Eliminar imagen"
+                  >
+                    ❌
+                  </button>
+                </div>
+                <div class="image-preview">
+                  <img :src="capturedImage" alt="Imagen capturada" class="preview-img" />
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
-      <!-- Mensaje de éxito -->
-      <div v-if="registroExitoso" style="background:#e6ffe6; color:#1a7f1a; border-radius:6px; padding:8px; margin-bottom:8px; text-align:center;">
-        <span style="font-size:18px;">✔</span> El Registro Ha Sido Exitoso
+      <!-- Botones de acción -->
+      <div class="action-buttons">
+        <button type="button" @click="registrar" class="btn-primary">
+          📝 Registrar Usuario
+        </button>
+        <button type="button" @click="cerrarSesion" class="btn-secondary">
+          🚪 Cerrar sesión
+        </button>
       </div>
+    </div>
 
-      <!-- Botón registrar -->
-      <button class="enviar" @click.prevent="registrar">Registrar</button>
-      <router-link to="/login" class="cerrar-sesion-btn">Cerrar sesión</router-link>
+    <!-- Modal para opciones de archivo -->
+    <div v-if="mostrarOpciones" class="modal">
+      <div class="modal-content">
+        <h3>Seleccionar opción</h3>
+        <button @click="abrirCamara" class="modal-btn camera">
+          📷 Tomar Foto
+        </button>
+        <button @click="subirArchivo" class="modal-btn file">
+          📁 Seleccionar Archivo
+        </button>
+        <button class="modal-btn cancel" @click="mostrarOpciones = false">
+          ❌ Cancelar
+        </button>
+      </div>
+    </div>
+
+    <!-- Cámara -->
+    <div v-if="mostrarCamara" class="camera-container">
+      <div class="camera-content">
+        <video ref="video" autoplay class="camera-video"></video>
+        <div class="camera-controls">
+          <button @click="capturarFoto" class="camera-btn capture">📸 Capturar</button>
+          <button @click="cerrarCamara" class="camera-btn close">❌ Cerrar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Nueva cámara -->
+    <div v-if="showCamera" class="camera-container">
+      <div class="camera-content">
+        <video ref="cameraVideo" autoplay class="camera-video"></video>
+        <div class="camera-controls">
+          <button @click="capturePhoto" class="camera-btn capture">📸 Capturar</button>
+          <button @click="closeCamera" class="camera-btn close">❌ Cerrar</button>
+        </div>
+      </div>
     </div>
 
     <!-- Modal para código de barras -->
     <div v-if="mostrarCodigoModal" class="modal">
-      <div class="modal-content" style="text-align:center; max-width:400px; margin:auto;">
+      <div class="modal-content barcode-modal">
         <h3>Código de Barras Generado</h3>
-        <img :src="codigoBarrasUrl" alt="Código de Barras" style="max-width:300px; display:block; margin:15px auto;" />
-        <div style="margin-top:10px;">
-          <button @click="descargarCodigo" class="enviar">Descargar</button>
-          <button @click="imprimirCodigo" class="enviar">Imprimir</button>
-          <button @click="cerrarCodigoModal" class="cerrar">Cerrar</button>
+        <img :src="codigoBarrasUrl" alt="Código de Barras" class="barcode-image" />
+        <div class="barcode-actions">
+          <button @click="descargarCodigo" class="modal-btn download">💾 Descargar</button>
+          <button @click="imprimirCodigo" class="modal-btn print">🖨️ Imprimir</button>
+          <button @click="cerrarCodigoModal" class="modal-btn cancel">❌ Cerrar</button>
         </div>
       </div>
     </div>
   </div>
 </template>
-
 
 <script>
 import axios from "axios";
@@ -197,46 +297,68 @@ export default {
 
   data() {
     return {
-      tipoRegistro: "Registrar",
+      // Datos del usuario
+      tipoRegistro: "",
       tipoUsuario: "",
       tipoDocumento: "",
-      numeroDocumento: "",
       nombre: "",
-      email: "",
+      numeroDocumento: "",
+      correoElectronico: "",
+      
+      // Datos del equipo
       serialEquipo: "",
       marcaEquipo: "",
       caracteristicas: "",
       mouse: false,
       cargador: false,
-      fotos: [],
+      
+      // Estados de la aplicación
       mostrarOpciones: false,
       mostrarCamara: false,
-      registroExitoso: false,
       mostrarCodigoModal: false,
-      codigoBarrasUrl: null,
-      usuarioEncontradoMsg: false, // 🔹 mensaje temporal
-      errores: { numeroDocumento: "", email: "", nombre: "", serialEquipo: "" },
+      fotos: [],
+      registroExitoso: false,
+      usuarioEncontradoMsg: false,
+      cameraButtonText: 'Tomar Foto',
+      showCamera: false,
+      capturedImage: null,
+      videoStream: null,
+      
+      // Errores de validación
+      errores: {
+        nombre: "",
+        numeroDocumento: "",
+        correoElectronico: "",
+        serialEquipo: ""
+      },
+      
+      // Carrusel de imágenes
       currentImageIndex: 0,
+      carouselInterval: null,
       backgroundImages: [
         {
-          url: 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&h=1080&q=80',
-          alt: 'Vigilante de seguridad registrando equipos de cómputo'
+          url: 'https://images.pexels.com/photos/3184291/pexels-photo-3184291.jpeg?auto=compress&cs=tinysrgb&w=2560&h=1440&dpr=2&fit=crop&q=90',
+          alt: 'Oficina moderna con tecnología'
         },
         {
-          url: 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&h=1080&q=80',
-          alt: 'Personal de seguridad en oficina corporativa'
+          url: 'https://images.pexels.com/photos/3184292/pexels-photo-3184292.jpeg?auto=compress&cs=tinysrgb&w=2560&h=1440&dpr=2&fit=crop&q=90',
+          alt: 'Espacio de trabajo colaborativo'
         },
         {
-          url: 'https://images.unsplash.com/photo-1551434678-e076c223a692?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&h=1080&q=80',
-          alt: 'Centro de control de acceso con tecnología moderna'
+          url: 'https://images.pexels.com/photos/3184293/pexels-photo-3184293.jpeg?auto=compress&cs=tinysrgb&w=2560&h=1440&dpr=2&fit=crop&q=90',
+          alt: 'Centro de datos y servidores'
         },
         {
-          url: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&h=1080&q=80',
-          alt: 'Edificio empresarial con sistemas de seguridad'
+          url: 'https://images.pexels.com/photos/3184294/pexels-photo-3184294.jpeg?auto=compress&cs=tinysrgb&w=2560&h=1440&dpr=2&fit=crop&q=90',
+          alt: 'Sala de conferencias tecnológica'
         },
         {
-          url: 'https://images.unsplash.com/photo-1573164713714-d95e436ab8d6?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&h=1080&q=80',
-          alt: 'Sistemas de vigilancia y control de acceso'
+          url: 'https://images.pexels.com/photos/3184295/pexels-photo-3184295.jpeg?auto=compress&cs=tinysrgb&w=2560&h=1440&dpr=2&fit=crop&q=90',
+          alt: 'Laboratorio de innovación'
+        },
+        {
+          url: 'https://images.pexels.com/photos/3184296/pexels-photo-3184296.jpeg?auto=compress&cs=tinysrgb&w=2560&h=1440&dpr=2&fit=crop&q=90',
+          alt: 'Área de desarrollo de software'
         }
       ]
     };
@@ -244,14 +366,15 @@ export default {
 
   watch: {
     tipoRegistro(nuevo) {
-      if (nuevo === "Registrado") {
+      console.log('🔄 Cambio en tipoRegistro:', nuevo);
+      if (nuevo === "registrado") {
+        console.log('✅ Navegando a RegistroUsuariosYaResg');
         this.$router.push({ name: "RegistroUsuariosYaResg" });
       }
     }
   },
 
   mounted() {
-    // Iniciar componentes después de que el DOM esté listo
     this.$nextTick(() => {
       if (this.initScanner) this.initScanner(this.onScanDetected);
       this.startCarousel();
@@ -267,267 +390,138 @@ export default {
   },
 
   methods: {
-async onScanDetected(scannedSerial) {
-  if (!scannedSerial) return;
+    async onScanDetected(scannedSerial) {
+      if (!scannedSerial) return;
 
-  // 🔹 Limpiar caracteres extra típicos de scanners
-  let serial = scannedSerial.toString().replace(/Shift/g, '').trim();
+      let serial = scannedSerial.toString().replace(/Shift/g, '').trim();
+      this.serialEquipo = serial;
 
-  this.serialEquipo = serial;
-
-  try {
-    // Usar URL relativa para evitar problemas de CORS y carga
-    const url = getApiUrl(`api/usuario-equipo/buscar/${encodeURIComponent(serial)}`);
-    
-    const token = localStorage.getItem("token");
-    if (!token) {
-      this.toast.error("No hay sesión activa. Por favor inicie sesión nuevamente.");
-      this.$router.push('/login');
-      return;
-    }
-    
-    const res = await axios.get(url, { 
-      headers: { Authorization: `Bearer ${token}` },
-      timeout: 10000 // Timeout de 10 segundos
-    });
-
-    if (res.data && Object.keys(res.data).length > 0) {
-      this.usuarioEncontradoMsg = true;
-      
-      // 🔹 Registrar entrada automáticamente
-      await this.registrarEntradaAutomatica(serial);
-      
-      setTimeout(() => {
-        this.usuarioEncontradoMsg = false;
-        // Redirigir a RegistroUsuariosYaResg con el serial
-        this.$router.push({ 
-          name: "RegistroUsuariosYaResg", 
-          query: { serial: serial, autoEntry: true }
-        });
-      }, 1200);
-    } else {
-      this.toast.info("No se encontró un usuario con ese serial.");
-    }
-  } catch (err) {
-    console.error("❌ Error al buscar por serial:", err.response?.data || err.message);
-    
-    if (err.code === 'ECONNABORTED') {
-      this.toast.error("La conexión ha tardado demasiado. Verifique su conexión a internet.");
-    } else if (err.response?.status === 401) {
-      this.toast.error("Sesión expirada. Por favor inicie sesión nuevamente.");
-      this.$router.push('/login');
-    } else if (err.response?.status === 404) {
-      this.toast.info("No se encontró un usuario con ese serial.");
-    } else {
-      this.toast.error("Error al buscar usuario por serial. Intente nuevamente.");
-    }
-  }
-},
-
-    validarDocumento(e) {
-      // Solo permitir números
-      e.target.value = e.target.value.replace(/\D/g, "");
-      this.numeroDocumento = e.target.value;
-      
-      // Validar longitud (entre 8 y 10 dígitos)
-      if (this.numeroDocumento.length < 8) {
-        this.errores.numeroDocumento = "El documento debe tener al menos 8 dígitos numéricos.";
-      } else if (this.numeroDocumento.length > 10) {
-        this.errores.numeroDocumento = "El documento no puede tener más de 10 dígitos numéricos.";
-      } else {
-        this.errores.numeroDocumento = "";
-      }
-    },
-    
-    validarNombre() {
-      // Eliminar caracteres especiales excepto espacios
-      this.nombre = this.nombre.replace(/[^\w\sáéíóúÁÉÍÓÚñÑ]/g, "");
-      
-      // Validar longitud mínima
-      if (this.nombre.length < 3) {
-        this.errores.nombre = "El nombre debe tener al menos 3 caracteres.";
-      } else {
-        this.errores.nombre = "";
-      }
-    },
-
-    validarEmail() {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      this.errores.email = !emailRegex.test(this.email) ? "Correo electrónico inválido." : "";
-    },
-    
-    validarSerial() {
-      // Eliminar caracteres especiales
-      this.serialEquipo = this.serialEquipo.replace(/[^\w\d]/g, "");
-      
-      // Validar longitud (entre 12 y 16 caracteres)
-      if (this.serialEquipo.length < 12) {
-        this.errores.serialEquipo = "El serial debe tener al menos 12 caracteres.";
-      } else if (this.serialEquipo.length > 16) {
-        this.errores.serialEquipo = "El serial no puede tener más de 16 caracteres.";
-      } else {
-        this.errores.serialEquipo = "";
-      }
-    },
-    
-    // Método auxiliar para validar email
-    validarEmailFormato(email) {
-      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-    },
-
-    async registrar() {
       try {
-        // Validar todos los campos antes de enviar
-        this.validarDocumento({ target: { value: this.numeroDocumento } });
-        this.validarNombre();
-        this.validarEmail();
-        this.validarSerial();
+        const url = getApiUrl(`api/usuario-equipo/buscar/${encodeURIComponent(serial)}`);
         
-        // Verificar campos obligatorios y marcarlos con error si están vacíos
-        let camposFaltantes = false;
-        
-        if (!this.tipoUsuario || !this.tipoDocumento) {
-          camposFaltantes = true;
-        }
-        
-        if (!this.numeroDocumento) {
-          this.errores.numeroDocumento = "Este campo es obligatorio.";
-          camposFaltantes = true;
-        }
-        
-        if (!this.nombre) {
-          this.errores.nombre = "Este campo es obligatorio.";
-          camposFaltantes = true;
-        }
-        
-        if (!this.email) {
-          this.errores.email = "Este campo es obligatorio.";
-          camposFaltantes = true;
-        }
-        
-        if (!this.serialEquipo) {
-          this.errores.serialEquipo = "Este campo es obligatorio.";
-          camposFaltantes = true;
-        }
-        
-        if (!this.marcaEquipo) {
-          camposFaltantes = true;
-        }
-        
-        if (camposFaltantes) {
-          this.toast.error("Por favor completa todos los campos obligatorios.");
-          return;
-        }
-        
-        // Verificar si hay errores de validación
-        if (this.errores.numeroDocumento || this.errores.nombre || this.errores.email || this.errores.serialEquipo) {
-          this.toast.error("Por favor corrige los errores en el formulario antes de continuar.");
-          return;
-        }
-        
-        // Validar longitudes específicas
-        if (this.numeroDocumento.length < 8 || this.numeroDocumento.length > 10) {
-          this.errores.numeroDocumento = "El documento debe tener entre 8 y 10 dígitos.";
-          return;
-        }
-        
-        if (this.nombre.length < 3) {
-          this.errores.nombre = "El nombre debe tener al menos 3 caracteres.";
-          return;
-        }
-        
-        if (this.serialEquipo.length < 12 || this.serialEquipo.length > 16) {
-          this.errores.serialEquipo = "El serial debe tener entre 12 y 16 caracteres.";
-          return;
-        }
-        
-        if (!this.validarEmailFormato(this.email)) {
-          this.errores.email = "Correo electrónico inválido.";
-          return;
-        }
-
-        // Preparar la foto si existe
-        let foto = null;
-        if (this.fotos.length > 0) {
-          // Usar la primera foto (podría mejorarse para manejar múltiples fotos)
-          foto = this.fotos[0].data;
-          console.log('Foto preparada para enviar:', foto ? 'Foto presente (base64)' : 'Foto null');
-        } else {
-          console.log('No hay fotos para enviar');
-        }
-
-        // Asegurarse de que la foto sea una cadena base64 válida
-        let fotoFinal = null;
-        if (foto && typeof foto === 'string' && foto.startsWith('data:image')) {
-          fotoFinal = foto;
-          console.log('Foto válida detectada');
-        } else if (foto) {
-          console.log('Formato de foto no válido:', typeof foto);
-        }
-        
-        const payload = {
-          tipoUsuario: this.tipoUsuario,
-          tipoDocumento: this.tipoDocumento,
-          numeroDocumento: this.numeroDocumento,
-          nombre: this.nombre,
-          email: this.email,
-          equipo: {
-            serial: this.serialEquipo,
-            marca: this.marcaEquipo,
-            caracteristicas: this.caracteristicas,
-            accesorios: { mouse: this.mouse, cargador: this.cargador }
-          },
-          foto: fotoFinal // Incluir la foto validada en el payload
-        };
-
-        // Verificar token antes de enviar
         const token = localStorage.getItem("token");
         if (!token) {
           this.toast.error("No hay sesión activa. Por favor inicie sesión nuevamente.");
           this.$router.push('/login');
           return;
         }
+        
+        const res = await axios.get(url, { 
+          headers: { Authorization: `Bearer ${token}` },
+          timeout: 10000
+        });
 
-        // Usar la utilidad apiConfig para obtener la URL
-        const url = getApiUrl('api/usuario-equipo/registrar');
-        
-        console.log('Enviando payload al backend:', JSON.stringify(payload).length, 'caracteres');
-        console.log('Payload contiene foto:', payload.foto ? 'Sí' : 'No');
-        
-        const res = await axios.post(
-          url,
-          payload,
-          { 
-            headers: { Authorization: `Bearer ${token}` },
-            timeout: 30000 // 30 segundos de timeout para subidas con imágenes
-          }
-        );
-
-        console.log("✅ Registrado:", res.data);
-        this.toast.success("Usuario registrado correctamente");
-        this.mostrarCodigoModal = true;
-        this.codigoBarrasUrl = `data:image/png;base64,${res.data.codigoBarrasBase64}`;
-        this.registroExitoso = true;
-        
-        // Emitir evento para actualizar la tabla de guardias
-        window.dispatchEvent(new CustomEvent('guardias-actualizados'));
+        if (res.data && Object.keys(res.data).length > 0) {
+          this.usuarioEncontradoMsg = true;
+          
+          await this.registrarEntradaAutomatica(serial);
+          
+          setTimeout(() => {
+            this.usuarioEncontradoMsg = false;
+            this.$router.push({ 
+              name: "RegistroUsuariosYaResg", 
+              query: { serial: serial, autoEntry: true }
+            });
+          }, 1200);
+        } else {
+          this.toast.info("No se encontró un usuario con ese serial.");
+        }
       } catch (err) {
-        console.error("❌ Error al registrar:", err.response?.data || err.message);
+        console.error("❌ Error al buscar por serial:", err.response?.data || err.message);
         
         if (err.code === 'ECONNABORTED') {
           this.toast.error("La conexión ha tardado demasiado. Verifique su conexión a internet.");
         } else if (err.response?.status === 401) {
           this.toast.error("Sesión expirada. Por favor inicie sesión nuevamente.");
           this.$router.push('/login');
-        } else if (err.response?.status === 400) {
-          this.toast.error(err.response.data.message || "Datos inválidos. Verifique la información.");
-        } else if (err.response?.status === 409) {
-          this.toast.error("El usuario o equipo ya se encuentra registrado.");
+        } else if (err.response?.status === 404) {
+          this.toast.info("No se encontró un usuario con ese serial.");
         } else {
-          this.toast.error("Error al registrar. Intente nuevamente más tarde.");
+          this.toast.error("Error al buscar usuario por serial. Intente nuevamente.");
         }
       }
     },
+
+    // Validaciones
+    validarNombre() {
+      if (this.nombre.length < 3) {
+        this.errores.nombre = 'El nombre debe tener al menos 3 caracteres';
+      } else {
+        this.errores.nombre = '';
+      }
+    },
+    
+    validarDocumento() {
+      const documento = this.numeroDocumento.replace(/\D/g, '');
+      if (documento.length < 8 || documento.length > 10) {
+        this.errores.numeroDocumento = 'El documento debe tener entre 8 y 10 dígitos';
+      } else {
+        this.errores.numeroDocumento = '';
+      }
+      this.numeroDocumento = documento;
+    },
+    
+    validarSerial() {
+      if (this.serialEquipo.length < 5) {
+        this.errores.serialEquipo = 'El serial debe tener al menos 5 caracteres';
+      } else {
+        this.errores.serialEquipo = '';
+      }
+    },
+
+    validarCorreo() {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!this.correoElectronico) {
+        this.errores.correoElectronico = 'El correo electrónico es obligatorio';
+      } else if (!emailRegex.test(this.correoElectronico)) {
+        this.errores.correoElectronico = 'Ingrese un correo electrónico válido';
+      } else {
+        this.errores.correoElectronico = '';
+      }
+    },
+
+    registrar() {
+        // Validar todos los campos
+        this.validarNombre();
+        this.validarDocumento();
+        this.validarCorreo();
+        this.validarSerial();
+        
+        // Verificar si hay errores
+        const hayErrores = Object.values(this.errores).some(error => error !== '');
+        
+        if (!hayErrores && this.tipoUsuario && this.tipoDocumento && this.marcaEquipo) {
+          console.log('Registrando usuario:', {
+            usuario: {
+              tipo: this.tipoUsuario,
+              documento: this.tipoDocumento,
+              numero: this.numeroDocumento,
+              nombre: this.nombre,
+              correoElectronico: this.correoElectronico
+            },
+            equipo: {
+              serial: this.serialEquipo,
+              marca: this.marcaEquipo,
+              caracteristicas: this.caracteristicas,
+              accesorios: {
+                mouse: this.mouse,
+                cargador: this.cargador
+              }
+            }
+          });
+          
+          this.registroExitoso = true;
+          setTimeout(() => {
+            this.registroExitoso = false;
+          }, 3000);
+        } else {
+          console.log('Faltan campos por completar o hay errores');
+        }
+      },
+      
+      cerrarSesion() {
+        this.$router.push('/login');
+      },
 
     descargarCodigo() {
       const link = document.createElement("a");
@@ -543,215 +537,403 @@ async onScanDetected(scannedSerial) {
       win.close();
     },
 
-    cerrarCodigoModal() { this.mostrarCodigoModal = false; },
-
-    abrirCamara() {
-      this.mostrarCamara = true;
-      navigator.mediaDevices.getUserMedia({ video: true })
-        .then(stream => {
-          this.$refs.video.srcObject = stream;
-          console.log('Cámara iniciada correctamente');
-        })
-        .catch(err => {
-          console.error('Error al acceder a la cámara:', err);
-          this.mostrarCamara = false;
-        });
+    cerrarCodigoModal() { 
+      this.mostrarCodigoModal = false; 
     },
 
-    capturarFoto() {
-      const canvas = document.createElement("canvas");
-      canvas.width = this.$refs.video.videoWidth;
-      canvas.height = this.$refs.video.videoHeight;
-      canvas.getContext("2d").drawImage(this.$refs.video, 0, 0);
-      const fotoData = canvas.toDataURL("image/png");
-      console.log('Foto capturada correctamente:', fotoData.substring(0, 50) + '...');
-      this.fotos.push({ data: fotoData, nombre: "foto.png" });
-      this.cerrarCamara();
+    openCamera() {
+      console.log('Abriendo cámara...');
+      this.showCamera = true;
+      this.$nextTick(() => {
+        this.initializeCamera();
+      });
     },
 
-    cerrarCamara() {
-      this.mostrarCamara = false;
-      const stream = this.$refs.video?.srcObject;
-      if (stream) stream.getTracks().forEach(t => t.stop());
-    },
-
-    subirArchivo() {
-      const input = document.createElement("input");
-      input.type = "file";
-      input.accept = "image/*";
-      input.onchange = e => {
-        const file = e.target.files[0];
+    openFileSelector() {
+      console.log('Abriendo selector de archivos...');
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.onchange = (event) => {
+        const file = event.target.files[0];
         if (file) {
-          console.log('Archivo seleccionado:', file.name, file.type, file.size, 'bytes');
-          const reader = new FileReader();
-          reader.onload = ev => {
-            const imageData = ev.target.result;
-            console.log('Imagen cargada correctamente:', imageData.substring(0, 50) + '...');
-            this.fotos.push({ data: imageData, nombre: file.name });
-          };
-          reader.onerror = error => {
-            console.error('Error al leer el archivo:', error);
-          };
-          reader.readAsDataURL(file);
+          this.handleFileUpload(file);
         }
       };
       input.click();
     },
 
+    handleFileUpload(file) {
+      console.log('Archivo seleccionado:', file.name);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        this.capturedImage = e.target.result;
+        // Mantener el texto original del botón
+      };
+      reader.readAsDataURL(file);
+    },
+
+    async initializeCamera() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+          video: { 
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          } 
+        });
+        
+        const video = this.$refs.cameraVideo;
+        if (video) {
+          video.srcObject = stream;
+          this.videoStream = stream;
+        }
+      } catch (error) {
+        console.error('Error accessing camera:', error);
+        alert('No se pudo acceder a la cámara. Verifique los permisos.');
+        this.showCamera = false;
+      }
+    },
+
+    capturePhoto() {
+      const video = this.$refs.cameraVideo;
+      const canvas = document.createElement('canvas');
+      const context = canvas.getContext('2d');
+      
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      context.drawImage(video, 0, 0);
+      
+      this.capturedImage = canvas.toDataURL('image/jpeg', 0.8);
+      // Mantener el texto original del botón
+      this.closeCamera();
+    },
+
+    closeCamera() {
+      if (this.videoStream) {
+        this.videoStream.getTracks().forEach(track => track.stop());
+        this.videoStream = null;
+      }
+      this.showCamera = false;
+    },
+
+    removeImage() {
+      this.capturedImage = null;
+      this.cameraButtonText = 'Tomar Foto';
+      console.log('Imagen eliminada');
+    },
+
+    abrirCamara() {
+      this.mostrarCamara = true;
+      this.mostrarOpciones = false;
+    },
+
+    cerrarCamara() {
+      this.mostrarCamara = false;
+    },
+
+    tomarFoto() {
+      const video = this.$refs.video;
+      const canvas = this.$refs.canvas;
+      const context = canvas.getContext('2d');
+      
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      context.drawImage(video, 0, 0);
+      
+      const dataURL = canvas.toDataURL('image/jpeg');
+      this.fotos.push({
+        data: dataURL,
+        nombre: `Foto_${Date.now()}.jpg`
+      });
+      
+      this.cerrarCamara();
+    },
+
+    subirArchivo(event) {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          this.fotos.push({
+            data: e.target.result,
+            nombre: file.name
+          });
+        };
+        reader.readAsDataURL(file);
+      }
+      this.mostrarOpciones = false;
+    },
+
     startCarousel() {
-      // Asegurarse de que no haya un intervalo existente
+      console.log('Iniciando carrusel de imágenes...');
+      console.log('Total de imágenes:', this.backgroundImages.length);
+      
+      // Asegurar que empezamos con la primera imagen
+      this.currentImageIndex = 0;
+      
       if (this.carouselInterval) {
         clearInterval(this.carouselInterval);
       }
       
-      // Iniciar el carrusel solo si hay imágenes disponibles
-      if (this.backgroundImages && this.backgroundImages.length > 0) {
-        this.carouselInterval = setInterval(() => {
-          this.currentImageIndex = (this.currentImageIndex + 1) % this.backgroundImages.length;
-        }, 5000);
-      }
+      this.carouselInterval = setInterval(() => {
+        this.currentImageIndex = (this.currentImageIndex + 1) % this.backgroundImages.length;
+        console.log('Cambiando a imagen:', this.currentImageIndex, 'URL:', this.backgroundImages[this.currentImageIndex]);
+      }, 3000); // Cambiar cada 3 segundos
     },
     
     precargarImagenes() {
-      // Usar Promise.all para manejar todas las cargas de imágenes
-      const preloadPromises = this.backgroundImages.map((image, index) => {
-        return new Promise((resolve) => {
-          const img = new Image();
-          
-          img.onload = () => {
-            console.log(`Imagen cargada correctamente: ${image.url}`);
-            resolve();
-          };
-          
-          img.onerror = () => {
-            console.error(`Error al cargar la imagen: ${image.url}`);
-            this.handleImageError(index);
-            resolve(); // Resolvemos la promesa incluso con error para continuar
-          };
-          
-          // Establecer un timeout para evitar bloqueos
-          setTimeout(() => {
-            if (!img.complete) {
-              console.warn(`Timeout al cargar imagen: ${image.url}`);
-              this.handleImageError(index);
-              resolve();
-            }
-          }, 5000); // 5 segundos de timeout
-          
-          img.src = image.url;
-        });
-      });
-      
-      // Cuando todas las imágenes estén procesadas
-      Promise.all(preloadPromises).then(() => {
-        console.log('Todas las imágenes han sido procesadas');
+      this.backgroundImages.forEach((image, index) => {
+        const img = new Image();
+        img.src = image.url;
+        img.onload = () => {
+          console.log(`Imagen ${index + 1} precargada:`, image.alt);
+        };
+        img.onerror = () => {
+          console.error(`Error cargando imagen ${index + 1}:`, image.alt);
+        };
       });
     },
-    
-    handleImageError(index) {
-      // Reemplazar con una imagen de respaldo si falla la carga
-      if (index !== -1 && this.backgroundImages[index]) {
-        console.log(`Reemplazando imagen en índice ${index} con imagen de respaldo`);
-        this.backgroundImages[index].url = 'https://via.placeholder.com/1920x1080?text=GateLogix';
-      }
-    },
 
-    // 🔹 Registrar entrada automática después del escaneo
-    async registrarEntradaAutomatica(serial) {
-      try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          console.error("No hay token disponible");
-          return;
-        }
 
-        // Obtener información del guardia desde el token
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        const docGuardia = payload.documento;
-
-        const url = getApiUrl('api/historial/entrada');
-
-        const response = await axios.post(url, {
-          serial: serial,
-          docGuardia: docGuardia
-        }, {
-          headers: { Authorization: `Bearer ${token}` },
-          timeout: 10000
-        });
-
-        console.log("✅ Entrada registrada automáticamente:", response.data);
-        this.toast.success("Entrada registrada correctamente");
-        
-      } catch (err) {
-        console.error("❌ Error al registrar entrada automática:", err.response?.data || err.message);
-        
-        if (err.response?.status === 401) {
-          this.toast.error("Sesión expirada. Por favor inicie sesión nuevamente.");
-          this.$router.push('/login');
-        } else {
-          this.toast.warning("No se pudo registrar la entrada automáticamente. Podrá hacerlo manualmente.");
-        }
-      }
-    }
   }
 };
 </script>
+
 <style>
-body {
-  background: #000000 !important;
+/* Estilos globales para eliminar scroll */
+* {
+  box-sizing: border-box;
+}
+
+html, body {
   margin: 0;
   padding: 0;
+  overflow: hidden;
+  height: 100vh;
+  background: #000000 !important;
 }
+
+#app {
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ===== RESPONSIVE DESIGN ===== */
+
+/* Laptops y pantallas medianas (768px - 1024px) */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .form-container-wrapper {
+    padding: 15px;
+  }
+  
+  .form-title {
+    font-size: 28px;
+  }
+  
+  .left-column, .right-column {
+    padding: 20px;
+    gap: 15px;
+  }
+  
+  .column-title {
+    font-size: 20px;
+  }
+}
+
+/* Tablets (481px - 768px) */
+@media (max-width: 768px) {
+  .form-container {
+    grid-template-columns: 1fr;
+    gap: 20px;
+    max-width: 600px;
+  }
+  
+  .form-container-wrapper {
+    padding: 15px;
+  }
+  
+  .form-title {
+    font-size: 26px;
+  }
+  
+  .left-column, .right-column {
+    max-height: none;
+    padding: 20px;
+  }
+  
+  .column-title {
+    font-size: 20px;
+    margin-bottom: 15px;
+  }
+  
+  .register-btn {
+    width: 100%;
+    max-width: 300px;
+  }
+}
+
+/* Móviles (hasta 480px) */
+@media (max-width: 480px) {
+  .form-container-wrapper {
+    padding: 10px;
+  }
+  
+  .header-section {
+    margin-bottom: 20px;
+  }
+  
+  .logo-img {
+    height: 50px;
+  }
+  
+  .form-title {
+    font-size: 22px;
+  }
+  
+  .user-found-message {
+    padding: 12px 20px;
+    font-size: 14px;
+  }
+  
+  .form-container {
+    gap: 15px;
+    max-width: 100%;
+  }
+  
+  .left-column, .right-column {
+    padding: 15px;
+    gap: 15px;
+  }
+  
+  .column-title {
+    font-size: 18px;
+    margin-bottom: 12px;
+  }
+  
+  .form-label {
+    font-size: 14px;
+  }
+  
+  .input-text, .input-select, .input-textarea {
+    padding: 14px;
+    font-size: 16px; /* Evita zoom en iOS */
+    min-height: 48px; /* Mejor para touch */
+  }
+  
+  .input-textarea {
+    min-height: 100px;
+  }
+  
+  .upload-btn, .image-btn {
+    padding: 14px 20px;
+    font-size: 14px;
+    min-height: 48px;
+  }
+  
+  .checkbox-group {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .checkbox-label {
+    font-size: 14px;
+  }
+  
+  .register-btn {
+    width: 100%;
+    padding: 16px 30px;
+    font-size: 16px;
+    min-height: 52px;
+  }
+  
+  .success-message {
+    padding: 15px;
+    font-size: 16px;
+  }
+  
+  /* Ajustes para la cámara en móviles */
+  .camera-video {
+    max-width: 95%;
+    max-height: 60vh;
+  }
+  
+  .camera-controls {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .camera-btn {
+    width: 100%;
+    max-width: 200px;
+    padding: 14px 20px;
+  }
+  
+  /* Preview de imágenes más pequeño en móviles */
+  .preview-img {
+    height: 150px;
+  }
+}
+
+/* Orientación horizontal en móviles */
+@media (max-width: 768px) and (orientation: landscape) and (max-height: 500px) {
+  .form-container-wrapper {
+    min-height: auto;
+  }
+  
+  .header-section {
+    margin-bottom: 15px;
+  }
+  
+  .logo-img {
+    height: 40px;
+  }
+  
+  .form-title {
+    font-size: 20px;
+  }
+  
+  .left-column, .right-column {
+    padding: 15px;
+    gap: 10px;
+  }
+  
+  .column-title {
+    font-size: 16px;
+    margin-bottom: 10px;
+  }
+}
+
 </style>
 
 <style scoped>
+/* Estilos globales para eliminar scroll */
+html, body {
+  overflow: hidden;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+}
+
 .page {
   position: fixed;
   top: 0;
   left: 0;
   width: 100vw;
   height: 100vh;
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0;
-  padding: 20px;
   overflow: hidden;
-  box-sizing: border-box;
-  z-index: 0;
-  background: transparent;
+  margin: 0;
+  padding: 0;
 }
 
-.input-text.error,
-.input-select.error {
-  border-color: #e74c3c;
-  background-color: #fff8f8;
-  box-shadow: 0 0 0 1px rgba(231, 76, 60, 0.2);
-}
-
-.error-message {
-  color: #e74c3c;
-  font-size: 13px;
-  margin-top: -5px;
-  margin-bottom: 10px;
-  font-weight: 500;
-  transition: all 0.3s ease;
-  animation: fadeIn 0.3s ease-in-out;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-5px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
+/* Background carousel */
 .background-carousel {
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: -1;
+  width: 100vw;
+  height: 100vh;
+  z-index: 0;
+  overflow: hidden;
 }
 
 .background-image {
@@ -762,471 +944,467 @@ body {
   height: 100%;
   background-size: cover;
   background-position: center;
-  will-change: opacity;
-  contain: strict;
-  background-position: center;
   background-repeat: no-repeat;
-}
-
-
-.fade-enter-active, .fade-leave-active {
-  transition: opacity 2s ease-in-out;
-}
-.background-image::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(30, 41, 59, 0.7);
-  z-index: 1;
-}
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 1s ease;
-  will-change: opacity;
-}
-
-.fade-enter-from,
-.fade-leave-to {
   opacity: 0;
+  transition: opacity 1s ease-in-out;
 }
 
-/* Optimización de rendimiento para dispositivos móviles */
-@media (prefers-reduced-motion: reduce) {
-  .fade-enter-active,
-  .fade-leave-active {
-    transition: opacity 0.5s ease;
-  }
-}
-.fade-enter-to, .fade-leave-from {
+.background-image.active {
   opacity: 1;
 }
-/* Modal genérico */
-.modal {
-  position: fixed;
-  top: 0;
-  left: 0;
+
+/* Form container */
+.form-container-wrapper {
+  position: relative;
+  z-index: 100;
   width: 100%;
-  height: 100%;
-  background: rgba(0,0,0,0.5);
+  min-height: 100vh;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 999;
-}
-.modal-content {
-  background: white;
+  flex-direction: column;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
   padding: 20px;
-  border-radius: 8px;
-  text-align: center;
-}
-.form-container {
-   background: rgba(0, 0, 0, 0.3);
-   backdrop-filter: blur(20px);
-   padding: 1.5rem;
-   border-radius: 20px;
-   width: 100%;
-   max-width: 420px;
-   max-height: 85vh;
-   overflow-y: auto;
-   display: flex;
-   flex-direction: column;
-   gap: 0.8rem;
-   box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4);
-   border: 1px solid rgba(255, 255, 255, 0.1);
-   position: relative;
-   z-index: 2;
-   scrollbar-width: thin;
-   scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
- }
-
-.form-container::-webkit-scrollbar {
-   width: 6px;
+  box-sizing: border-box;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
-.form-container::-webkit-scrollbar-track {
-   background: transparent;
+/* Header section */
+.header-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 30px;
+  flex-shrink: 0;
 }
 
-.form-container::-webkit-scrollbar-thumb {
-   background-color: rgba(255, 255, 255, 0.3);
-   border-radius: 6px;
+.logo-section {
+  margin-bottom: 20px;
 }
- 
- /* Logo section */
- .logo-section {
-   text-align: center;
-   margin-bottom: 0.5rem;
- }
- 
- .logo-img {
-   width: 160px;
-   height: auto;
-   filter: brightness(1.1) contrast(1.1);
-   transition: all 0.3s ease;
- }
- 
- .logo-img:hover {
-   transform: scale(1.05);
- }
+
+.logo-img {
+  height: 60px;
+  width: auto;
+}
+
 .form-title {
-   text-align: center;
-   color: #ffffff;
-   font-size: 1.4rem;
-   font-weight: 700;
-   margin-bottom: 1rem;
-   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-   letter-spacing: 0.5px;
- }
-.input-text, .input-select {
-     width: 100%;
-     padding: 12px 15px;
-     margin-top: 3px;
-     margin-bottom: 8px;
-     border: 1px solid rgba(255, 255, 255, 0.4);
-     border-radius: 10px;
-     font-size: 14px;
-     color: #1f2937;
-     background: rgba(255, 255, 255, 0.9);
-     backdrop-filter: blur(10px);
-     box-sizing: border-box;
-     transition: all 0.3s ease;
-     font-weight: 500;
-   }
-  .input-text:focus, .input-select:focus {
-    outline: none;
-    border-color: #3b82f6;
-    background: rgba(255, 255, 255, 0.95);
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15), 0 6px 25px rgba(59, 130, 246, 0.2);
-    transform: translateY(-2px);
-  }
-  .input-text::placeholder {
-    color: #6b7280;
-    font-weight: 400;
-  }
-  .input-text:focus, .input-select:focus {
-    outline: none;
-    border-color: #3b82f6;
-    background: rgba(255, 255, 255, 0.95);
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15), 0 6px 25px rgba(59, 130, 246, 0.2);
-    transform: translateY(-2px);
-  }
-  .input-text::placeholder {
-    color: #6b7280;
-    font-weight: 400;
-  }
-  .checkbox-group {
-     display: flex;
-     align-items: center;
-     justify-content: center;
-     gap: 16px;
-     margin-bottom: 8px;
-     width: 100%;
-   }
-   .custom-check {
-       display: flex;
-       align-items: center;
-       background: rgba(255, 255, 255, 0.85);
-       backdrop-filter: blur(10px);
-       border-radius: 10px;
-       padding: 8px 16px;
-       cursor: pointer;
-       font-size: 13px;
-       color: #1f2937;
-       border: 1px solid rgba(255, 255, 255, 0.5);
-       transition: all 0.3s ease;
-       user-select: none;
-       min-width: 110px;
-       font-weight: 600;
-     }
-    .custom-check:hover {
-      background: rgba(255, 255, 255, 0.9);
-      transform: translateY(-1px);
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    }
-    .custom-check.checked {
-      background: rgba(59, 130, 246, 0.3);
-      border-color: #3b82f6;
-      color: #ffffff;
-      box-shadow: 0 6px 20px rgba(59, 130, 246, 0.3);
-    }
-   .icon-text {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
- /* Sección de archivos */
- .file-section {
-   margin: 0.5rem 0;
-   text-align: center;
-   width: 100%;
- }
-
-.file-buttons {
-   display: flex;
-   gap: 10px;
-   justify-content: center;
-   margin-top: 8px;
-   flex-wrap: wrap;
-}
-
-.preview-container {
-   margin-top: 10px;
-   display: flex;
-   justify-content: center;
-}
-
-.preview-image {
-   max-width: 100%;
-   max-height: 150px;
-   border-radius: 8px;
-   object-fit: contain;
-}
-
-.barcode-image {
-   max-width: 100%;
-   margin: 10px 0;
-}
-
-.modal-buttons {
-   display: flex;
-   gap: 10px;
-   justify-content: center;
-   flex-wrap: wrap;
-}
-
-.cancel-btn {
-   background: rgba(239, 68, 68, 0.8);
-}
-
-.cancel-btn:hover {
-   background: rgba(185, 28, 28, 0.95);
+  color: white;
+  font-size: 32px;
+  font-weight: bold;
+  text-align: center;
+  margin: 0;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
 }
 
 .user-found-message {
-   background: #e0f7ff;
-   color: #007acc;
-   border-radius: 6px;
-   padding: 8px;
-   margin-bottom: 8px;
-   text-align: center;
-   animation: pulse 1.5s infinite;
+  background: rgba(76, 175, 80, 0.9);
+  color: white;
+  padding: 15px 25px;
+  border-radius: 8px;
+  margin-top: 15px;
+  font-weight: bold;
+  font-size: 16px;
 }
 
-@keyframes pulse {
-   0% { opacity: 0.8; }
-   50% { opacity: 1; }
-   100% { opacity: 0.8; }
+/* Form container - Two columns */
+.form-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 30px;
+  flex: 1;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
 }
- 
- .file-label {
-    color: #ffffff;
-    font-size: 14px;
-    font-weight: 600;
-    margin-bottom: 6px;
-    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-  }
- 
- .file-upload-btn {
-   background: rgba(16, 185, 129, 0.8);
-   backdrop-filter: blur(8px);
-   color: #ffffff;
-   border: 1px solid rgba(255, 255, 255, 0.3);
-   border-radius: 12px;
-   font-weight: 500;
-   font-size: 14px;
-   padding: 10px 20px;
-   cursor: pointer;
-   transition: all 0.3s ease;
-   box-shadow: 0 4px 15px rgba(16, 185, 129, 0.2);
- }
- 
- .file-upload-btn:hover {
-   background: rgba(16, 185, 129, 0.9);
-   transform: translateY(-1px);
-   box-shadow: 0 6px 20px rgba(16, 185, 129, 0.3);
- }
 
- button {
-   cursor: pointer;
- }
-.enviar {
-   background: linear-gradient(135deg, #3b82f6, #1e40af);
-   color: #ffffff;
-   border: none;
-   border-radius: 10px;
-   font-weight: 600;
-   font-size: 15px;
-   padding: 10px 0;
-   box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
-   margin-top: 8px;
-   transition: all 0.3s ease;
-   width: 100%;
-   cursor: pointer;
- }
- .enviar:hover {
-   transform: translateY(-2px);
-   box-shadow: 0 12px 35px rgba(59, 130, 246, 0.4);
-   background: linear-gradient(135deg, #2563eb, #1d4ed8);
- }
- 
- .cerrar-sesion-btn {
-   display: block;
-   width: 100%;
-   margin-top: 8px;
-   background: rgba(239, 68, 68, 0.9);
-   backdrop-filter: blur(8px);
-   color: #ffffff;
-   border: 1px solid rgba(255, 255, 255, 0.2);
-   border-radius: 10px;
-   font-weight: 600;
-   font-size: 13px;
-   padding: 8px 0;
-   text-align: center;
-   box-shadow: 0 6px 20px rgba(239, 68, 68, 0.25);
-   transition: all 0.3s ease;
-   cursor: pointer;
-   text-decoration: none;
- }
- .cerrar-sesion-btn:hover {
-   background: rgba(185, 28, 28, 0.95);
-   transform: translateY(-2px);
-   box-shadow: 0 8px 25px rgba(185, 28, 28, 0.35);
- }
-.modal {
-  position: fixed;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  background: rgba(0,0,0,0.5);
+/* Columns */
+.left-column, .right-column {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(15px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 15px;
+  padding: 25px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+/* Column titles */
+.column-title {
+  color: white;
+  font-size: 24px;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 20px;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* Form groups */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.form-label {
+  color: white;
+  font-weight: bold;
+  font-size: 16px;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* Input styles */
+.input-text, .input-select, .input-textarea {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.9);
+  color: #333;
+  font-size: 16px;
+  transition: all 0.3s ease;
+  box-sizing: border-box;
+}
+
+.input-textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+.input-text:focus, .input-select:focus, .input-textarea:focus {
+  outline: none;
+  border-color: rgba(46, 204, 113, 0.8);
+  box-shadow: 0 0 10px rgba(46, 204, 113, 0.3);
+  transform: translateY(-2px);
+}
+
+/* Custom scrollbar */
+.left-column::-webkit-scrollbar, .right-column::-webkit-scrollbar {
+  width: 6px;
+}
+
+.left-column::-webkit-scrollbar-track, .right-column::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+.left-column::-webkit-scrollbar-thumb, .right-column::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 3px;
+}
+
+.left-column::-webkit-scrollbar-thumb:hover, .right-column::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+/* Image section */
+.image-section {
+  margin-top: 10px;
+}
+
+.image-upload-area {
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px dashed rgba(255, 255, 255, 0.4);
+  border-radius: 10px;
+  padding: 20px;
+  text-align: center;
+}
+
+.upload-text {
+  color: white;
+  font-weight: 600;
+  display: block;
+  margin-bottom: 15px;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.upload-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.upload-btn {
+  padding: 10px 15px;
+  border: none;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 13px;
+}
+
+.camera-btn {
+  background: #2196F3;
+  color: white;
+}
+
+.camera-btn:hover {
+  background: #1976D2;
+  transform: translateY(-2px);
+}
+
+.file-btn {
+  background: #FF9800;
+  color: white;
+}
+
+.file-btn:hover {
+  background: #F57C00;
+  transform: translateY(-2px);
+}
+
+/* Action buttons */
+.action-buttons {
   display: flex;
   justify-content: center;
+  gap: 20px;
+  margin-top: 20px;
+  flex-shrink: 0;
+}
+
+.btn-primary, .btn-secondary {
+  padding: 12px 25px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  display: inline-flex;
   align-items: center;
+  gap: 8px;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #4CAF50, #45a049);
+  color: white;
+  box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, #45a049, #3d8b40);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+}
+
+.btn-secondary {
+  background: linear-gradient(135deg, #f44336, #d32f2f);
+  color: white;
+  box-shadow: 0 4px 15px rgba(244, 67, 54, 0.3);
+}
+
+.btn-secondary:hover {
+  background: linear-gradient(135deg, #d32f2f, #b71c1c);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(244, 67, 54, 0.4);
+}
+
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   z-index: 1000;
 }
+
 .modal-content {
   background: white;
-  padding: 1rem;
-  border-radius: 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  min-width: 220px;
+  padding: 30px;
+  border-radius: 15px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  text-align: center;
+  max-width: 400px;
+  width: 90%;
 }
-.camara-container {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  align-items: center;
+
+.modal-content h3 {
+  color: #2c3e50;
+  margin-bottom: 20px;
+  font-size: 20px;
 }
-video {
+
+.modal-btn {
+  display: block;
   width: 100%;
-  max-width: 260px;
+  padding: 12px;
+  margin: 8px 0;
+  border: none;
   border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
 }
-/* Animaciones de entrada */
- @keyframes slideInUp {
-   from {
-     opacity: 0;
-     transform: translateY(30px);
-   }
-   to {
-     opacity: 1;
-     transform: translateY(0);
-   }
- }
- 
- .form-container {
-   animation: slideInUp 0.8s ease-out;
- }
- 
- .input-text, .input-select {
-   animation: slideInUp 0.6s ease-out;
-   animation-fill-mode: both;
- }
- 
- .input-text:nth-child(1) { animation-delay: 0.1s; }
- .input-text:nth-child(2) { animation-delay: 0.2s; }
- .input-text:nth-child(3) { animation-delay: 0.3s; }
- .input-text:nth-child(4) { animation-delay: 0.4s; }
- 
- /* Responsive Design */
-  @media (max-width: 768px) {
-    .page {
-      padding: 15px;
-      align-items: flex-start;
-      overflow-y: auto;
-    }
-    
-    .form-container {
-      max-width: 95vw;
-      padding: 1.5rem 1.25rem;
-      margin: 20px auto;
-    }
-    
-    .logo-img {
-      width: 140px;
-    }
-    
-    .form-title {
-      font-size: 1.5rem;
-    }
-    
-    .checkbox-group {
-      flex-direction: column;
-      gap: 10px;
-    }
-    
-    .custom-check {
-      width: 100%;
-      justify-content: center;
-    }
-    
-    .modal-content {
-      width: 90%;
-      max-width: 400px;
-    }
-  }
-  
-  @media (max-width: 480px) {
-    .page {
-      padding: 10px;
-      height: auto;
-      min-height: 100vh;
-    }
-    
-    .form-container {
-      max-width: 98vw;
-      padding: 1.25rem 1rem;
-      margin: 10px auto;
-    }
-    
-    .logo-img {
-      width: 120px;
-    }
-    
-    .form-title {
-      font-size: 1.25rem;
-      margin-bottom: 1rem;
-    }
-    
-    .input-text, .input-select {
-      padding: 12px 16px;
-      font-size: 14px;
-      margin-bottom: 12px;
-    }
-    
-    video {
-      max-width: 90vw;
-    }
-    
-    .file-upload-btn,
-    .enviar,
-    .cerrar-sesion-btn {
-      padding: 12px 0;
-      font-size: 16px;
-    }
-  }
+
+.modal-btn.camera {
+  background: #3498db;
+  color: white;
+}
+
+.modal-btn.file {
+  background: #2ecc71;
+  color: white;
+}
+
+.modal-btn.download {
+  background: #f39c12;
+  color: white;
+}
+
+.modal-btn.print {
+  background: #9b59b6;
+  color: white;
+}
+
+.modal-btn.cancel {
+  background: #e74c3c;
+  color: white;
+}
+
+.modal-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+.barcode-modal {
+  max-width: 500px;
+}
+
+.barcode-image {
+  max-width: 300px;
+  display: block;
+  margin: 15px auto;
+}
+
+.barcode-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.barcode-actions .modal-btn {
+  flex: 1;
+  margin: 0;
+}
+
+.camera-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.camera-content {
+  text-align: center;
+}
+
+.camera-video {
+  max-width: 90%;
+  max-height: 70vh;
+  border-radius: 10px;
+}
+
+.camera-controls {
+  margin-top: 20px;
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+}
+
+.camera-btn {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.camera-btn.capture {
+  background: #2ecc71;
+  color: white;
+}
+
+.camera-btn.close {
+  background: #e74c3c;
+  color: white;
+}
+
+.camera-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+/* Image Preview Styles */
+.image-preview-container {
+  margin-top: 15px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 12px;
+  padding: 15px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(5px);
+}
+
+.image-preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.preview-title {
+  color: white;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.remove-image-btn {
+  background: rgba(231, 76, 60, 0.8);
+  border: none;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.remove-image-btn:hover {
+  background: rgba(231, 76, 60, 1);
+  transform: scale(1.1);
+}
+
+.image-preview {
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.preview-img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  display: block;
+}
+
+
 </style>

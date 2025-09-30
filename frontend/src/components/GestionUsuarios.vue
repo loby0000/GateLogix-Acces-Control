@@ -1304,6 +1304,7 @@ tbody tr:hover {
 
 .modal-field {
   margin-bottom: 20px;
+}
 
 /* Estilos para la imagen ampliada */
 .imagen-ampliada-container {
@@ -1480,9 +1481,54 @@ tbody tr:hover {
 }
 
 /* Responsive design */
-@media (max-width: 768px) {
+@media (max-width: 1024px) and (min-width: 768px) {
   .header {
-    padding: 16px 20px;
+    padding: 18px 30px;
+  }
+  
+  .logo-img {
+    width: 160px;
+  }
+  
+  .search-container {
+    padding: 0 30px;
+  }
+  
+  .search-input {
+    max-width: 450px;
+    padding: 14px 20px;
+    font-size: 15px;
+  }
+  
+  table {
+    width: 92%;
+    font-size: 13px;
+  }
+  
+  th, td {
+    padding: 14px 10px;
+  }
+  
+  .user-photo {
+    width: 45px;
+    height: 45px;
+  }
+  
+  .edit-btn {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+  
+  .modal-content {
+    width: 85%;
+    max-width: 500px;
+    padding: 22px;
+  }
+}
+
+@media (max-width: 768px) and (min-width: 481px) {
+  .header {
+    padding: 16px 25px;
     flex-direction: column;
     gap: 16px;
   }
@@ -1492,11 +1538,17 @@ tbody tr:hover {
   }
   
   .search-container {
-    padding: 0 20px;
+    padding: 0 25px;
+  }
+  
+  .search-input {
+    max-width: 400px;
+    padding: 12px 18px;
+    font-size: 14px;
   }
   
   table {
-    width: calc(100% - 40px);
+    width: calc(100% - 50px);
     font-size: 12px;
   }
   
@@ -1504,29 +1556,156 @@ tbody tr:hover {
     padding: 12px 8px;
   }
   
+  .user-photo {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .edit-btn {
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+  
   .modal-content {
-    width: 350px;
-    padding: 24px;
-  background: #8e0000;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    width: 90%;
+    max-width: 450px;
+    padding: 20px;
+  }
+  
+  .dashboard-btn {
+    padding: 10px 20px;
+    font-size: 13px;
+  }
 }
 
-@media screen and (max-width: 480px) {
+@media (max-width: 480px) {
+  .header {
+    padding: 12px 15px;
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .logo-img {
+    width: 120px;
+  }
+  
+  .search-container {
+    padding: 0 15px;
+  }
+  
+  .search-input {
+    padding: 10px 15px;
+    font-size: 13px;
+  }
+  
+  table {
+    width: calc(100% - 30px);
+    font-size: 11px;
+  }
+  
+  th, td {
+    padding: 8px 4px;
+  }
+  
+  .user-photo {
+    width: 35px;
+    height: 35px;
+  }
+  
+  .edit-btn {
+    padding: 4px 8px;
+    font-size: 10px;
+  }
+  
   .modal-content {
     width: 95%;
-    padding: 20px;
+    padding: 16px;
   }
   
   .modal-actions {
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
   }
   
   .save-btn, .close-btn {
     width: 100%;
+    padding: 10px;
+    font-size: 13px;
+  }
+  
+  .dashboard-btn {
+    padding: 8px 16px;
+    font-size: 12px;
+  }
+  
+  .loading-content {
+    padding: 20px 30px;
+  }
+  
+  .loading-text {
+    font-size: 16px;
+  }
+  
+  .status-message {
+    width: 95%;
     padding: 12px;
+    font-size: 14px;
   }
 }
-}}
+
+/* Mobile Landscape */
+@media (max-width: 768px) and (orientation: landscape) {
+  .header {
+    padding: 10px 20px;
+    flex-direction: row;
+    gap: 10px;
+  }
+  
+  .logo-img {
+    width: 100px;
+  }
+  
+  .search-container {
+    padding: 0 15px;
+    flex: 1;
+  }
+  
+  .search-input {
+    padding: 8px 15px;
+    font-size: 12px;
+  }
+  
+  table {
+    font-size: 10px;
+  }
+  
+  th, td {
+    padding: 6px 3px;
+  }
+  
+  .user-photo {
+    width: 30px;
+    height: 30px;
+  }
+  
+  .edit-btn {
+    padding: 3px 6px;
+    font-size: 9px;
+  }
+  
+  .dashboard-btn {
+    padding: 6px 12px;
+    font-size: 11px;
+  }
+  
+  .modal-content {
+    width: 80%;
+    max-width: 400px;
+    padding: 15px;
+  }
+  
+  .loading-content {
+    padding: 15px 25px;
+  }
+}
 </style>

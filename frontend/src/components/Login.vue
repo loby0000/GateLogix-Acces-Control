@@ -680,6 +680,53 @@ input:hover {
   }
 }
 
+/* Laptops pequeños (768px - 1024px) */
+@media (max-width: 1024px) and (min-width: 769px) {
+  .container {
+    padding: 30px;
+    gap: 40px;
+  }
+  
+  .logo-brand-container {
+    left: 12%;
+  }
+  
+  .logo-image {
+    width: clamp(140px, 22vw, 170px);
+    height: clamp(140px, 22vw, 170px);
+  }
+  
+  .brand-title {
+    font-size: clamp(2.2rem, 4.5vw, 2.8rem);
+  }
+  
+  .brand-subtitle {
+    font-size: clamp(1rem, 2.2vw, 1.3rem);
+  }
+  
+  .login-form {
+    width: clamp(380px, 40vw, 450px);
+    padding: clamp(35px, 4vw, 45px);
+  }
+  
+  h2 {
+    font-size: clamp(1.8rem, 3.5vw, 2.2rem);
+  }
+  
+  select,
+  input {
+    padding: 14px 35px 14px 14px;
+    font-size: 1rem;
+    min-height: 48px;
+  }
+  
+  .btn {
+    padding: 16px 22px;
+    font-size: 1rem;
+    min-height: 50px;
+  }
+}
+
 /* Desktop */
 @media (max-width: 1200px) {
   .container {
@@ -725,6 +772,67 @@ input:hover {
   }
 }
 
+/* Tablets (481px - 768px) */
+@media (max-width: 768px) and (min-width: 481px) {
+  .container {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 25px;
+    gap: 35px;
+  }
+  
+  .logo-brand-container {
+    position: static;
+    width: 100%;
+    max-width: none;
+    height: auto;
+    padding: 0;
+    margin-bottom: 25px;
+    text-align: center;
+  }
+  
+  .logo-image {
+    width: clamp(120px, 20vw, 160px);
+    height: clamp(120px, 20vw, 160px);
+    margin: 0 auto 25px;
+  }
+  
+  .brand-title {
+    font-size: clamp(2rem, 4.5vw, 2.5rem);
+    margin-bottom: 10px;
+  }
+  
+  .brand-subtitle {
+    font-size: clamp(0.9rem, 2.5vw, 1.1rem);
+  }
+  
+  .login-form {
+    position: static;
+    width: 100%;
+    max-width: 400px;
+    margin: 0 auto;
+    padding: 30px;
+  }
+  
+  h2 {
+    font-size: clamp(1.5rem, 3.5vw, 1.8rem);
+  }
+  
+  select,
+  input {
+    padding: 12px 30px 12px 12px;
+    font-size: 0.95rem;
+    min-height: 46px;
+  }
+  
+  .btn {
+    padding: 14px 18px;
+    font-size: 0.95rem;
+    min-height: 48px;
+  }
+}
+
 /* Tablet */
 @media (max-width: 992px) {
   .container {
@@ -755,12 +863,12 @@ input:hover {
     padding: clamp(30px, 5vw, 40px) clamp(25px, 4vw, 35px);
   }
   
-  .form-title {
+  h2 {
     font-size: clamp(1.8rem, 3.5vw, 2.2rem);
   }
   
-  .form-input,
-  .form-select {
+  select,
+  input {
     padding: 14px 45px 14px 18px;
     font-size: 0.95rem;
     min-height: 48px;
@@ -819,20 +927,16 @@ input:hover {
     margin: 0 auto;
   }
   
-  .form-title {
+  h2 {
     font-size: clamp(1.5rem, 3vw, 1.8rem);
   }
   
-  .form-subtitle {
-    font-size: clamp(0.8rem, 2vw, 0.9rem);
-  }
-  
-  .input-label {
+  label {
     font-size: clamp(0.8rem, 2vw, 0.85rem);
   }
   
-  .form-input,
-  .form-select {
+  select,
+  input {
     padding: 14px 40px 14px 16px;
     font-size: clamp(0.85rem, 2vw, 0.9rem);
     min-height: 46px;
@@ -843,9 +947,70 @@ input:hover {
     font-size: clamp(0.9rem, 2vw, 0.95rem);
     min-height: 48px;
   }
+}
+
+/* Mobile (≤480px) */
+@media (max-width: 480px) {
+  .container {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 15px;
+    gap: 25px;
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
   
-  .input-group {
+  .logo-brand-container {
+    position: static;
+    width: 100%;
+    max-width: none;
+    height: auto;
+    padding: 0;
+    margin-bottom: 20px;
+    text-align: center;
+  }
+  
+  .logo-image {
+    width: clamp(90px, 18vw, 130px);
+    height: clamp(90px, 18vw, 130px);
+    margin: 0 auto 20px;
+  }
+  
+  .brand-title {
+    font-size: clamp(1.6rem, 4vw, 2rem);
+    margin-bottom: 8px;
+  }
+  
+  .brand-subtitle {
+    font-size: clamp(0.8rem, 2.2vw, 0.95rem);
+  }
+  
+  .login-form {
+    position: static;
+    width: 100%;
+    max-width: 320px;
+    margin: 0 auto;
+    padding: 20px;
+    border-radius: 16px;
+  }
+  
+  h2 {
+    font-size: clamp(1.3rem, 3.2vw, 1.6rem);
     margin-bottom: 18px;
+  }
+  
+  select,
+  input {
+    padding: 10px 25px 10px 10px;
+    font-size: 0.9rem;
+    min-height: 44px;
+  }
+  
+  .btn {
+    padding: 12px 16px;
+    font-size: 0.9rem;
+    min-height: 46px;
   }
 }
 
@@ -878,12 +1043,12 @@ input:hover {
     padding: clamp(20px, 4vw, 25px) clamp(15px, 3vw, 20px);
   }
   
-  .form-title {
+  h2 {
     font-size: clamp(1.3rem, 3vw, 1.5rem);
   }
   
-  .form-input,
-  .form-select {
+  select,
+  input {
     padding: 12px 35px 12px 14px;
     font-size: clamp(0.8rem, 2vw, 0.85rem);
     min-height: 44px;
@@ -893,10 +1058,6 @@ input:hover {
     padding: 14px 18px;
     font-size: clamp(0.85rem, 2vw, 0.9rem);
     min-height: 46px;
-  }
-  
-  .input-group {
-    margin-bottom: 16px;
   }
   
   .actions {
@@ -961,6 +1122,56 @@ input:hover {
   
   .input-group {
     margin-bottom: clamp(12px, 3vw, 18px);
+  }
+}
+
+/* Mobile Landscape */
+@media (max-width: 768px) and (orientation: landscape) {
+  .container {
+    padding: 15px 25px;
+    gap: 20px;
+  }
+  
+  .logo-image {
+    width: clamp(80px, 12vw, 110px);
+    height: clamp(80px, 12vw, 110px);
+    margin-bottom: 15px;
+  }
+  
+  .brand-title {
+    font-size: clamp(1.4rem, 3vw, 1.8rem);
+    margin-bottom: 6px;
+  }
+  
+  .brand-subtitle {
+    font-size: clamp(0.75rem, 1.8vw, 0.9rem);
+  }
+  
+  .login-form {
+    max-width: 350px;
+    padding: 18px;
+  }
+  
+  .form-title {
+    font-size: clamp(1.2rem, 2.8vw, 1.4rem);
+    margin-bottom: 15px;
+  }
+  
+  .form-input,
+  .form-select {
+    padding: 8px 20px 8px 8px;
+    font-size: 0.85rem;
+    min-height: 40px;
+  }
+  
+  .btn {
+    padding: 10px 14px;
+    font-size: 0.85rem;
+    min-height: 42px;
+  }
+  
+  .input-group {
+    margin-bottom: 12px;
   }
 }
 

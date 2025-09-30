@@ -152,48 +152,146 @@
 
     <!-- Modal para nuevo equipo -->
     <div v-if="modalAbierto" class="modal-overlay" @click.self="cerrarModal">
-      <div class="modal-content">
-        <h2>Registrar Nuevo Equipo</h2>
-        <input
-          type="text"
-          placeholder="Marca del equipo"
-          v-model="nuevoEquipo.nombre"
-        />
-        <input
-          type="text"
-          placeholder="Serial del equipo"
-          v-model="nuevoEquipo.serial"
-        />
-        <textarea
-          placeholder="Características"
-          v-model="nuevoEquipo.caracteristicas"
-        ></textarea>
-
-        <label>
-          <input type="checkbox" v-model="nuevoEquipo.mouse" />
-          Mouse
-        </label>
-        <label>
-          <input type="checkbox" v-model="nuevoEquipo.cargador" />
-          Cargador
-        </label>
-
-        <!-- Sección para cargar imagen del equipo -->
-        <div class="file-section">
-          <div class="file-label">Insertar imagen del equipo</div>
-          <button type="button" class="file-upload-btn" @click="mostrarOpciones = true">📎 Agregar Foto</button>
-        </div>
-        
-        <!-- Vista previa de la imagen -->
-        <div v-if="nuevoEquipo.foto" class="image-preview">
-          <img :src="nuevoEquipo.foto" alt="Vista previa" style="max-width: 200px; max-height: 150px; margin-top: 10px; border-radius: 4px;" />
+      <div class="modal-content-large">
+        <!-- Header del modal -->
+        <div class="modal-header-large">
+          <h2>Registro de Usuario con Equipo</h2>
+          <button class="close-btn" @click="cerrarModal">✕</button>
         </div>
 
-        <div class="modal-actions">
-          <button class="guardar" @click="guardarNuevoEquipo">
-            Registrar equipo nuevo
-          </button>
-          <button class="cancelar" @click="cerrarModal">Cancelar</button>
+        <!-- Contenedor de dos columnas -->
+        <div class="form-container-two-columns">
+          <!-- Columna izquierda: Información del usuario -->
+          <div class="form-column user-info-column">
+            <div class="column-header">
+              <h4>👤 Información del Usuario</h4>
+            </div>
+            <div class="user-info-display">
+              <div class="info-item">
+                <label>Nombre Completo</label>
+                <div class="info-value">{{ usuarioSeleccionado?.nombre || 'No disponible' }}</div>
+              </div>
+              <div class="info-item">
+                <label>Tipo de Documento</label>
+                <div class="info-value">{{ usuarioSeleccionado?.tipoDocumento || 'No disponible' }}</div>
+              </div>
+              <div class="info-item">
+                <label>Número de Documento</label>
+                <div class="info-value">{{ usuarioSeleccionado?.numeroDocumento || 'No disponible' }}</div>
+              </div>
+              <div class="info-item">
+                <label>Tipo de Usuario</label>
+                <div class="info-value">{{ usuarioSeleccionado?.tipoUsuario || 'No disponible' }}</div>
+              </div>
+              <div class="info-item">
+                <label>Equipos Actuales</label>
+                <div class="equipos-actuales">
+                  <div v-if="!usuarioSeleccionado?.equipos || usuarioSeleccionado.equipos.length === 0" class="no-equipos">
+                    No tiene equipos registrados
+                  </div>
+                  <div v-else class="equipos-list-compact">
+                    <div v-for="(equipo, index) in usuarioSeleccionado.equipos" :key="index" class="equipo-compact">
+                      <div class="equipo-badge">{{ equipo.tipo || 'Equipo' }}</div>
+                      <div class="equipo-name">{{ equipo.marca }}</div>
+                      <div class="equipo-serial">{{ equipo.serial }}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Columna derecha: Información del equipo -->
+          <div class="form-column equipment-info-column">
+            <div class="column-header">
+              <h4>💻 Información del Equipo</h4>
+            </div>
+            <div class="form-fields">
+              <div class="form-group">
+                <label>Marca/Nombre del Equipo *</label>
+                <input
+                  type="text"
+                  class="form-input"
+                  placeholder="Ej: Dell Latitude, HP Pavilion..."
+                  v-model="nuevoEquipo.nombre"
+                />
+              </div>
+
+              <div class="form-group">
+                <label>Número de Serie *</label>
+                <input
+                  type="text"
+                  class="form-input"
+                  placeholder="Ingrese el serial del equipo"
+                  v-model="nuevoEquipo.serial"
+                />
+              </div>
+
+              <div class="form-group">
+                <label>Características</label>
+                <textarea
+                  class="form-textarea"
+                  placeholder="Describa las características del equipo (procesador, RAM, etc.)"
+                  v-model="nuevoEquipo.caracteristicas"
+                ></textarea>
+              </div>
+
+              <div class="form-group">
+                <label>Accesorios Incluidos</label>
+                <div class="accessories-grid">
+                  <div class="checkbox-item">
+                    <input type="checkbox" id="mouse" v-model="nuevoEquipo.mouse" />
+                    <div class="checkbox-custom"></div>
+                    <label for="mouse" class="checkbox-label">🖱️ Mouse</label>
+                  </div>
+                  <div class="checkbox-item">
+                    <input type="checkbox" id="cargador" v-model="nuevoEquipo.cargador" />
+                    <div class="checkbox-custom"></div>
+                    <label for="cargador" class="checkbox-label">🔌 Cargador</label>
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label>Imagen del Equipo</label>
+                <div class="image-upload-section">
+                  <button type="button" class="image-upload-btn" @click="mostrarOpciones = true">
+                    📷 Agregar Foto del Equipo
+                  </button>
+                </div>
+                
+                <!-- Vista previa de la imagen - aparece inmediatamente después de los botones -->
+                <div v-if="nuevoEquipo.foto" class="image-preview-container">
+                  <img :src="nuevoEquipo.foto" alt="Vista previa del equipo" class="image-preview" />
+                  <button type="button" class="remove-image-btn" @click="eliminarFoto">✕</button>
+                </div>
+                
+                <!-- Mensaje cuando no hay imagen -->
+                <div v-else class="no-image-placeholder">
+                  <span>📷 Sin imagen</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer del modal -->
+        <div class="modal-footer-large">
+          <div class="footer-info">
+            <p class="required-note">* Campos obligatorios</p>
+          </div>
+          <div class="footer-actions">
+            <button class="btn-secondary" @click="cerrarModal">
+              Cancelar
+            </button>
+            <button 
+              class="btn-primary" 
+              @click="guardarNuevoEquipo"
+              :disabled="!nuevoEquipo.nombre || !nuevoEquipo.serial"
+            >
+              💾 Registrar Equipo
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -208,6 +306,12 @@
         <div class="modal-body">
           <button @click="abrirCamara" class="btn-action">Tomar Foto</button>
           <button @click="subirArchivo" class="btn-action">Seleccionar Archivo</button>
+          
+          <!-- Vista previa de imagen subida -->
+          <div v-if="nuevoEquipo.foto && !mostrarCamara" class="image-preview-modal">
+            <img :src="nuevoEquipo.foto" alt="Vista previa" class="preview-image" />
+            <button @click="eliminarFoto" class="remove-preview-btn">✕ Eliminar</button>
+          </div>
         </div>
       </div>
     </div>
@@ -221,8 +325,18 @@
         </div>
         <div class="modal-body">
           <video ref="video" autoplay style="width: 100%; max-width: 500px;"></video>
+          
+          <!-- Vista previa de foto capturada en el centro -->
+          <div v-if="nuevoEquipo.foto" class="captured-photo-preview">
+            <img :src="nuevoEquipo.foto" alt="Foto capturada" class="captured-image" />
+            <div class="photo-actions">
+              <button @click="eliminarFoto" class="btn-action btn-secondary">🗑️ Eliminar</button>
+              <button @click="cerrarCamara" class="btn-action btn-primary">✅ Usar esta foto</button>
+            </div>
+          </div>
+          
           <div class="modal-footer">
-            <button @click="capturarFoto" class="btn-action">Capturar</button>
+            <button v-if="!nuevoEquipo.foto" @click="capturarFoto" class="btn-action">Capturar</button>
             <button @click="cerrarCamara" class="btn-action">Cancelar</button>
           </div>
         </div>
@@ -291,6 +405,9 @@ export default {
     tipoRegistro(nuevoValor) {
       if (nuevoValor === "Registrar") {
         this.$router.push({ name: "registro" });
+      } else if (nuevoValor === "Registrado") {
+        // Ya estamos en la página correcta para "Registrado"
+        // No necesitamos hacer nada adicional
       }
     },
   },
@@ -643,9 +760,18 @@ export default {
         // Convertir a JPEG con calidad reducida para optimizar tamaño
         const optimizedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
         this.nuevoEquipo.foto = optimizedDataUrl;
+        console.log('✅ Imagen asignada:', this.nuevoEquipo.foto ? 'Sí' : 'No');
+        
+        // Forzar actualización de la vista
+        this.$forceUpdate();
       };
       
       img.src = dataUrl;
+    },
+
+    eliminarFoto() {
+      this.nuevoEquipo.foto = null;
+      console.log('🗑️ Foto eliminada');
     },
 
     // 🔹 Métodos para control de movimientos
@@ -1075,6 +1201,8 @@ export default {
   z-index: 2000;
   padding: 20px;
 }
+
+/* Modal original para compatibilidad */
 .modal-content {
   background: white;
   padding: 28px;
@@ -1085,6 +1213,974 @@ export default {
   gap: 16px;
   box-shadow: 0 8px 28px rgba(0,0,0,0.18);
 }
+
+/* Nuevo modal de dos columnas */
+.modal-content-large {
+  background: white;
+  border-radius: 16px;
+  width: 95%;
+  max-width: 1200px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+}
+
+.modal-header-large {
+  padding: 24px 32px;
+  border-bottom: 1px solid #e0e0e0;
+  background: linear-gradient(135deg, #1565c0 0%, #1976d2 100%);
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header-large h2 {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 600;
+}
+
+.close-btn {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  cursor: pointer;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease;
+}
+
+.close-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.form-container-two-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+}
+
+.form-column {
+  display: flex;
+  flex-direction: column;
+}
+
+.user-info-column {
+  background: #f8f9fa;
+  border-right: 1px solid #e0e0e0;
+}
+
+.equipment-info-column {
+  background: white;
+}
+
+.column-header {
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid #e0e0e0;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+}
+
+.column-header h4 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #495057;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.user-info-display {
+  padding: 24px;
+}
+
+.info-item {
+  margin-bottom: 20px;
+}
+
+.info-item label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #666;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.info-value {
+  background: white;
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  font-size: 0.95rem;
+  color: #333;
+  min-height: 20px;
+}
+
+.equipos-actuales {
+  max-height: none;
+}
+
+.no-equipos {
+  color: #888;
+  font-style: italic;
+  text-align: center;
+  padding: 20px;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+.equipos-list-compact {
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  overflow: hidden;
+}
+
+.equipo-compact {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.equipo-compact:last-child {
+  border-bottom: none;
+}
+
+.equipo-badge {
+  background: #1565c0;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  min-width: 60px;
+  text-align: center;
+}
+
+.equipo-name {
+  font-weight: 500;
+  color: #333;
+  flex: 1;
+}
+
+.equipo-serial {
+  font-size: 0.85rem;
+  color: #666;
+  font-family: monospace;
+  background: #f5f5f5;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.form-fields {
+  padding: 24px;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #333;
+  font-size: 0.9rem;
+}
+
+.form-input,
+.form-textarea {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  transition: border-color 0.2s ease;
+  box-sizing: border-box;
+}
+
+.form-input:focus,
+.form-textarea:focus {
+  outline: none;
+  border-color: #1565c0;
+  box-shadow: 0 0 0 3px rgba(21, 101, 192, 0.1);
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.accessories-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.checkbox-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  padding: 12px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.checkbox-item:hover {
+  border-color: #1565c0;
+  background: #f8f9ff;
+}
+
+.checkbox-item input[type="checkbox"] {
+  display: none;
+}
+
+.checkbox-custom {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #ddd;
+  border-radius: 4px;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.checkbox-item input[type="checkbox"]:checked + .checkbox-custom {
+  background: #1565c0;
+  border-color: #1565c0;
+}
+
+.checkbox-item input[type="checkbox"]:checked + .checkbox-custom::after {
+  content: '✓';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.checkbox-label {
+  font-weight: 500;
+  color: #333;
+}
+
+.image-upload-section {
+  margin-top: 8px;
+}
+
+.image-upload-btn {
+  background: #f0f0f0;
+  border: 2px dashed #ccc;
+  border-radius: 8px;
+  padding: 16px 24px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.9rem;
+  color: #666;
+  width: 100%;
+}
+
+.image-upload-btn:hover {
+  background: #e8f5e9;
+  border-color: #4caf50;
+  color: #2e7d32;
+}
+
+.image-preview-container {
+  position: relative;
+  margin-top: 12px;
+  display: block !important;
+  width: 100%;
+}
+
+.no-image-placeholder {
+  margin-top: 12px;
+  padding: 20px;
+  background: #f9f9f9;
+  border: 1px dashed #ddd;
+  border-radius: 8px;
+  text-align: center;
+  color: #888;
+  font-size: 0.9rem;
+}
+
+.image-preview {
+  max-width: 200px;
+  max-height: 150px;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  object-fit: cover;
+  display: block !important;
+  visibility: visible !important;
+}
+
+.remove-image-btn {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: #f44336;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-footer-large {
+  padding: 20px 32px;
+  border-top: 1px solid #e0e0e0;
+  background: #f8f9fa;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.footer-info {
+  color: #666;
+  font-size: 0.85rem;
+}
+
+.required-note {
+  font-style: italic;
+  margin: 0;
+}
+
+.footer-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #1565c0 0%, #1976d2 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #0d47a1 0%, #1565c0 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(21, 101, 192, 0.3);
+}
+
+.btn-primary:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.btn-secondary {
+  background: white;
+  color: #666;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 10px 24px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-secondary:hover {
+  background: #f5f5f5;
+  border-color: #ccc;
+}
+
+/* Estilos para vista previa de imágenes en modales */
+.image-preview-modal {
+  margin-top: 20px;
+  text-align: center;
+  padding: 15px;
+  border: 2px dashed #e0e0e0;
+  border-radius: 8px;
+  background: #f9f9f9;
+}
+
+.preview-image {
+  max-width: 100%;
+  max-height: 200px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 10px;
+}
+
+.remove-preview-btn {
+  background: #ff4444;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.remove-preview-btn:hover {
+  background: #cc0000;
+  transform: translateY(-1px);
+}
+
+.captured-photo-preview {
+  text-align: center;
+  margin: 20px 0;
+  padding: 20px;
+  background: #f9f9f9;
+  border-radius: 12px;
+  border: 2px solid #e0e0e0;
+}
+
+.captured-image {
+  max-width: 100%;
+  max-height: 300px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  margin-bottom: 15px;
+}
+
+.photo-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  align-items: center;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #1565c0 0%, #1976d2 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+/* ===== RESPONSIVE DESIGN ===== */
+
+/* Laptops (769px - 1024px) */
+@media (max-width: 1024px) and (min-width: 769px) {
+  .header {
+    padding: 15px 30px;
+  }
+  
+  .logo {
+    height: 45px;
+  }
+  
+  .header h1 {
+    font-size: 1.6rem;
+  }
+  
+  .controls {
+    padding: 0 30px;
+    gap: 15px;
+  }
+  
+  .buscar-documento input {
+    padding: 10px 15px;
+    font-size: 14px;
+  }
+  
+  .tabla-registro {
+    font-size: 13px;
+  }
+  
+  .tabla-registro th,
+  .tabla-registro td {
+    padding: 10px 8px;
+  }
+  
+  .user-photo {
+    width: 50px;
+    height: 50px;
+  }
+  
+  .no-photo {
+    width: 50px;
+    height: 50px;
+    font-size: 9px;
+  }
+  
+  .modal-content-large {
+    width: 95%;
+    max-width: 900px;
+    max-height: 90vh;
+  }
+  
+  .form-container-two-columns {
+    grid-template-columns: 1fr;
+  }
+  
+  .user-info-column {
+    border-right: none;
+    border-bottom: 1px solid #e0e0e0;
+  }
+  
+  .column-header {
+    padding: 16px 20px 12px;
+  }
+  
+  .user-info-display,
+  .form-fields {
+    padding: 20px;
+  }
+}
+
+/* Tablets (481px - 768px) */
+@media (max-width: 768px) and (min-width: 481px) {
+  .header {
+    padding: 12px 20px;
+    flex-direction: column;
+    gap: 10px;
+    text-align: center;
+  }
+  
+  .logo {
+    height: 40px;
+  }
+  
+  .header h1 {
+    font-size: 1.4rem;
+    margin: 0;
+  }
+  
+  .controls {
+    padding: 0 20px;
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .buscar-documento {
+    width: 100%;
+  }
+  
+  .buscar-documento input {
+    width: 70%;
+    padding: 12px 15px;
+    font-size: 14px;
+  }
+  
+  .buscar-documento button {
+    padding: 12px 20px;
+    font-size: 14px;
+  }
+  
+  .tipo-registro select {
+    padding: 12px 15px;
+    font-size: 14px;
+    width: 100%;
+  }
+  
+  .tabla-registro {
+    font-size: 12px;
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+  
+  .tabla-registro thead,
+  .tabla-registro tbody,
+  .tabla-registro th,
+  .tabla-registro td,
+  .tabla-registro tr {
+    display: block;
+  }
+  
+  .tabla-registro thead tr {
+    position: absolute;
+    top: -9999px;
+    left: -9999px;
+  }
+  
+  .tabla-registro tr {
+    border: 1px solid #ccc;
+    margin-bottom: 10px;
+    padding: 10px;
+    border-radius: 8px;
+    background: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  
+  .tabla-registro td {
+    border: none;
+    position: relative;
+    padding: 8px 10px 8px 35%;
+    text-align: left;
+    white-space: normal;
+  }
+  
+  .tabla-registro td:before {
+    content: attr(data-label) ": ";
+    position: absolute;
+    left: 6px;
+    width: 30%;
+    padding-right: 10px;
+    white-space: nowrap;
+    font-weight: bold;
+    color: #333;
+  }
+  
+  .user-photo {
+    width: 45px;
+    height: 45px;
+  }
+  
+  .no-photo {
+    width: 45px;
+    height: 45px;
+    font-size: 8px;
+  }
+  
+  .modal-content-large {
+    width: 95%;
+    height: 95vh;
+    max-height: 95vh;
+    border-radius: 8px;
+  }
+  
+  .form-container-two-columns {
+    grid-template-columns: 1fr;
+  }
+  
+  .accessories-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .footer-actions {
+    flex-direction: column-reverse;
+    width: 100%;
+  }
+  
+  .btn-primary,
+  .btn-secondary {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .btn-movimiento {
+    padding: 15px 25px;
+    font-size: 16px;
+    min-width: 180px;
+  }
+  
+  .estado-info {
+    max-width: 350px;
+    padding: 15px;
+  }
+}
+
+/* Mobile (≤480px) */
+@media (max-width: 480px) {
+  .registro-usuarios {
+    padding: 0;
+  }
+  
+  .header {
+    padding: 10px 15px;
+    flex-direction: column;
+    gap: 8px;
+    text-align: center;
+  }
+  
+  .logo {
+    height: 35px;
+  }
+  
+  .header h1 {
+    font-size: 1.2rem;
+    margin: 0;
+    line-height: 1.3;
+  }
+  
+  .controls {
+    padding: 0 15px;
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .buscar-documento {
+    width: 100%;
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .buscar-documento input {
+    width: 100%;
+    padding: 12px 15px;
+    font-size: 14px;
+  }
+  
+  .buscar-documento button {
+    width: 100%;
+    padding: 12px 20px;
+    font-size: 14px;
+  }
+  
+  .tipo-registro select {
+    padding: 12px 15px;
+    font-size: 14px;
+    width: 100%;
+  }
+  
+  .tabla-registro {
+    margin: 15px;
+    font-size: 11px;
+    display: block;
+    overflow-x: auto;
+  }
+  
+  .tabla-registro thead,
+  .tabla-registro tbody,
+  .tabla-registro th,
+  .tabla-registro td,
+  .tabla-registro tr {
+    display: block;
+  }
+  
+  .tabla-registro thead tr {
+    position: absolute;
+    top: -9999px;
+    left: -9999px;
+  }
+  
+  .tabla-registro tr {
+    border: 1px solid #ccc;
+    margin-bottom: 10px;
+    padding: 12px;
+    border-radius: 8px;
+    background: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  
+  .tabla-registro td {
+    border: none;
+    position: relative;
+    padding: 8px 10px 8px 40%;
+    text-align: left;
+    white-space: normal;
+  }
+  
+  .tabla-registro td:before {
+    content: attr(data-label) ": ";
+    position: absolute;
+    left: 6px;
+    width: 35%;
+    padding-right: 10px;
+    white-space: nowrap;
+    font-weight: bold;
+    color: #333;
+    font-size: 10px;
+  }
+  
+  .foto-cell {
+    width: 100%;
+    padding: 10px 0;
+  }
+  
+  .user-photo {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .no-photo {
+    width: 40px;
+    height: 40px;
+    font-size: 7px;
+  }
+  
+  .kebab-btn {
+    padding: 6px 8px;
+    font-size: 14px;
+  }
+  
+  .modal-content-large {
+    width: 100%;
+    height: 100vh;
+    max-height: 100vh;
+    border-radius: 0;
+    margin: 0;
+  }
+  
+  .modal-header-large {
+    padding: 15px;
+  }
+  
+  .modal-header-large h2 {
+    font-size: 1.3rem;
+  }
+  
+  .form-container-two-columns {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+  
+  .column-header {
+    padding: 12px 15px 8px;
+  }
+  
+  .column-header h4 {
+    font-size: 1rem;
+  }
+  
+  .user-info-display,
+  .form-fields {
+    padding: 15px;
+  }
+  
+  .form-input,
+  .form-textarea {
+    padding: 12px;
+    font-size: 14px;
+  }
+  
+  .accessories-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  
+  .checkbox-item {
+    padding: 12px;
+  }
+  
+  .footer-actions {
+    flex-direction: column-reverse;
+    width: 100%;
+    padding: 15px;
+    gap: 10px;
+  }
+  
+  .btn-primary,
+  .btn-secondary {
+    width: 100%;
+    justify-content: center;
+    padding: 15px;
+    font-size: 14px;
+  }
+  
+  .btn-movimiento {
+    padding: 12px 20px;
+    font-size: 14px;
+    min-width: 150px;
+    margin: 5px;
+  }
+  
+  .btn-icon {
+    font-size: 16px;
+  }
+  
+  .estado-info {
+    max-width: 300px;
+    padding: 12px;
+    margin: 10px;
+  }
+  
+  .estado-actual {
+    font-size: 14px;
+  }
+  
+  .estado-badge {
+    padding: 4px 8px;
+    font-size: 12px;
+  }
+  
+  .ultimo-movimiento {
+    font-size: 11px;
+  }
+}
+
+/* Mobile Landscape (≤768px and landscape) */
+@media (max-width: 768px) and (orientation: landscape) {
+  .header {
+    padding: 8px 15px;
+  }
+  
+  .header h1 {
+    font-size: 1.1rem;
+  }
+  
+  .logo {
+    height: 30px;
+  }
+  
+  .controls {
+    padding: 0 15px;
+    flex-direction: row;
+    gap: 15px;
+  }
+  
+  .buscar-documento {
+    flex: 1;
+    flex-direction: row;
+    gap: 10px;
+  }
+  
+  .tipo-registro {
+    min-width: 150px;
+  }
+  
+  .modal-content-large {
+    width: 95%;
+    height: 95vh;
+    max-height: 95vh;
+  }
+  
+  .form-container-two-columns {
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+  
+  .user-info-column {
+    border-right: 1px solid #e0e0e0;
+    border-bottom: none;
+  }
+  
+  .column-header {
+    padding: 10px 15px 8px;
+  }
+  
+  .user-info-display,
+  .form-fields {
+    padding: 15px;
+  }
+  
+  .btn-movimiento {
+    padding: 10px 15px;
+    font-size: 13px;
+    min-width: 130px;
+  }
+}
+
 .modal-content input,
 .modal-content textarea {
   padding: 12px;
@@ -1202,5 +2298,34 @@ export default {
 }
 .fade-enter-from, .fade-leave-to {
   opacity: 0;
+}
+
+/* ===== Estilos para botones de acción ===== */
+.btn-action {
+  background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin: 8px 0;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-action:hover {
+  background: linear-gradient(135deg, #357abd 0%, #2968a3 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
+}
+
+.btn-action:active {
+  transform: translateY(0);
 }
 </style>

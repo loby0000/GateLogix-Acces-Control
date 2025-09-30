@@ -1187,4 +1187,342 @@ h3 {
   color: #3550b2;
   margin-bottom: 10px;
 }
+
+/* Media Queries para Responsive Design */
+
+/* Laptops pequeños (768px - 1024px) */
+@media (max-width: 1024px) and (min-width: 769px) {
+  .container {
+    max-width: 95%;
+    padding: 0 15px;
+    margin: 25px auto;
+  }
+  
+  .logo img {
+    height: 70px;
+    max-width: 320px;
+  }
+  
+  .controls {
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 20px;
+  }
+  
+  .search-input {
+    width: 280px;
+    height: 42px;
+    font-size: 0.95rem;
+  }
+  
+  .activo-label {
+    padding: 8px 16px;
+    font-size: 0.95rem;
+  }
+  
+  .btn-reload, .btn-dashboard {
+    width: 36px;
+    height: 36px;
+  }
+  
+  table {
+    min-width: 1000px;
+    font-size: 0.95rem;
+  }
+  
+  th, td {
+    padding: 14px 10px;
+    font-size: 1rem;
+  }
+  
+  .modal-content {
+    width: 85%;
+    max-width: 500px;
+    padding: 25px;
+  }
+}
+
+/* Tablets (481px - 768px) */
+@media (max-width: 768px) and (min-width: 481px) {
+  .container {
+    max-width: 100%;
+    padding: 0 12px;
+    margin: 20px auto;
+  }
+  
+  .logo {
+    margin-bottom: 20px;
+  }
+  
+  .logo img {
+    height: 60px;
+    max-width: 280px;
+  }
+  
+  .controls {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 15px;
+    margin-bottom: 20px;
+  }
+  
+  .search-input {
+    width: 100%;
+    height: 45px;
+    margin-right: 0;
+    font-size: 1rem;
+  }
+  
+  .filter-actions {
+    justify-content: center;
+    gap: 15px;
+  }
+  
+  .activo-label {
+    padding: 10px 18px;
+    font-size: 1rem;
+  }
+  
+  .btn-reload, .btn-dashboard {
+    width: 40px;
+    height: 40px;
+    margin-left: 0;
+  }
+  
+  table {
+    min-width: 700px;
+    font-size: 0.9rem;
+  }
+  
+  th, td {
+    padding: 12px 8px;
+    font-size: 0.9rem;
+  }
+  
+  .editar-btn {
+    padding: 8px 12px;
+    font-size: 0.85rem;
+  }
+  
+  .modal-content {
+    width: 90%;
+    max-width: 450px;
+    padding: 22px;
+  }
+  
+  .modal-field label {
+    font-size: 0.95rem;
+  }
+  
+  .modal-field input,
+  .modal-field select,
+  .jornada-field select {
+    padding: 10px 12px;
+    font-size: 0.95rem;
+  }
+}
+
+/* Mobile (≤480px) */
+@media (max-width: 480px) {
+  .container {
+    max-width: 100%;
+    padding: 0 8px;
+    margin: 15px auto;
+  }
+  
+  .logo {
+    margin-bottom: 15px;
+  }
+  
+  .logo img {
+    height: 50px;
+    max-width: 240px;
+  }
+  
+  .controls {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    margin-bottom: 15px;
+  }
+  
+  .search-input {
+    width: 100%;
+    height: 42px;
+    margin-right: 0;
+    font-size: 0.95rem;
+    padding-left: 12px;
+  }
+  
+  .filter-actions {
+    justify-content: center;
+    gap: 12px;
+  }
+  
+  .activo-label {
+    padding: 8px 14px;
+    font-size: 0.9rem;
+    border-radius: 18px;
+  }
+  
+  .btn-reload, .btn-dashboard {
+    width: 36px;
+    height: 36px;
+    margin-left: 0;
+  }
+  
+  table {
+    min-width: 600px;
+    font-size: 0.8rem;
+  }
+  
+  th, td {
+    padding: 10px 6px;
+    font-size: 0.8rem;
+  }
+  
+  .editar-btn {
+    padding: 6px 10px;
+    font-size: 0.8rem;
+  }
+  
+  .badge {
+    padding: 4px 8px;
+    font-size: 0.75rem;
+  }
+  
+  .modal-content {
+    width: 95%;
+    max-width: 350px;
+    padding: 18px;
+    margin: 10px;
+  }
+  
+  .modal-content h3 {
+    font-size: 1.2rem;
+    margin-bottom: 15px;
+  }
+  
+  .modal-field {
+    margin-bottom: 12px;
+  }
+  
+  .modal-field label {
+    font-size: 0.9rem;
+    margin-bottom: 4px;
+  }
+  
+  .modal-field input,
+  .modal-field select,
+  .jornada-field select {
+    padding: 8px 10px;
+    font-size: 0.9rem;
+  }
+  
+  .modal-actions {
+    gap: 10px;
+    flex-direction: column;
+  }
+  
+  .modal-actions button {
+    width: 100%;
+    padding: 12px;
+    font-size: 0.9rem;
+  }
+  
+  .mensaje-confirmacion {
+    font-size: 1rem;
+    margin: 12px 0;
+  }
+  
+  .admin-auth-modal {
+    max-width: 320px;
+  }
+}
+
+/* Mobile Landscape */
+@media (max-width: 768px) and (orientation: landscape) {
+  .container {
+    padding: 0 10px;
+    margin: 10px auto;
+  }
+  
+  .logo {
+    margin-bottom: 12px;
+  }
+  
+  .logo img {
+    height: 45px;
+    max-width: 200px;
+  }
+  
+  .controls {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  
+  .search-input {
+    width: 250px;
+    height: 38px;
+    font-size: 0.9rem;
+  }
+  
+  .filter-actions {
+    gap: 8px;
+  }
+  
+  .activo-label {
+    padding: 6px 12px;
+    font-size: 0.85rem;
+  }
+  
+  .btn-reload, .btn-dashboard {
+    width: 32px;
+    height: 32px;
+  }
+  
+  table {
+    font-size: 0.75rem;
+  }
+  
+  th, td {
+    padding: 8px 5px;
+    font-size: 0.75rem;
+  }
+  
+  .modal-content {
+    width: 80%;
+    max-width: 400px;
+    padding: 15px;
+  }
+  
+  .modal-content h3 {
+    font-size: 1.1rem;
+    margin-bottom: 10px;
+  }
+  
+  .modal-field {
+    margin-bottom: 10px;
+  }
+  
+  .modal-field input,
+  .modal-field select,
+  .jornada-field select {
+    padding: 6px 8px;
+    font-size: 0.85rem;
+  }
+  
+  .modal-actions {
+    flex-direction: row;
+    gap: 8px;
+  }
+  
+  .modal-actions button {
+    padding: 8px 12px;
+    font-size: 0.85rem;
+  }
+}
 </style>

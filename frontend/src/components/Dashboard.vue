@@ -483,8 +483,8 @@ export default {
 
 .chart-bars {
   display: flex;
-  align-items: end;
   justify-content: space-between;
+  align-items: end;
   height: clamp(200px, 30vw, 300px);
   padding: clamp(1rem, 3vw, 1.5rem);
   background: var(--bg-glass);
@@ -1202,6 +1202,9 @@ export default {
 
 .bar:hover {
   filter: brightness(1.1);
+  transform: scaleY(1.1) scaleX(1.1);
+  filter: brightness(1.2);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
 }
 
 .month-label {

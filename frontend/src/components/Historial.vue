@@ -126,6 +126,35 @@
           </div>
           <button class="modal-close-btn" @click="closeUserModal">✕</button>
         </div>
+
+        <!-- Información del equipo principal -->
+        <div v-if="equipoPrincipal" class="equipo-principal-info">
+          <h4>Equipo Principal</h4>
+          <div class="equipo-details">
+            <div class="equipo-detail-item">
+              <strong>Marca:</strong> {{ equipoPrincipal.marca || 'No especificada' }}
+            </div>
+            <div class="equipo-detail-item">
+              <strong>Serial:</strong> {{ equipoPrincipal.serial || 'No especificado' }}
+            </div>
+            <div v-if="equipoPrincipal.caracteristicas" class="equipo-detail-item">
+              <strong>Características:</strong> {{ equipoPrincipal.caracteristicas }}
+            </div>
+            <div v-if="equipoPrincipal.accesorios" class="equipo-detail-item">
+              <strong>Accesorios:</strong>
+              <span v-if="equipoPrincipal.accesorios.mouse" class="accesorio-badge">Mouse</span>
+              <span v-if="equipoPrincipal.accesorios.cargador" class="accesorio-badge">Cargador</span>
+              <span v-if="!equipoPrincipal.accesorios.mouse && !equipoPrincipal.accesorios.cargador">Ninguno</span>
+            </div>
+          </div>
+          
+          <!-- Botón "Otros equipos" - solo si hay equipos adicionales -->
+          <div v-if="otrosEquipos && otrosEquipos.length > 0" class="otros-equipos-section">
+            <button class="btn-otros-equipos" @click="abrirModalOtrosEquipos">
+              Otros equipos ({{ otrosEquipos.length }})
+            </button>
+          </div>
+        </div>
         
         <div class="modal-table-container">
           <table class="modal-table">
@@ -170,6 +199,99 @@
         </div>
       </div>
     </div>
+
+    <!-- Modal de otros equipos -->
+    <div v-if="showOtrosEquiposModal" class="modal-overlay" @click.self="cerrarModalOtrosEquipos">
+      <div class="modal-content-medium">
+        <div class="modal-header">
+          <h3>Otros Equipos de {{ selectedUser?.usuario }}</h3>
+          <button class="modal-close-btn" @click="cerrarModalOtrosEquipos">✕</button>
+        </div>
+        
+        <div class="otros-equipos-list">
+          <div v-for="(equipo, index) in otrosEquipos" :key="equipo._id || index" 
+               class="equipo-item" @click="abrirHistorialEquipo(equipo)">
+            <div class="equipo-info">
+              <h4>{{ equipo.marca || 'Equipo sin marca' }}</h4>
+              <p><strong>Serial:</strong> {{ equipo.serial || 'No especificado' }}</p>
+              <p v-if="equipo.caracteristicas"><strong>Características:</strong> {{ equipo.caracteristicas }}</p>
+              <div v-if="equipo.accesorios" class="accesorios">
+                <span v-if="equipo.accesorios.mouse" class="accesorio-badge">Mouse</span>
+                <span v-if="equipo.accesorios.cargador" class="accesorio-badge">Cargador</span>
+              </div>
+            </div>
+            <div class="equipo-action">
+              <span class="ver-historial">Ver historial →</span>
+            </div>
+          </div>
+          
+          <div v-if="otrosEquipos.length === 0" class="no-otros-equipos">
+            Este usuario no tiene otros equipos registrados
+          </div>
+        </div>
+        
+        <div class="modal-footer">
+          <button class="btn secondary" @click="cerrarModalOtrosEquipos">Cerrar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal de historial individual por equipo -->
+    <div v-if="showHistorialEquipoModal" class="modal-overlay" @click.self="cerrarHistorialEquipoModal">
+      <div class="modal-content-large">
+        <div class="modal-header">
+          <h3>Historial de {{ equipoSeleccionado?.marca || 'Equipo' }}</h3>
+          <div class="modal-user-info">
+            <span><strong>Usuario:</strong> {{ selectedUser?.usuario }}</span>
+            <span><strong>Serial:</strong> {{ equipoSeleccionado?.serial }}</span>
+            <span><strong>Total registros:</strong> {{ historialEquipoSeleccionado.length }}</span>
+          </div>
+          <button class="modal-close-btn" @click="cerrarHistorialEquipoModal">✕</button>
+        </div>
+        
+        <div class="modal-table-container">
+          <table class="modal-table">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Entrada</th>
+                <th>Salida</th>
+                <th>Guardia</th>
+                <th>Estado</th>
+                <th>Tipo</th>
+              </tr>
+            </thead>
+            <tbody class="modal-table-body">
+              <tr v-for="(record, index) in historialEquipoSeleccionado" :key="record.id || index">
+                <td class="fecha-cell">{{ formatearFechaSolo(record.fechaCreacion) }}</td>
+                <td class="fecha-cell">{{ record.entradaFormateada || '---' }}</td>
+                <td class="fecha-cell">{{ record.salidaFormateada || '---' }}</td>
+                <td>{{ record.nombreGuardia }}</td>
+                <td>
+                  <span :class="['estado-badge', record.estado.toLowerCase()]">
+                    {{ record.estado }}
+                  </span>
+                </td>
+                <td>
+                  <span :class="['type-badge', record.tipo.toLowerCase()]">
+                    {{ record.tipo }}
+                  </span>
+                </td>
+              </tr>
+              <tr v-if="historialEquipoSeleccionado.length === 0">
+                <td colspan="6" class="no-results">
+                  No se encontraron registros históricos para este equipo
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        
+        <div class="modal-footer">
+          <button class="btn secondary" @click="cerrarHistorialEquipoModal">Cerrar</button>
+        </div>
+      </div>
+    </div>
   </section>
 </template>
 
@@ -200,7 +322,14 @@ export default {
         total: 0,
         adentro: 0,
         afuera: 0
-      }
+      },
+      // Nuevas propiedades para equipos
+      equipoPrincipal: null,
+      otrosEquipos: [],
+      showOtrosEquiposModal: false,
+      showHistorialEquipoModal: false,
+      equipoSeleccionado: null,
+      historialEquipoSeleccionado: []
     };
   },
   async mounted() {
@@ -514,7 +643,7 @@ export default {
     },
 
     // 🔹 Modal de usuario - Mostrar historial completo
-    showUserModal(record) {
+    async showUserModal(record) {
       this.selectedUser = record;
       
       // Filtrar todos los registros históricos del usuario
@@ -524,14 +653,128 @@ export default {
         (r.documento === record.documento && r.documento !== 'N/A')
       ).sort((a, b) => new Date(b.fechaCreacion) - new Date(a.fechaCreacion));
       
+      // Obtener información completa del usuario y sus equipos
+      await this.obtenerEquiposUsuario(record.documento);
+      
       console.log(`📋 Mostrando historial completo de ${record.usuario}: ${this.userHistoryRecords.length} registros`);
       this.showModal = true;
+    },
+
+    // 🔹 Obtener equipos del usuario
+    async obtenerEquiposUsuario(documento) {
+      try {
+        const token = localStorage.getItem('token');
+        const timestamp = new Date().getTime();
+        const response = await fetch(
+          getApiUrl(`api/equipos/usuario/${documento}?t=${timestamp}`),
+          {
+            headers: { 
+              Authorization: `Bearer ${token}`,
+              'Cache-Control': 'no-cache',
+              'Pragma': 'no-cache'
+            }
+          }
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          
+          // Determinar equipo principal y otros equipos
+          if (data.equipos && data.equipos.length > 0) {
+            // El primer equipo del array es el principal
+            this.equipoPrincipal = data.equipos[0];
+            this.otrosEquipos = data.equipos.slice(1);
+          } else if (data.equipo) {
+            // Si solo hay un equipo en el campo 'equipo'
+            this.equipoPrincipal = data.equipo;
+            this.otrosEquipos = [];
+          } else {
+            this.equipoPrincipal = null;
+            this.otrosEquipos = [];
+          }
+          
+          console.log(`📱 Equipo principal:`, this.equipoPrincipal);
+          console.log(`📱 Otros equipos (${this.otrosEquipos.length}):`, this.otrosEquipos);
+        } else {
+          console.error('Error obteniendo equipos del usuario');
+          this.equipoPrincipal = null;
+          this.otrosEquipos = [];
+        }
+      } catch (error) {
+        console.error('Error obteniendo equipos:', error);
+        this.equipoPrincipal = null;
+        this.otrosEquipos = [];
+      }
+    },
+
+    // 🔹 Abrir modal de otros equipos
+    abrirModalOtrosEquipos() {
+      this.showOtrosEquiposModal = true;
+    },
+
+    // 🔹 Cerrar modal de otros equipos
+    cerrarModalOtrosEquipos() {
+      this.showOtrosEquiposModal = false;
+    },
+
+    // 🔹 Abrir historial de equipo específico
+    async abrirHistorialEquipo(equipo) {
+      this.equipoSeleccionado = equipo;
+      
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(
+          getApiUrl(`api/historial/equipo/${equipo.serial}`),
+          {
+            headers: { Authorization: `Bearer ${token}` }
+          }
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          
+          // Formatear los datos del historial del equipo
+          this.historialEquipoSeleccionado = data.map(record => ({
+            id: record._id,
+            entrada: record.entrada,
+            entradaFormateada: this.formatearFecha(record.entrada),
+            salida: record.salida,
+            salidaFormateada: record.salida ? this.formatearFecha(record.salida) : null,
+            nombreGuardia: record.guardia?.nombre || 'N/A',
+            estado: record.estado || 'N/A',
+            tipo: this.determinarTipo(record),
+            fechaCreacion: record.createdAt
+          })).sort((a, b) => new Date(b.fechaCreacion) - new Date(a.fechaCreacion));
+          
+          console.log(`📋 Historial del equipo ${equipo.serial}: ${this.historialEquipoSeleccionado.length} registros`);
+        } else {
+          console.error('Error obteniendo historial del equipo');
+          this.historialEquipoSeleccionado = [];
+        }
+      } catch (error) {
+        console.error('Error obteniendo historial del equipo:', error);
+        this.historialEquipoSeleccionado = [];
+      }
+      
+      this.cerrarModalOtrosEquipos();
+      this.showHistorialEquipoModal = true;
+    },
+
+    // 🔹 Cerrar modal de historial de equipo
+    cerrarHistorialEquipoModal() {
+      this.showHistorialEquipoModal = false;
+      this.equipoSeleccionado = null;
+      this.historialEquipoSeleccionado = [];
     },
 
     closeUserModal() {
       this.showModal = false;
       this.selectedUser = null;
       this.userHistoryRecords = [];
+      this.equipoPrincipal = null;
+      this.otrosEquipos = [];
+      this.cerrarModalOtrosEquipos();
+      this.cerrarHistorialEquipoModal();
     },
   }
 }
@@ -1068,3 +1311,710 @@ select:focus {
   }
 }
 </style>
+
+/* 🔹 Estilos mejorados para información del equipo principal */
+.equipo-principal-info {
+  padding: 2rem;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.3);
+  border-radius: 16px 16px 0 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.equipo-principal-info::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #3b82f6, #8b5cf6, #06b6d4);
+  background-size: 200% 100%;
+  animation: shimmer 3s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0%, 100% { background-position: 200% 0; }
+  50% { background-position: -200% 0; }
+}
+
+.equipo-principal-info h4 {
+  margin: 0 0 1.5rem 0;
+  color: #1e293b;
+  font-size: 1.25rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.equipo-principal-info h4::before {
+  content: '🖥️';
+  font-size: 1.5rem;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+.equipo-details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.equipo-detail-item {
+  font-size: 0.95rem;
+  color: #475569;
+  padding: 0.75rem 1rem;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  backdrop-filter: blur(10px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.equipo-detail-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: linear-gradient(180deg, #3b82f6, #8b5cf6);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.equipo-detail-item:hover {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(59, 130, 246, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.15);
+}
+
+.equipo-detail-item:hover::before {
+  opacity: 1;
+}
+
+.equipo-detail-item strong {
+  color: #1e293b;
+  margin-right: 0.75rem;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.accesorio-badge {
+  display: inline-block;
+  padding: 0.4rem 0.8rem;
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  color: #1d4ed8;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-right: 0.75rem;
+  margin-top: 0.25rem;
+  border: 1px solid rgba(29, 78, 216, 0.2);
+  box-shadow: 0 2px 8px rgba(29, 78, 216, 0.1);
+  transition: all 0.3s ease;
+}
+
+.accesorio-badge:hover {
+  background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%);
+  color: white;
+  transform: scale(1.05);
+}
+
+.otros-equipos-section {
+  margin-top: 1.5rem;
+  text-align: center;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.btn-otros-equipos {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 1rem 2rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-otros-equipos::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s ease;
+}
+
+.btn-otros-equipos:hover {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
+}
+
+.btn-otros-equipos:hover::before {
+  left: 100%;
+}
+
+/* 🔹 Modal de tamaño medio mejorado */
+.modal-content-medium {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border-radius: 20px;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+  width: 90vw;
+  max-width: 750px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+/* 🔹 Lista de otros equipos mejorada con efectos avanzados */
+.otros-equipos-list {
+  padding: 2rem;
+  max-height: 65vh;
+  overflow-y: auto;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  position: relative;
+}
+
+.otros-equipos-list::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #3b82f6, #8b5cf6, #06b6d4);
+  background-size: 200% 100%;
+  animation: shimmer 3s ease-in-out infinite;
+}
+
+.otros-equipos-list::-webkit-scrollbar {
+  width: 10px;
+}
+
+.otros-equipos-list::-webkit-scrollbar-track {
+  background: rgba(148, 163, 184, 0.1);
+  border-radius: 6px;
+  margin: 0.5rem 0;
+}
+
+.otros-equipos-list::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #3b82f6, #8b5cf6);
+  border-radius: 6px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+  transition: all 0.3s ease;
+}
+
+.otros-equipos-list::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #2563eb, #7c3aed);
+}
+
+.equipo-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 2rem;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 20px;
+  margin-bottom: 1.5rem;
+  cursor: pointer;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+}
+
+.equipo-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(139, 92, 246, 0.08) 100%);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.equipo-item::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #3b82f6, #8b5cf6, #06b6d4);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.equipo-item:hover {
+  border-color: rgba(59, 130, 246, 0.4);
+  box-shadow: 0 20px 40px rgba(59, 130, 246, 0.25);
+  transform: translateY(-6px) scale(1.02);
+}
+
+.equipo-item:hover::before {
+  opacity: 1;
+}
+
+.equipo-item:hover::after {
+  opacity: 1;
+}
+
+.equipo-info {
+  position: relative;
+  z-index: 2;
+  flex: 1;
+}
+
+.equipo-info h4 {
+  margin: 0 0 1rem 0;
+  color: #1e293b;
+  font-size: 1.2rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  position: relative;
+}
+
+.equipo-info h4::before {
+  content: '💻';
+  font-size: 1.4rem;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15));
+  transition: transform 0.3s ease;
+}
+
+.equipo-item:hover .equipo-info h4::before {
+  transform: scale(1.1) rotate(5deg);
+}
+
+.equipo-info p {
+  margin: 0.6rem 0;
+  font-size: 0.95rem;
+  color: #64748b;
+  font-weight: 500;
+  padding: 0.4rem 0.8rem;
+  background: rgba(248, 250, 252, 0.8);
+  border-radius: 8px;
+  border: 1px solid rgba(148, 163, 184, 0.15);
+  transition: all 0.3s ease;
+}
+
+.equipo-info p:hover {
+  background: rgba(59, 130, 246, 0.05);
+  border-color: rgba(59, 130, 246, 0.2);
+}
+
+.equipo-info p strong {
+  color: #374151;
+  font-weight: 600;
+  margin-right: 0.5rem;
+}
+
+.accesorios {
+  margin-top: 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.equipo-action {
+  display: flex;
+  align-items: center;
+  position: relative;
+  z-index: 2;
+}
+
+.ver-historial {
+  color: #3b82f6;
+  font-size: 0.95rem;
+  font-weight: 600;
+  padding: 1rem 2rem;
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  border-radius: 16px;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.15);
+  position: relative;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.ver-historial::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  transition: left 0.6s ease;
+}
+
+.equipo-item:hover .ver-historial {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  transform: scale(1.08);
+  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
+}
+
+.equipo-item:hover .ver-historial::before {
+  left: 100%;
+}
+
+.no-otros-equipos {
+  text-align: center;
+  color: #64748b;
+  font-style: italic;
+  padding: 4rem 2rem;
+  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+  border-radius: 20px;
+  border: 2px dashed rgba(148, 163, 184, 0.3);
+  font-size: 1.1rem;
+  font-weight: 500;
+  position: relative;
+  overflow: hidden;
+}
+
+.no-otros-equipos::before {
+  content: '📦';
+  display: block;
+  font-size: 4rem;
+  margin-bottom: 1.5rem;
+  opacity: 0.6;
+  filter: grayscale(0.3);
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+/* 🔹 Modal de historial individual mejorado con efectos avanzados */
+.modal-content-large {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border-radius: 24px;
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.3);
+  width: 95vw;
+  max-width: 1000px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  backdrop-filter: blur(20px);
+  position: relative;
+}
+
+.modal-content-large::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.02) 0%, rgba(139, 92, 246, 0.02) 100%);
+  pointer-events: none;
+}
+
+.modal-header {
+  padding: 2.5rem;
+  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+  color: white;
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.modal-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #3b82f6, #8b5cf6, #06b6d4);
+  background-size: 200% 100%;
+  animation: shimmer 3s ease-in-out infinite;
+}
+
+.modal-header::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.modal-header:hover::after {
+  opacity: 1;
+}
+
+.modal-header h3 {
+  margin: 0 0 1.5rem 0;
+  font-size: 1.6rem;
+  font-weight: 700;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  position: relative;
+  z-index: 2;
+}
+
+.modal-header h3::before {
+  content: '📊';
+  font-size: 1.8rem;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+.modal-user-info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+  font-size: 0.95rem;
+  opacity: 0.95;
+  position: relative;
+  z-index: 2;
+}
+
+.modal-user-info span {
+  background: rgba(255, 255, 255, 0.15);
+  padding: 0.75rem 1.25rem;
+  border-radius: 12px;
+  backdrop-filter: blur(15px);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.modal-user-info span::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.6s ease;
+}
+
+.modal-user-info span:hover {
+  background: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+}
+
+.modal-user-info span:hover::before {
+  left: 100%;
+}
+
+/* 🔹 Responsive mejorado para equipos */
+@media (max-width: 768px) {
+  .equipo-details {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+  
+  .equipo-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1.25rem;
+    padding: 1.25rem;
+  }
+  
+  .equipo-action {
+    align-self: stretch;
+    justify-content: center;
+  }
+  
+  .modal-content-medium,
+  .modal-content-large {
+    width: 95vw;
+    margin: 1rem;
+  }
+  
+  .modal-header {
+    padding: 1.5rem;
+  }
+  
+  .modal-user-info {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  
+  .otros-equipos-list {
+    padding: 1.5rem;
+  }
+  
+  .equipo-principal-info {
+    padding: 1.5rem;
+  }
+  
+  .btn-otros-equipos {
+    padding: 0.875rem 1.5rem;
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .equipo-principal-info h4 {
+    font-size: 1.1rem;
+  }
+  
+  .equipo-info h4 {
+    font-size: 1rem;
+  }
+  
+  .modal-header h3 {
+    font-size: 1.25rem;
+  }
+  
+  .equipo-detail-item {
+    padding: 0.625rem 0.875rem;
+    font-size: 0.875rem;
+  }
+}
+
+.equipo-detail-item {
+  padding: 0.625rem 0.875rem;
+  font-size: 0.875rem;
+}
+
+.equipo-principal-info h4 {
+  margin: 0 0 1rem 0;
+  color: #1565c0;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.equipo-details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.equipo-detail-item {
+  font-size: 0.9rem;
+  color: #555;
+}
+
+.equipo-detail-item strong {
+  color: #333;
+  margin-right: 0.5rem;
+}
+
+.accesorio-badge {
+  display: inline-block;
+  padding: 0.2rem 0.5rem;
+  background: #e3f2fd;
+  color: #1565c0;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  margin-right: 0.5rem;
+}
+
+.otros-equipos-section {
+  margin-top: 1rem;
+  text-align: center;
+}
+
+.btn-otros-equipos {
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0.75rem 1.5rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+}
+
+.btn-otros-equipos:hover {
+  background: linear-gradient(135deg, #218838 0%, #1e7e34 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
+}
+
+.equipo-item:hover {
+  border-color: #1565c0;
+  box-shadow: 0 4px 12px rgba(21, 101, 192, 0.15);
+  transform: translateY(-2px);
+}
+
+.equipo-info h4 {
+  margin: 0 0 0.5rem 0;
+  color: #1565c0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.equipo-info p {
+  margin: 0.25rem 0;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.accesorios {
+  margin-top: 0.5rem;
+}
+
+.equipo-action {
+  display: flex;
+  align-items: center;
+}
+
+.ver-historial {
+  color: #1565c0;
+  font-size: 0.9rem;
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  background: #e3f2fd;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.equipo-item:hover .ver-historial {
+  background: #1565c0;
+  color: white;
+}

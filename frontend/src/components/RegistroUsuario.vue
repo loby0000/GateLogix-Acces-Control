@@ -720,6 +720,68 @@ html, body {
 
 /* ===== RESPONSIVE DESIGN ===== */
 
+/* Portátiles pequeños (1025px - 1366px) */
+@media (min-width: 1025px) and (max-width: 1366px) {
+  .form-container {
+    gap: 25px;
+    max-width: 1100px;
+  }
+  
+  .left-column, .right-column {
+    padding: 22px;
+    max-height: 65vh;
+  }
+  
+  .column-title {
+    font-size: 22px;
+    margin-bottom: 18px;
+  }
+  
+  .form-group {
+    gap: 7px;
+  }
+  
+  .form-label {
+    font-size: 15px;
+  }
+  
+  .input-text, .input-select, .input-textarea {
+    padding: 11px 14px;
+    font-size: 14px;
+  }
+  
+  .input-textarea {
+    min-height: 70px;
+  }
+  
+  .accessories-section {
+    gap: 10px;
+  }
+  
+  .checkbox-group {
+    padding: 10px 12px;
+    font-size: 14px;
+  }
+  
+  .action-buttons {
+    gap: 12px;
+    margin-top: 20px;
+  }
+  
+  .btn-primary, .btn-secondary {
+    padding: 11px 20px;
+    font-size: 15px;
+  }
+  
+  .logo-img {
+    height: 55px;
+  }
+  
+  .form-title {
+    font-size: 30px;
+  }
+}
+
 /* Laptops y pantallas medianas (768px - 1024px) */
 @media (min-width: 768px) and (max-width: 1024px) {
   .form-container-wrapper {

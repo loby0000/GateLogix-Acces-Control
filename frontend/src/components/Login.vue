@@ -619,6 +619,47 @@ input:hover {
   container-type: inline-size;
 }
 
+/* Responsive Design - Portátiles pequeños (1025px - 1366px) */
+@media (min-width: 1025px) and (max-width: 1366px) {
+  .login-container {
+    padding: clamp(20px, 3vw, 30px);
+  }
+  
+  .logo-section {
+    padding-right: clamp(60px, 8vw, 80px);
+  }
+  
+  .logo-image {
+    width: clamp(140px, 18vw, 150px);
+    height: clamp(140px, 18vw, 150px);
+  }
+  
+  .form-section {
+    padding-right: clamp(60px, 8vw, 80px);
+  }
+  
+  .login-form {
+    width: clamp(360px, 42vw, 450px);
+    min-width: 360px;
+    max-width: 450px;
+    padding: clamp(28px, 4.5vw, 35px);
+  }
+  
+  .form-title {
+    font-size: clamp(1.6rem, 3.5vw, 1.8rem);
+  }
+  
+  .form-group input {
+    padding: clamp(14px, 2.5vw, 16px);
+    font-size: clamp(0.95rem, 2vw, 1rem);
+  }
+  
+  .login-button {
+    padding: clamp(14px, 2.5vw, 16px);
+    font-size: clamp(0.95rem, 2vw, 1rem);
+  }
+}
+
 /* Ultra-wide screens */
 @media (min-width: 1920px) {
   .container {

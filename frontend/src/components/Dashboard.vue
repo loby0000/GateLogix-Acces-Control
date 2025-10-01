@@ -1498,6 +1498,70 @@ export default {
 
 /* Media Queries para Responsive Design */
 
+/* Portátiles pequeños (1025px - 1366px) - Nuevo breakpoint específico */
+@media (min-width: 1025px) and (max-width: 1366px) {
+  .sidebar {
+    width: 240px;
+    padding: 1.3rem;
+  }
+  
+  .main-content {
+    padding: 1.8rem;
+  }
+  
+  .top-cards {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1.2rem;
+  }
+  
+  .card {
+    padding: 1.6rem;
+  }
+  
+  .card h3 {
+    font-size: clamp(1rem, 2.2vw, 1.1rem);
+  }
+  
+  .card .number {
+    font-size: clamp(2.2rem, 4vw, 2.8rem);
+  }
+  
+  .chart-section {
+    padding: 1.6rem;
+  }
+  
+  .chart-bars {
+    height: 280px;
+    padding: 1.2rem;
+  }
+  
+  .bar-group {
+    min-width: 45px;
+  }
+  
+  .entrada-salida-panel, .guardias-activos-panel {
+    padding: 1.6rem;
+  }
+  
+  .count-box {
+    padding: 1.3rem;
+  }
+  
+  .calendar {
+    padding: 1.3rem;
+  }
+  
+  .btn-gestion-usuarios, .btn-gestion-guardias {
+    padding: 0.9rem 1.4rem;
+    font-size: 0.95rem;
+  }
+  
+  .circular-chart {
+    width: clamp(140px, 22vw, 160px);
+    height: clamp(140px, 22vw, 160px);
+  }
+}
+
 /* Laptops pequeños (768px - 1024px) */
 @media (max-width: 1024px) {
   .sidebar {

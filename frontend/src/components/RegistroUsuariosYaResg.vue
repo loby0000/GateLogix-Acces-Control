@@ -2328,4 +2328,109 @@ export default {
 .btn-action:active {
   transform: translateY(0);
 }
+
+/* ===== RESPONSIVE DESIGN ===== */
+
+/* Portátiles pequeños (1025px - 1366px) */
+@media (min-width: 1025px) and (max-width: 1366px) {
+  .modal-content {
+    width: 85%;
+    max-width: 900px;
+    max-height: 80vh;
+    padding: 20px;
+  }
+  
+  .modal-header {
+    padding: 18px 20px;
+  }
+  
+  .modal-title {
+    font-size: 1.3rem;
+  }
+  
+  .modal-body {
+    padding: 0 20px 20px;
+  }
+  
+  .equipos-section {
+    max-height: 200px;
+  }
+  
+  .equipo-compact {
+    padding: 10px 14px;
+  }
+  
+  .equipo-badge {
+    padding: 3px 7px;
+    font-size: 0.7rem;
+    min-width: 55px;
+  }
+  
+  .equipo-name {
+    font-size: 0.9rem;
+  }
+  
+  .equipo-serial {
+    font-size: 0.8rem;
+    padding: 2px 5px;
+  }
+  
+  .form-fields {
+    padding: 20px;
+  }
+  
+  .form-group {
+    margin-bottom: 18px;
+  }
+  
+  .form-group label {
+    font-size: 0.85rem;
+    margin-bottom: 7px;
+  }
+  
+  .form-input,
+  .form-textarea {
+    padding: 10px 14px;
+    font-size: 0.9rem;
+  }
+  
+  .form-textarea {
+    min-height: 70px;
+  }
+  
+  .accessories-grid {
+    gap: 10px;
+  }
+  
+  .checkbox-item {
+    padding: 10px;
+    font-size: 0.85rem;
+  }
+  
+  .checkbox-item input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+  }
+  
+  .modal-footer {
+    padding: 15px 20px;
+    gap: 10px;
+  }
+  
+  .btn {
+    padding: 8px 16px;
+    font-size: 0.9rem;
+  }
+  
+  .user-photo {
+    width: 55px;
+    height: 55px;
+  }
+  
+  .no-photo {
+    width: 55px;
+    height: 55px;
+    font-size: 9px;
+  }
+}
 </style>

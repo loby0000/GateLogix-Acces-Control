@@ -1,0 +1,25 @@
+steps:
+  # Construir imagen Docker desde carpeta backend
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'europe-west1-docker.pkg.dev/gatelogixserver/gatelogix-acces-control/backend:latest', './backend']
+
+  # Subir imagen a Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'europe-west1-docker.pkg.dev/gatelogixserver/gatelogix-acces-control/backend:latest']
+
+  # Deploy a Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - backend
+      - --image=europe-west1-docker.pkg.dev/gatelogixserver/gatelogix-acces-control/backend:latest
+      - --region=europe-west1
+      - --platform=managed
+      - --allow-unauthenticated
+      - --set-env-vars
+      - MONGODB_URI=mongodb+srv://CarlosA:bbkmtpjFekqrzrEE@access.iyrpsbl.mongodb.net/?retryWrites=true&w=majority&appName=Access
+
+images:
+  - 'europe-west1-docker.pkg.dev/gatelogixserver/gatelogix-acces-control/backend:latest'

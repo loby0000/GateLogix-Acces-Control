@@ -1,0 +1,25 @@
+steps:
+  # Construir imagen Docker desde carpeta frontend
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'europe-west1-docker.pkg.dev/gatelogixserver/gatelogix-acces-control/frontend:latest', './frontend']
+
+  # Subir imagen a Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'europe-west1-docker.pkg.dev/gatelogixserver/gatelogix-acces-control/frontend:latest']
+
+  # Deploy a Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - frontend
+      - --image=europe-west1-docker.pkg.dev/gatelogixserver/gatelogix-acces-control/frontend:latest
+      - --region=europe-west1
+      - --platform=managed
+      - --allow-unauthenticated
+      - --set-env-vars
+      - VITE_BACKEND_URL=https://backend-736887951555.europe-west1.run.app
+
+images:
+  - 'europe-west1-docker.pkg.dev/gatelogixserver/gatelogix-acces-control/frontend:latest'

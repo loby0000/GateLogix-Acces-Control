@@ -1,9 +1,9 @@
 steps:
-  # Construir imagen Docker desde carpeta frontend
+  # Construir la imagen
   - name: 'gcr.io/cloud-builders/docker'
     args: ['build', '-t', 'europe-west1-docker.pkg.dev/gatelogixserver/gatelogix-acces-control/frontend:latest', './frontend']
 
-  # Subir imagen a Artifact Registry
+  # Push al Artifact Registry
   - name: 'gcr.io/cloud-builders/docker'
     args: ['push', 'europe-west1-docker.pkg.dev/gatelogixserver/gatelogix-acces-control/frontend:latest']
 
@@ -23,3 +23,6 @@ steps:
 
 images:
   - 'europe-west1-docker.pkg.dev/gatelogixserver/gatelogix-acces-control/frontend:latest'
+
+options:
+  logging: CLOUD_LOGGING_ONLY

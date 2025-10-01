@@ -37,7 +37,7 @@ const configuredAxios = httpCacheInterceptor.setup(axios);
 const apiUrl = import.meta.env.VITE_API_URL || 
                (window.location.hostname === 'localhost' ? 
                 'http://localhost:3000' : 
-                'https://backend-app-115351146305.us-central1.run.app');
+                'https://backend-736887951555.europe-west1.run.app');
 console.log('🌐 API URL configurada:', apiUrl);
 configuredAxios.defaults.baseURL = apiUrl;
 

@@ -1,10 +1,10 @@
 // frontend/src/utils/apiConfig.js
 
 // URL del backend en producción
-const PRODUCTION_API_URL = 'https://backend-app-115351146305.us-central1.run.app';
+const PRODUCTION_API_URL = 'https://backend-736887951555.europe-west1.run.app';
 
 // URLs para entorno local
-const LOCAL_API_URL_DEV = 'http://localhost:3000';  // Para desarrollo local
+
 const LOCAL_API_URL_CLOUD = 'http://localhost:8080'; // Para pruebas de nube local
 
 /**

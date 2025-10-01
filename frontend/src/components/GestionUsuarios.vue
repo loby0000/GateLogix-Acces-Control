@@ -1528,6 +1528,7 @@ export default {
   color: var(--text-dark);
   background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 

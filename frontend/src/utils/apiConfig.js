@@ -39,7 +39,9 @@ export function getApiUrl(endpoint) {
   const baseUrl = getApiBaseUrl();
   // Asegurarse de que el endpoint no comience con / para evitar doble slash
   const cleanEndpoint = endpoint.startsWith('/') ? endpoint.substring(1) : endpoint;
-  return `${baseUrl}/${cleanEndpoint}`;
+  const fullUrl = `${baseUrl}/${cleanEndpoint}`;
+  console.log('🔗 [apiConfig] Construyendo URL:', fullUrl, 'para endpoint:', endpoint);
+  return fullUrl;
 }
 
 // Exportar la URL de producción para uso directo

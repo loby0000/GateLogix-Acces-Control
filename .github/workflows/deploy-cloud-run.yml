@@ -58,7 +58,7 @@ jobs:
           --max-instances 10 \
           --min-instances 0 \
           --port 8080 \
-          --set-env-vars="NODE_ENV=production,PORT=8080" \
+          --set-env-vars="NODE_ENV=production" \
           --set-secrets="MONGODB_URI=mongodb-credentials:latest,JWT_SECRET=jwt-secret:latest" \
           --timeout 300s \
           --cpu-throttling \

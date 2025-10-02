@@ -19,7 +19,9 @@ steps:
       - --platform=managed
       - --allow-unauthenticated
       - --set-env-vars
-      - MONGODB_URI=mongodb+srv://CarlosA:bbkmtpjFekqrzrEE@access.iyrpsbl.mongodb.net/?retryWrites=true&w=majority&appName=Access
+      - NODE_ENV=production,PORT=8080
+      - --set-secrets
+      - MONGODB_URI=mongodb-credentials:latest,JWT_SECRET=jwt-secret:latest
 
 images:
   - 'europe-west1-docker.pkg.dev/gatelogixserver/gatelogix-acces-control/backend:latest'

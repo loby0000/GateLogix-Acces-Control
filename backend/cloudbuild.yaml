@@ -49,6 +49,7 @@ steps:
       - '--min-instances=1'
       - '--port=8080'
       - '--set-env-vars=NODE_ENV=production,PORT=8080,MONGODB_URI=${_MONGODB_URI}'
++     - '--set-secrets=JWT_SECRET=${_JWT_SECRET_NAME}:latest'
       - '--timeout=300s'
       - '--cpu-throttling'
       - '--concurrency=80'
@@ -59,6 +60,7 @@ substitutions:
   _SERVICE_NAME: gatelogix
   _DEPLOY_REGION: northamerica-south1
   _MONGODB_URI: ${_MONGODB_URI}
++  _JWT_SECRET_NAME: jwt-secret
   _SERVICE_ACCOUNT: ${_SERVICE_ACCOUNT}
 
 options:

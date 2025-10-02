@@ -19,7 +19,7 @@ steps:
       - --platform=managed
       - --allow-unauthenticated
       - --set-env-vars
-      - VITE_BACKEND_URL=https://backend-736887951555.europe-west1.run.app
+      - NODE_ENV=production,VITE_BACKEND_URL=https://backend-736887951555.europe-west1.run.app
 
 images:
   - 'europe-west1-docker.pkg.dev/gatelogixserver/gatelogix-acces-control/frontend:latest'

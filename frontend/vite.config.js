@@ -3,7 +3,21 @@ import vue from '@vitejs/plugin-vue'
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [vue()],
+  plugins: [
+    vue(),
+    {
+      name: 'print-cloud-link',
+      configureServer(server) {
+        const cloudUrl = process.env.VITE_API_URL || 'https://frontend-736887951555.europe-west1.run.app'
+        const print = () => console.log(`   ➜  Cloud:   ${cloudUrl}`)
+        if (server.httpServer?.listening) {
+          print()
+        } else {
+          server.httpServer?.once('listening', print)
+        }
+      }
+    }
+  ],
   resolve: {
     alias: {
       '@': '/src',

@@ -454,12 +454,14 @@ export default {
           let ultimaEntrada = null;
           let ultimaSalida = null;
           let nombreGuardia = null;
+          let ultimoSerialEntrada = null; // ✅ guardar el serial del último ingreso
           
           for (const registro of usuario.registros) {
             // Si encontramos una entrada y aún no tenemos una última entrada
             if (registro.entrada && (!ultimaEntrada || new Date(registro.entrada) > new Date(ultimaEntrada))) {
               ultimaEntrada = registro.entrada;
               nombreGuardia = registro.nombreGuardia;
+              ultimoSerialEntrada = registro.serial; // ✅ actualizar serial al del último ingreso
             }
             
             // Si encontramos una salida y aún no tenemos una última salida
@@ -472,6 +474,8 @@ export default {
           usuario.ultimaEntrada = ultimaEntrada;
           usuario.ultimaSalida = ultimaSalida;
           usuario.nombreGuardia = nombreGuardia;
+          
+          // 🔹 Mantener serial original; se actualizará con el equipo principal más adelante
           
           // Determinar estado actual basado en la última acción
           if (ultimaEntrada && ultimaSalida) {
@@ -495,6 +499,9 @@ export default {
             const fechaB = b.ultimaEntrada ? new Date(b.ultimaEntrada) : new Date(0);
             return fechaB - fechaA;
           });
+        
+        // ✅ Actualizar el serial mostrado en la tabla al del equipo principal
+        await this.actualizarSerialPrincipalTabla(this.records);
         
         this.totalRecords = this.records.length;
         this.filteredRecords = [...this.records];
@@ -626,6 +633,31 @@ export default {
       await this.cargarHistorial();
     },
 
+    // 🔹 Actualizar serial en la tabla según equipo principal
+    async actualizarSerialPrincipalTabla(records) {
+      try {
+        const token = localStorage.getItem('token');
+        const timestamp = new Date().getTime();
+        // Procesar en serie para evitar saturar backend
+        for (let r of records) {
+          const documento = r.documento;
+          if (!documento || documento === 'N/A') continue;
+          const resp = await fetch(
+            getApiUrl(`api/equipos/usuario/${documento}?t=${timestamp}`),
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+          if (!resp.ok) continue;
+          const data = await resp.json();
+          const principal = (data.equipo && data.equipo.serial) ? data.equipo : (Array.isArray(data.equipos) && data.equipos.length > 0 ? data.equipos[0] : null);
+          if (principal && principal.serial) {
+            r.serial = principal.serial;
+          }
+        }
+      } catch (e) {
+        console.warn('No se pudo actualizar seriales de equipo principal en la tabla:', e);
+      }
+    },
+
     // 🔹 Exportar datos (placeholder)
     exportData(type) {
       if (this.filteredRecords.length === 0) {
@@ -642,21 +674,29 @@ export default {
       this.$router.push({ path: '/dashboard' });
     },
 
-    // 🔹 Modal de usuario - Mostrar historial completo
+    // 🔹 Modal de usuario - Mostrar historial completo (solo equipo principal)
     async showUserModal(record) {
       this.selectedUser = record;
       
-      // Filtrar todos los registros históricos del usuario
-      // Incluir todos los registros del usuario, no solo los del día actual
-      this.userHistoryRecords = this.allRecords.filter(r => 
-        r.usuarioId === record.usuarioId || 
-        (r.documento === record.documento && r.documento !== 'N/A')
-      ).sort((a, b) => new Date(b.fechaCreacion) - new Date(a.fechaCreacion));
+      // Filtrar todos los registros históricos del usuario (incluye todo su histórico)
+      this.userHistoryRecords = this.allRecords
+        .filter(r => r.usuarioId === record.usuarioId || (r.documento === record.documento && r.documento !== 'N/A'))
+        .sort((a, b) => new Date(b.fechaCreacion) - new Date(a.fechaCreacion));
+      
+      // Detectar el serial del último ingreso del usuario (por si no hay equipo principal definido)
+      const ultimoIngreso = this.userHistoryRecords.find(r => r.entrada);
+      const serialUltimoIngreso = ultimoIngreso ? ultimoIngreso.serial : null;
       
       // Obtener información completa del usuario y sus equipos
       await this.obtenerEquiposUsuario(record.documento);
       
-      console.log(`📋 Mostrando historial completo de ${record.usuario}: ${this.userHistoryRecords.length} registros`);
+      // ✅ Mostrar únicamente el historial del equipo principal en el modal
+      const serialPrincipal = (this.equipoPrincipal && this.equipoPrincipal.serial) ? this.equipoPrincipal.serial : serialUltimoIngreso;
+      if (serialPrincipal) {
+        this.userHistoryRecords = this.userHistoryRecords.filter(r => r.serial === serialPrincipal);
+      }
+      
+      console.log(`📋 Mostrando historial (equipo principal) de ${record.usuario}: ${this.userHistoryRecords.length} registros`);
       this.showModal = true;
     },
 
@@ -679,15 +719,16 @@ export default {
         if (response.ok) {
           const data = await response.json();
           
-          // Determinar equipo principal y otros equipos
-          if (data.equipos && data.equipos.length > 0) {
-            // El primer equipo del array es el principal
+          // Determinar equipo principal y otros equipos (prioriza 'data.equipo' si existe)
+          if (data.equipo && data.equipo.serial) {
+            this.equipoPrincipal = data.equipo;
+            this.otrosEquipos = Array.isArray(data.equipos)
+              ? data.equipos.filter(e => e && e.serial !== data.equipo.serial)
+              : [];
+          } else if (Array.isArray(data.equipos) && data.equipos.length > 0) {
+            // Usar el primer elemento del array como principal y el resto como otros
             this.equipoPrincipal = data.equipos[0];
             this.otrosEquipos = data.equipos.slice(1);
-          } else if (data.equipo) {
-            // Si solo hay un equipo en el campo 'equipo'
-            this.equipoPrincipal = data.equipo;
-            this.otrosEquipos = [];
           } else {
             this.equipoPrincipal = null;
             this.otrosEquipos = [];

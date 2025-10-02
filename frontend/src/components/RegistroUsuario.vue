@@ -480,7 +480,7 @@ export default {
       }
     },
 
-    registrar() {
+    async registrar() {
         // Validar todos los campos
         this.validarNombre();
         this.validarDocumento();
@@ -491,31 +491,65 @@ export default {
         const hayErrores = Object.values(this.errores).some(error => error !== '');
         
         if (!hayErrores && this.tipoUsuario && this.tipoDocumento && this.marcaEquipo) {
-          console.log('Registrando usuario:', {
-            usuario: {
-              tipo: this.tipoUsuario,
-              documento: this.tipoDocumento,
-              numero: this.numeroDocumento,
-              nombre: this.nombre,
-              correoElectronico: this.correoElectronico
-            },
-            equipo: {
-              serial: this.serialEquipo,
-              marca: this.marcaEquipo,
-              caracteristicas: this.caracteristicas,
-              accesorios: {
-                mouse: this.mouse,
-                cargador: this.cargador
-              }
+          try {
+            const token = localStorage.getItem('token');
+            if (!token) {
+              this.toast.error('No hay sesión activa');
+              this.$router.push('/login');
+              return;
             }
-          });
-          
-          this.registroExitoso = true;
-          setTimeout(() => {
-            this.registroExitoso = false;
-          }, 3000);
+
+            const payload = {
+              tipoUsuario: this.tipoUsuario,
+              tipoDocumento: this.tipoDocumento,
+              numeroDocumento: this.numeroDocumento.replace(/\D/g, ''),
+              nombre: this.nombre,
+              email: this.correoElectronico,
+              foto: this.capturedImage || null,
+              equipo: {
+                serial: this.serialEquipo,
+                marca: this.marcaEquipo,
+                caracteristicas: this.caracteristicas,
+                accesorios: {
+                  mouse: this.mouse,
+                  cargador: this.cargador
+                }
+              }
+            };
+
+            const url = getApiUrl('api/usuario-equipo/registrar');
+            const res = await axios.post(url, payload, {
+              headers: { Authorization: `Bearer ${token}` },
+              timeout: 15000
+            });
+
+            this.toast.success(res.data?.message || 'Usuario registrado con éxito');
+
+            // Mostrar código de barras si viene del backend
+            if (res.data?.codigoBarrasBase64) {
+              this.codigoBarrasUrl = `data:image/png;base64,${res.data.codigoBarrasBase64}`;
+              this.mostrarCodigoModal = true;
+            }
+
+            this.registroExitoso = true;
+            // Opcional: limpiar formulario
+            // setTimeout(() => { this.registroExitoso = false; }, 3000);
+          } catch (err) {
+            console.error('❌ Error al registrar usuario:', err.response?.data || err.message);
+            if (err.response?.status === 409) {
+              const msg = err.response?.data?.message || 'Datos duplicados';
+              this.toast.error(msg);
+            } else if (err.response?.status === 400) {
+              this.toast.error(err.response?.data?.message || 'Validación inválida');
+            } else if (err.response?.status === 401) {
+              this.toast.error('Sesión expirada. Por favor inicie sesión nuevamente.');
+              this.$router.push('/login');
+            } else {
+              this.toast.error('Error al registrar usuario. Intente nuevamente.');
+            }
+          }
         } else {
-          console.log('Faltan campos por completar o hay errores');
+          this.toast.error('Faltan campos por completar o hay errores');
         }
       },
       
@@ -665,8 +699,8 @@ export default {
     },
 
     startCarousel() {
-      console.log('Iniciando carrusel de imágenes...');
-      console.log('Total de imágenes:', this.backgroundImages.length);
+      // console.log('Iniciando carrusel de imágenes...');
+      // console.log('Total de imágenes:', this.backgroundImages.length);
       
       // Asegurar que empezamos con la primera imagen
       this.currentImageIndex = 0;
@@ -677,7 +711,7 @@ export default {
       
       this.carouselInterval = setInterval(() => {
         this.currentImageIndex = (this.currentImageIndex + 1) % this.backgroundImages.length;
-        console.log('Cambiando a imagen:', this.currentImageIndex, 'URL:', this.backgroundImages[this.currentImageIndex]);
+        // console.log('Cambiando a imagen:', this.currentImageIndex, 'URL:', this.backgroundImages[this.currentImageIndex]);
       }, 3000); // Cambiar cada 3 segundos
     },
     
@@ -686,7 +720,7 @@ export default {
         const img = new Image();
         img.src = image.url;
         img.onload = () => {
-          console.log(`Imagen ${index + 1} precargada:`, image.alt);
+          // console.log(`Imagen ${index + 1} precargada:`, image.alt);
         };
         img.onerror = () => {
           console.error(`Error cargando imagen ${index + 1}:`, image.alt);

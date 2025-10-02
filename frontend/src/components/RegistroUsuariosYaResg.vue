@@ -147,6 +147,13 @@
               <span v-if="eq.accesorios.mouse || eq.mouse" class="accesorio-badge">🖱️ Mouse</span>
               <span v-if="eq.accesorios.cargador || eq.cargador" class="accesorio-badge">🔌 Cargador</span>
             </div>
+            <!-- Acciones de selección de equipo -->
+            <div class="equipo-item-actions" style="margin-top:8px; display:flex; gap:8px; align-items:center;">
+              <button class="select-equipo-btn" @click="seleccionarEquipo(eq)" style="padding:6px 10px; border-radius:8px; border:1px solid #0d6efd; background:#0d6efd; color:#fff; cursor:pointer;">
+                Seleccionar este equipo
+              </button>
+              <span v-if="usuarios[equipoMenuAbierto]?.equipoSeleccionadoSerial === (eq.serial || '')" class="equipo-selected" style="color:#0a7; font-weight:600;">✅ Seleccionado</span>
+            </div>
           </div>
         </div>
         <button
@@ -604,18 +611,25 @@ export default {
       }
     },
     
-    // Función para obtener el equipo principal desde el array de equipos
+    // Función para obtener el equipo principal: prioriza el campo único 'equipo' del usuario o el seleccionado manualmente
     getEquipoPrincipal(usuario) {
       if (!usuario) return null;
       
-      // Si hay equipos en el array, devolver el primero (que debería ser el principal)
-      if (usuario.equipos && Array.isArray(usuario.equipos) && usuario.equipos.length > 0) {
-        return usuario.equipos[0];
+      // Si hay un equipo seleccionado manualmente para este usuario, usarlo como principal
+      if (usuario.equipoSeleccionadoSerial) {
+        const lista = this.defaultEquipos(usuario);
+        const seleccionado = lista.find(e => e && e.serial === usuario.equipoSeleccionadoSerial);
+        if (seleccionado) return seleccionado;
       }
       
-      // Fallback al campo equipo si existe
+      // Prioridad: si existe usuario.equipo con serial, usarlo como principal
       if (usuario.equipo && usuario.equipo.serial) {
         return usuario.equipo;
+      }
+      
+      // Fallback: si no hay 'equipo', usar el primer elemento del array de 'equipos' si existe
+      if (usuario.equipos && Array.isArray(usuario.equipos) && usuario.equipos.length > 0) {
+        return usuario.equipos[0];
       }
       
       return null;
@@ -779,6 +793,25 @@ export default {
         tracks.forEach(track => track.stop());
         this.$refs.video.srcObject = null;
       }
+    },
+    
+    // Seleccionar un equipo desde el modal y actualizar información visible
+    seleccionarEquipo(eq) {
+      const idx = this.equipoMenuAbierto;
+      const usuario = (idx !== null) ? this.usuarios[idx] : this.usuarios[0];
+      if (!usuario) return;
+      
+      usuario.equipoSeleccionadoSerial = eq?.serial || null;
+      // Cerrar el modal de menú de equipos
+      this.equipoMenuAbierto = null;
+      
+      // Actualizar estado e último movimiento para el equipo seleccionado
+      if (eq && eq.serial) {
+        this.obtenerEstadoUsuario(eq.serial);
+      }
+      
+      // Forzar actualización visual
+      this.$forceUpdate();
     },
     
     capturarFoto() {
@@ -950,7 +983,8 @@ export default {
            this.toast.error("Sesión expirada. Por favor inicie sesión nuevamente.");
            this.$router.push('/login');
          } else {
-           this.toast.error("Error al registrar el movimiento. Intente nuevamente.");
+           const msg = err.response?.data?.msg || err.response?.data?.message || err.message || "Error al registrar el movimiento. Intente nuevamente.";
+           this.toast.error(msg);
          }
       } finally {
         this.cargandoMovimiento = false;
@@ -983,8 +1017,7 @@ export default {
         const payload = JSON.parse(atob(token.split('.')[1]));
         const docGuardia = payload.documento;
 
-        const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-        const url = `${baseUrl}/api/historial/entrada`;
+        const url = getApiUrl('api/historial/entrada');
         
         const response = await axios.post(
           url,

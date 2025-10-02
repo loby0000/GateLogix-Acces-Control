@@ -12,6 +12,23 @@ const generateBarcode = require('../utils/barcodeGenerator.js'); // tu función 
 exports.login = async (req, res) => {
   const { documento, clave } = req.body;
 
+  // Validación de configuración crítica
+  if (!process.env.JWT_SECRET || process.env.JWT_SECRET.trim() === '') {
+    console.error('❌ Configuración faltante: JWT_SECRET no está definido en el entorno');
+    return res.status(500).json({
+      message: 'Configuración de servidor incompleta: JWT_SECRET no definido',
+      code: 'CONFIG_MISSING_JWT_SECRET'
+    });
+  }
+
+  // Validación de entrada mínima
+  if (!documento || !clave) {
+    return res.status(400).json({
+      message: 'Documento y clave son requeridos',
+      code: 'VALIDATION_ERROR'
+    });
+  }
+
   try {
     // 🚀 Intentar obtener guardia del caché primero
     const cacheKey = `guard:doc:${documento}`;
@@ -62,8 +79,8 @@ exports.login = async (req, res) => {
 
     res.json({ token });
   } catch (err) {
-    console.error('Error en login de guardia:', err);
-    res.status(500).json({ message: 'Error en el servidor' });
+    console.error('Error en login de guardia:', err && err.message ? err.message : err);
+    return res.status(500).json({ message: 'Error en el servidor', error: err && err.message ? err.message : undefined });
   }
 };
 

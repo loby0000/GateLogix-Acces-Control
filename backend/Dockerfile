@@ -1,4 +1,4 @@
-FROM node:18-slim
+FROM node:20-slim
 
 # Crear directorio de la aplicación
 WORKDIR /app

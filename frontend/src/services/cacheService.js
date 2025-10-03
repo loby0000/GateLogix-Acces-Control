@@ -42,7 +42,9 @@ class FrontendCacheService {
   set(key, data, ttl = this.defaultTTL, useSession = false) {
     try {
       const cacheKey = this._getKey(key);
-      const expiresAt = this._now() + ttl;
+      // TTL infinito si ttl es null/undefined/<=0
+      const infinite = ttl == null || ttl <= 0 || ttl === Infinity;
+      const expiresAt = infinite ? Number.MAX_SAFE_INTEGER : (this._now() + ttl);
       
       const cacheData = {
         data,
@@ -53,7 +55,7 @@ class FrontendCacheService {
       const storage = useSession ? sessionStorage : localStorage;
       storage.setItem(cacheKey, JSON.stringify(cacheData));
       
-      console.log(`💾 [FRONTEND CACHE] Guardado: ${key} (TTL: ${ttl}ms)`);
+      console.log(`💾 [FRONTEND CACHE] Guardado: ${key} (TTL: ${infinite ? 'infinite' : ttl + 'ms'})`);
       return true;
       
     } catch (error) {

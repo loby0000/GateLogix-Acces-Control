@@ -1084,6 +1084,19 @@ export default {
         document.dispatchEvent(registrosActualizadosEvent);
         window.dispatchEvent(registrosActualizadosEvent);
 
+        // 🔔 Emitir evento de movimiento registrado (para notificaciones)
+        const movimientoEvent = new CustomEvent('historial-movimiento-registrado', {
+          detail: {
+            tipo: response.data.tipo, // 'entrada' o 'salida'
+            estado: response.data.tipo === 'entrada' ? 'Ingreso' : 'Egreso',
+            usuario: response.data.usuario,
+            serial: serial,
+            timestamp: response.data.timestamp
+          }
+        });
+        document.dispatchEvent(movimientoEvent);
+        window.dispatchEvent(movimientoEvent);
+
       } catch (err) {
         console.error("❌ Error al registrar movimiento:", err);
         

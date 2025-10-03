@@ -180,6 +180,16 @@ async function confirmarRegistro() {
       
       // Emitir evento específico para actualizar solo el contador de registros
       if (tipoIngreso.value === 'guardia') {
+        // Emitir notificación de guardia registrado
+        const guardiaRegistradoEvent = new CustomEvent('guardia-registrado', {
+          detail: {
+            documento: documento.value,
+            nombre: nombre.value,
+            jornada: turno.value
+          }
+        })
+        window.dispatchEvent(guardiaRegistradoEvent)
+
         const registrosActualizadosEvent = new CustomEvent('registros-actualizados', {
           detail: {
             guardiaId: data.guardiaId, // ID del guardia registrado
@@ -188,6 +198,16 @@ async function confirmarRegistro() {
         })
         document.dispatchEvent(registrosActualizadosEvent)
         window.dispatchEvent(registrosActualizadosEvent)
+      } else if (tipoIngreso.value === 'admin') {
+        // Emitir notificación de admin registrado/reemplazado
+        const adminRegistradoEvent = new CustomEvent('admin-registrado', {
+          detail: {
+            usuario: usuarioNuevoAdmin.value,
+            documento: documentoNuevoAdmin.value,
+            nombre: nombreNuevoAdmin.value
+          }
+        })
+        window.dispatchEvent(adminRegistradoEvent)
       }
       router.push({ name: 'login' })
     } else {

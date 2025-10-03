@@ -128,6 +128,22 @@ async function onSubmit() {
       const data = await res.json()
       if (res.ok && data.token) {
         localStorage.setItem('token', data.token)
+        // Emitir evento de guardia que inició sesión
+        try {
+          const payload = JSON.parse(atob(data.token.split('.')[1]))
+          const guardiaInicioEvent = new CustomEvent('guardia-inicio-sesion', {
+            detail: {
+              documento: payload?.documento || documento.value,
+              jornada: turno.value
+            }
+          })
+          window.dispatchEvent(guardiaInicioEvent)
+        } catch (e) {
+          const guardiaInicioEvent = new CustomEvent('guardia-inicio-sesion', {
+            detail: { documento: documento.value, jornada: turno.value }
+          })
+          window.dispatchEvent(guardiaInicioEvent)
+        }
         router.push({ name: 'registro' })
       } else {
         alert(data.message || 'Credenciales incorrectas')
@@ -145,6 +161,21 @@ async function onSubmit() {
       const data = await res.json()
       if (res.ok && data.token) {
         localStorage.setItem('token', data.token)
+        // Emitir evento de admin que inició sesión
+        try {
+          const payload = JSON.parse(atob(data.token.split('.')[1]))
+          const adminInicioEvent = new CustomEvent('admin-inicio-sesion', {
+            detail: {
+              usuario: payload?.usuario || documento.value
+            }
+          })
+          window.dispatchEvent(adminInicioEvent)
+        } catch (e) {
+          const adminInicioEvent = new CustomEvent('admin-inicio-sesion', {
+            detail: { usuario: documento.value }
+          })
+          window.dispatchEvent(adminInicioEvent)
+        }
         router.push({ name: 'dashboard' })
       } else {
         alert(data.message || 'Usuario o contraseña de admin incorrectos')

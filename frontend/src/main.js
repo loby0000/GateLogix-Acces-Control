@@ -7,6 +7,7 @@ import Toast from 'vue-toastification'
 import 'vue-toastification/dist/index.css'
 import httpCacheInterceptor from './services/httpInterceptor.js'
 import axios from 'axios'
+import frontendCacheService from './services/cacheService.js'
 
 // Configuración global para manejar errores de red
 window.addEventListener('error', function(e) {
@@ -75,5 +76,52 @@ app.config.errorHandler = (err, vm, info) => {
     app.config.globalProperties.$toast.error('Ha ocurrido un error. Por favor, intente nuevamente.');
   }
 };
+
+// Escuchadores globales para cachear eventos de notificaciones cuando el panel no está montado
+const NOTIF_QUEUE_KEY = 'notifications_queue';
+// Desduplicación simple para evitar eventos duplicados (window + document)
+const _recentEventMap = new Map();
+const _DEDUP_MS = 800; // ventana de desduplicación
+function enqueueNotificationEvent(eventName, detail) {
+  try {
+    const now = Date.now();
+    let detailKey = '';
+    try { detailKey = JSON.stringify(detail || {}); } catch { detailKey = String(detail || ''); }
+    const key = `${eventName}:${detailKey}`;
+    const last = _recentEventMap.get(key) || 0;
+    if (now - last < _DEDUP_MS) return; // ignorar duplicado reciente
+    _recentEventMap.set(key, now);
+
+    const existing = frontendCacheService.get(NOTIF_QUEUE_KEY) || [];
+    // Guardar al inicio para mantener orden reciente
+    existing.unshift({ eventName, detail, time: now });
+    // Limitar tamaño de la cola
+    if (existing.length > 50) existing.pop();
+    // Persistir por 6 horas
+    frontendCacheService.set(NOTIF_QUEUE_KEY, existing, 6 * 60 * 60 * 1000);
+  } catch (e) {
+    console.warn('No se pudo cachear evento de notificación:', e?.message || e);
+  }
+}
+
+const globalNotificationEvents = [
+  'usuario-registrado',
+  'guardia-sesion-expirada',
+  'registros-actualizados',
+  'guardia-registrado',
+  'guardia-inicio-sesion',
+  'admin-inicio-sesion',
+  'admin-registrado',
+  'guardia-estado-cambiado',
+  'equipo-registrado',
+  'historial-movimiento-registrado',
+];
+
+globalNotificationEvents.forEach((ev) => {
+  const handler = (e) => enqueueNotificationEvent(ev, e.detail);
+  // Capturar en window y document, con desduplicación para evitar dobles
+  window.addEventListener(ev, handler, { capture: true });
+  document.addEventListener(ev, handler, { capture: true });
+});
 
 app.mount('#app')

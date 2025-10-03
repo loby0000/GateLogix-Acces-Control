@@ -187,6 +187,30 @@ class HttpCacheInterceptor {
         return response;
       },
       (error) => {
+        // Emitir evento de sesión de guardia expirada si hay 401
+        try {
+          const status = error?.response?.status;
+          if (status === 401) {
+            // Intentar obtener datos del guardia desde token
+            const token = localStorage.getItem('token');
+            let nombre = 'Guardia', documento = '';
+            if (token) {
+              const payloadBase64 = token.split('.')[1];
+              if (payloadBase64) {
+                const json = JSON.parse(atob(payloadBase64));
+                nombre = json?.nombre || nombre;
+                documento = json?.documento || documento;
+              }
+            }
+            const evt = new CustomEvent('guardia-sesion-expirada', {
+              detail: { nombre, documento }
+            });
+            document.dispatchEvent(evt);
+            window.dispatchEvent(evt);
+          }
+        } catch (e) {
+          console.warn('No se pudo emitir evento guardia-sesion-expirada:', e?.message || e);
+        }
         // Manejar respuestas desde caché
         if (axios.isCancel(error) && error.message && typeof error.message === 'object') {
           return Promise.resolve(error.message);

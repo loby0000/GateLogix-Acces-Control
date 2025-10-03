@@ -543,6 +543,17 @@ export default {
         const guardiasActualizadosEvent = new CustomEvent('guardias-actualizados');
         document.dispatchEvent(guardiasActualizadosEvent);
         window.dispatchEvent(guardiasActualizadosEvent);
+
+        // Emitir evento de cambio de estado del guardia
+        const estadoCambiadoEvent = new CustomEvent('guardia-estado-cambiado', {
+          detail: {
+            guardiaId: this.usuarioEdit._id,
+            nombre: nombreGuardia,
+            estado: this.usuarioEdit.activo ? 'activo' : 'inactivo'
+          }
+        });
+        document.dispatchEvent(estadoCambiadoEvent);
+        window.dispatchEvent(estadoCambiadoEvent);
         
         // Mostrar mensaje de éxito
         const mensaje = `Guardia ${nombreGuardia} actualizado correctamente`;

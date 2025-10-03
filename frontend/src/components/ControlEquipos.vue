@@ -1028,6 +1028,15 @@ export default {
           equipoData,
           { headers: { Authorization: `Bearer ${token}` } }
         );
+        // Emitir evento de equipo registrado
+        const equipoRegistradoEvent = new CustomEvent('equipo-registrado', {
+          detail: {
+            serial: this.nuevoEquipo.serial,
+            documento: this.usuarioSeleccionado.numeroDocumento || this.usuarioSeleccionado.documento,
+            nombre: this.usuarioSeleccionado.nombre || this.usuarioSeleccionado.usuario?.nombre
+          }
+        })
+        window.dispatchEvent(equipoRegistradoEvent)
         
         // Agregar equipo al usuario seleccionado en la UI
         if (!this.usuarioSeleccionado.equipos) {

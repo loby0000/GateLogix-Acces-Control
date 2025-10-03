@@ -532,6 +532,20 @@ export default {
             }
 
             this.registroExitoso = true;
+
+            // Emitir evento global de usuario registrado para mini-notificaciones
+            try {
+              const evento = new CustomEvent('usuario-registrado', {
+                detail: {
+                  nombre: this.nombre,
+                  documento: (this.numeroDocumento || '').replace(/\D/g, '')
+                }
+              });
+              document.dispatchEvent(evento);
+              window.dispatchEvent(evento);
+            } catch (e) {
+              console.warn('No se pudo emitir evento usuario-registrado:', e?.message || e);
+            }
             // Opcional: limpiar formulario
             // setTimeout(() => { this.registroExitoso = false; }, 3000);
           } catch (err) {

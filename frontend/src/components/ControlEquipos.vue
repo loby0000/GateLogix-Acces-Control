@@ -185,8 +185,7 @@
               <div class="equipo-details">
                 <p><strong>Serial:</strong> {{ equipo.serial }}</p>
                 <p><strong>Características:</strong> {{ equipo.caracteristicas || 'No especificadas' }}</p>
-                <p v-if="equipo.fechaIngreso"><strong>Fecha de ingreso:</strong> {{ formatearFecha(equipo.fechaIngreso) }}</p>
-                <p v-else><strong>Fecha de ingreso:</strong> {{ obtenerFechaIngreso(usuarioSeleccionado._id, equipo.serial) }}</p>
+                <p><strong>Fecha de ingreso:</strong> {{ obtenerFechaIngresoFormateada(usuarioSeleccionado._id, equipo) }}</p>
                 <div class="equipo-accesorios">
                   <span :class="['accesorio', equipo.mouse || equipo.accesorios?.mouse ? 'active' : '']">Mouse</span>
                   <span :class="['accesorio', equipo.cargador || equipo.accesorios?.cargador ? 'active' : '']">Cargador</span>
@@ -357,6 +356,8 @@ export default {
       equiposCargados: false,
       // Caché para fechas de ingreso
       fechasIngresoCache: {},
+      // Mapa reactivo de fechas formateadas por usuario+serial
+      fechasIngresoFormateadas: {},
       // Caché para datos de API
       usuariosCache: null,
       equiposCache: null,
@@ -385,6 +386,41 @@ export default {
     this.cargarUsuariosYEquipos();
   },
   methods: {
+    // Fecha de ingreso formateada (método con parámetros)
+    obtenerFechaIngresoFormateada(usuarioId, equipo) {
+      // Priorizar fecha almacenada en el equipo
+      if (equipo && equipo.fechaIngreso) {
+        return this.formatearFecha(equipo.fechaIngreso);
+      }
+      // Intentar desde el caché precalculado
+      const key = `${usuarioId}_${equipo?.serial}`;
+      const val = this.fechasIngresoFormateadas[key];
+      if (val) return val;
+      // Fallback mientras se calcula
+      this.calcularFechaIngresoAsync(usuarioId, equipo?.serial);
+      return 'Calculando…';
+    },
+
+    // Cálculo asíncrono y almacenamiento reactivo de fecha de ingreso
+    async calcularFechaIngresoAsync(usuarioId, serial) {
+      try {
+        if (!usuarioId || !serial) return;
+        const cacheKeyHistorial = `historial_${usuarioId}`;
+        // Reusar caché si existe, si no, cargar
+        let historialLocal = this.fechasIngresoCache[cacheKeyHistorial];
+        if (!historialLocal) {
+          historialLocal = await this.obtenerHistorialLocal(usuarioId);
+        }
+        const primerIngreso = historialLocal.find(h => h.serial === serial && h.entrada);
+        const formateada = primerIngreso?.entrada ? this.formatearFecha(primerIngreso.entrada) : 'No disponible';
+        const key = `${usuarioId}_${serial}`;
+        // En Vue 3, la asignación directa es reactiva para objetos
+        this.fechasIngresoFormateadas[key] = formateada;
+      } catch (error) {
+        console.error('Error calculando fecha de ingreso:', error);
+      }
+    },
+
     // Método para buscar
     onSearch() {
       // La búsqueda se maneja automáticamente a través de la propiedad computada filteredUsers
@@ -488,24 +524,7 @@ export default {
       return '/logo-gatelogix.svg'; // Imagen por defecto en la carpeta public
     },
     
-    async obtenerFechaIngreso(usuarioId, serial) {
-      try {
-        if (!usuarioId || !serial) return 'No disponible';
-        
-        // Buscar en el historial local primero
-        const historialLocal = await this.obtenerHistorialLocal(usuarioId);
-        const primerIngreso = historialLocal.find(h => h.serial === serial && h.entrada);
-        
-        if (primerIngreso && primerIngreso.entrada) {
-          return this.formatearFecha(primerIngreso.entrada);
-        }
-        
-        return 'No disponible';
-      } catch (error) {
-        console.error('Error al obtener fecha de ingreso:', error);
-        return 'No disponible';
-      }
-    },
+    // obtenerFechaIngreso ya no se usa directamente en el template
     
     async obtenerHistorialLocal(usuarioId) {
       try {

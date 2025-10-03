@@ -3,6 +3,7 @@ const UsuarioEquipo = require('../models/UsuarioEquipo');
 const Guardia = require('../models/Guardia');
 const Log = require('../models/Logs');
 const { generarCodigoBarras } = require('../utils/barcodeGenerator'); // ✅ Importación corregida
+const { enviarCodigoBarrasEmail } = require('../utils/emailService');
 const Historial = require('../models/Historial');
 const cacheService = require('../utils/cacheService');
 const { invalidarCacheEstadisticas } = require('./estadisticasController');
@@ -94,6 +95,16 @@ exports.registrar = async (req, res) => {
     // Crear el usuario en la base de datos
     const nuevo = await UsuarioEquipo.create(usuarioData);
     
+    // Enviar código de barras por correo (best-effort)
+    try {
+      await enviarCodigoBarrasEmail(email, nombre, equipo.serial, codigoBarras, {
+        subject: `Código de barras de su equipo (${equipo.serial})`
+      });
+      console.log(`📧 Email enviado a ${email} con código de barras`);
+    } catch (mailErr) {
+      console.error('❌ Error enviando email con código de barras:', mailErr.message);
+    }
+
     // Crear entrada automática en historial (usuario recién registrado)
     try {
       const historialEntrada = await Historial.create({

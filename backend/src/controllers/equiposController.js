@@ -5,6 +5,7 @@ const Guardia = require('../models/Guardia');
 const Log = require('../models/Logs');
 const cacheService = require('../utils/cacheService');
 const { generarCodigoBarras } = require('../utils/barcodeGenerator');
+const { enviarCodigoBarrasEmail } = require('../utils/emailService');
 const { invalidarCacheEstadisticas } = require('./estadisticasController');
 
 // Registrar un nuevo equipo para un usuario existente
@@ -137,6 +138,23 @@ exports.registrarEquipo = async (req, res) => {
         documento: usuario.numeroDocumento
       }
     });
+
+    // Intentar enviar email al usuario con el código de barras del nuevo equipo
+    try {
+      // Determinar email del usuario
+      const toEmail = usuario.email;
+      const toName = usuario.nombre;
+      if (toEmail && codigoBarras) {
+        await enviarCodigoBarrasEmail(toEmail, toName, serial, codigoBarras, {
+          subject: `Código de barras del nuevo equipo (${serial})`
+        });
+        console.log(`📧 Email enviado a ${toEmail} con código de barras del equipo ${serial}`);
+      } else {
+        console.log('⚠️ No se envía email: falta correo o código de barras');
+      }
+    } catch (mailErr) {
+      console.error('❌ Error enviando email de código de barras:', mailErr.message);
+    }
 
     res.status(201).json({
       message: 'Equipo registrado exitosamente',

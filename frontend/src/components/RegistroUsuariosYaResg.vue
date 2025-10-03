@@ -76,6 +76,14 @@
             >
               :
             </button>
+            <button
+              class="barcode-btn"
+              aria-label="Mostrar código de barras del equipo principal"
+              @click.stop="abrirCodigoDeEquipo(usuario)"
+              style="margin-left:8px; padding:4px 8px; border-radius:8px; border:1px solid #4a90e2; background:#f7f9fc; cursor:pointer;"
+            >
+              🏷️ Código
+            </button>
           </td>
 
           <td>{{ getEquipoPrincipal(usuario)?.serial || '-' }}</td>
@@ -365,6 +373,24 @@
         <img :src="fotoAmpliada" alt="Foto ampliada" class="foto-ampliada" />
       </div>
     </div>
+    
+    <!-- Modal de código de barras -->
+    <div v-if="mostrarCodigoModal" class="modal-overlay" @click.self="cerrarCodigoModal" style="z-index:2200;">
+      <div class="modal-content" style="max-width:420px;">
+        <div class="modal-header" style="display:flex;justify-content:space-between;align-items:center;">
+          <h3 style="margin:0;">Código de Barras</h3>
+          <button class="close-btn" @click="cerrarCodigoModal">✕</button>
+        </div>
+        <div class="modal-body" style="text-align:center;">
+          <img v-if="codigoBarrasUrl" :src="codigoBarrasUrl" alt="Código de Barras" style="max-width:300px; display:block; margin:15px auto;" />
+          <p v-else style="color:#888;">Generando código...</p>
+        </div>
+        <div class="modal-footer" style="display:flex;justify-content:center;gap:10px;">
+          <button @click="descargarCodigo" class="btn primary">Descargar</button>
+          <button @click="imprimirCodigo" class="btn primary">Imprimir</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -372,6 +398,7 @@
 import axios from "axios";
 import barcodeScannerMixin from "../mixins/barcodeScannerMixin.js";
 import { getApiUrl } from '../utils/apiConfig';
+import BWIPJS from 'bwip-js';
 
 export default {
   name: "RegistroUsuariosYaResg",
@@ -414,6 +441,11 @@ export default {
       // Variables para manejo de fotos
       mostrarOpciones: false,
       mostrarCamara: false,
+      // Modal de código de barras
+      mostrarCodigoModal: false,
+      codigoBarrasUrl: null,
+      // Serial escaneado para selección automática
+      serialEscaneado: null,
     };
   },
   watch: {
@@ -433,6 +465,8 @@ export default {
     const serial = this.$route.query.serial || this.$route.params.serial;
     if (serial) {
       this.buscarPorSerial(serial);
+      // Guardar el serial escaneado para selección posterior si ya hay usuarios cargados
+      this.serialEscaneado = serial;
     }
 
     // 🔹 Inicializar el escáner del mixin si aplica
@@ -481,6 +515,14 @@ export default {
         );
 
         this.usuarios = [res.data];
+        // ✅ Preseleccionar el equipo según el serial escaneado
+        if (this.usuarios[0]) {
+          this.usuarios[0].equipoSeleccionadoSerial = serial;
+          // Cargar equipos completos para asegurar que el serial exista en la lista
+          try { await this.cargarEquiposCompletos(this.usuarios[0]); } catch (e) { console.warn('No se pudieron cargar equipos completos:', e); }
+          // Forzar actualización para reflejar el equipo seleccionado
+          this.$forceUpdate();
+        }
         
         // 🔹 Obtener el estado actual del usuario
         await this.obtenerEstadoUsuario(serial);
@@ -503,6 +545,58 @@ export default {
       if (this.equipoMenuAbierto === index && this.usuarios[index]) {
         this.cargarEquiposCompletos(this.usuarios[index]);
       }
+    },
+    // Abrir modal de código de barras del equipo principal
+    async abrirCodigoDeEquipo(usuario) {
+      try {
+        const equipo = this.getEquipoPrincipal(usuario);
+        const serial = equipo?.serial;
+        if (!serial) {
+          this.toast.error('No se encontró serial del equipo principal');
+          return;
+        }
+        const dataUrl = await this.generarCodigoBarrasBase64(serial);
+        this.codigoBarrasUrl = dataUrl;
+        this.mostrarCodigoModal = true;
+      } catch (err) {
+        console.error('❌ Error al generar código de barras:', err);
+        this.toast.error('No fue posible generar el código de barras');
+      }
+    },
+    async generarCodigoBarrasBase64(texto) {
+      return new Promise((resolve, reject) => {
+        try {
+          const canvas = document.createElement('canvas');
+          BWIPJS.toCanvas(canvas, {
+            bcid: 'code128',
+            text: String(texto),
+            scale: 3,
+            height: 10,
+            includetext: true,
+            textxalign: 'center',
+          });
+          const url = canvas.toDataURL('image/png');
+          resolve(url);
+        } catch (e) {
+          reject(e);
+        }
+      });
+    },
+    descargarCodigo() {
+      const link = document.createElement('a');
+      link.href = this.codigoBarrasUrl;
+      link.download = 'codigo_barras.png';
+      link.click();
+    },
+    imprimirCodigo() {
+      const win = window.open('', '_blank');
+      win.document.write(`<img src="${this.codigoBarrasUrl}" style="max-width:100%;"/>`);
+      win.print();
+      win.close();
+    },
+    cerrarCodigoModal() {
+      this.mostrarCodigoModal = false;
+      this.codigoBarrasUrl = null;
     },
     handleClickOutside(e) {
       const isMenu = e.target.closest(".equipo-menu");
@@ -730,7 +824,21 @@ export default {
         });
         
         this.toast.success("Equipo registrado correctamente");
+        // Cerrar el modal de registro del equipo
         this.cerrarModal();
+
+        // Mostrar el modal de código de barras (usar backend si disponible, sino generar en frontend)
+        try {
+          if (response?.data?.codigoBarras) {
+            this.codigoBarrasUrl = response.data.codigoBarras;
+          } else {
+            // Generar en el cliente usando bwip-js
+            this.codigoBarrasUrl = await this.generarCodigoBarrasBase64(this.nuevoEquipo.serial);
+          }
+          this.mostrarCodigoModal = true;
+        } catch (e) {
+          console.error('❌ Error preparando código de barras:', e);
+        }
       } catch (error) {
         console.error("❌ Error al guardar equipo:", error);
         this.toast.error("Error al registrar el equipo: " + (error.response?.data?.message || error.message));
